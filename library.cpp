@@ -11,8 +11,7 @@ void ToyAdd(TVMArgs args, TVMRetValue* rv) {
     // automatically convert arguments to desired type.
     int a = args[0];
     int b = args[1];
+
+    *rv = a + b;
 }
 
-void hello() {
-    std::cout << "Hello, World!" << std::endl;
-}
