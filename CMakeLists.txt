@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
     MESSAGE(STATUS "Current platform: Linux ")
-    set(TVM_INCLUDE /home/richard/project/tvm/3rdparty/dlpack/include)
+    set(TVM_INCLUDE /home/richard/project/tvm/include)
     set(DLPACK_INCLUDE /home/richard/project/tvm/3rdparty/dlpack/include)
     set(DMLC_INCLUDE /home/richard/project/tvm/3rdparty/dmlc-core/include)
     set(TVM_RUNTIME_DLL /home/richard/project/tvm/build/libtvm_runtime.so)
