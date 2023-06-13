@@ -10,4 +10,6 @@ inline T toy_add(T a, T b) {
 
 void ListGlobalFuncNames();
 
+void test_toy_add(float a, float b);
+
 #endif //OPENXAE_LIBRARY_H
