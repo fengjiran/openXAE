@@ -1,4 +1,0 @@
-#ifndef OPENXAE_LIBRARY_H
-#define OPENXAE_LIBRARY_H
-
-#endif //OPENXAE_LIBRARY_H

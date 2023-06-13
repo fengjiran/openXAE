@@ -1,17 +1,21 @@
 #include <iostream>
-#include "library.h"
-#include "tvm/runtime/object.h"
+#include "include/library.h"
 #include "tvm/runtime/registry.h"
 
-using TVMArgs = tvm::runtime::TVMArgs;
-using TVMRetValue = tvm::runtime::TVMRetValue;
-using PackedFunc = tvm::runtime::PackedFunc;
+using namespace tvm;
+using namespace tvm::runtime;
 
-void ToyAdd(TVMArgs args, TVMRetValue* rv) {
-    // automatically convert arguments to desired type.
-    int a = args[0];
-    int b = args[1];
+TVM_REGISTER_GLOBAL("toy_add").set_body([](TVMArgs args, TVMRetValue *rv) -> void {
+    *rv = toy_add<double>(args[0], args[1]);
+});
 
-    *rv = a + b;
+void ListGlobalFuncNames() {
+    int global_func_num;
+    const char** plist;
+    TVMFuncListGlobalNames(&global_func_num, &plist);
+
+    LOG_INFO << "List all " << global_func_num << " global functions:";
+    for (int i = 0; i < global_func_num; i++) {
+        std::cout << plist[i] << std::endl;
+    }
 }
-
