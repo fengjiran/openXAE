@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../include/library.h"
+#include "library.h"
 #include "tvm/runtime/registry.h"
 
 using namespace tvm;

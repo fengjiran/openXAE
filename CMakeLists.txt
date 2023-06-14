@@ -24,6 +24,18 @@ message(STATUS "DLPACK include path: " ${DLPACK_INCLUDE})
 message(STATUS "DMLC include path: " ${DMLC_INCLUDE})
 message(STATUS "TVM runtime DLL path: " ${TVM_RUNTIME_DLL})
 
-add_library(${PROJECT_NAME} SHARED src/library.cpp)
-include_directories(${TVM_INCLUDE} ${DLPACK_INCLUDE} ${DMLC_INCLUDE})
-target_link_libraries(${PROJECT_NAME} ${TVM_RUNTIME_DLL})
+file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+
+add_library(${PROJECT_NAME} SHARED ${SRC_FILES})
+
+include_directories(
+        ${PROJECT_SOURCE_DIR}/include
+        ${TVM_INCLUDE}
+        ${DLPACK_INCLUDE}
+        ${DMLC_INCLUDE}
+)
+
+target_link_libraries(
+        ${PROJECT_NAME}
+        ${TVM_RUNTIME_DLL}
+)
