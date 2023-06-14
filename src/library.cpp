@@ -1,6 +1,7 @@
 #include <iostream>
 #include "library.h"
 #include "tvm/runtime/registry.h"
+#include "tvm/ir/type.h"
 
 using namespace tvm;
 using namespace tvm::runtime;
