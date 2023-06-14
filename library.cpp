@@ -45,3 +45,10 @@ void ListGlobalFuncNames() {
         std::cout << plist[i] << std::endl;
     }
 }
+
+void ListTypeTable() {
+    String fname = "runtime.DumpTypeTable";
+    const PackedFunc *fp = Registry::Get(fname);
+    ICHECK(fp != nullptr);
+    (*fp)(0);
+}
