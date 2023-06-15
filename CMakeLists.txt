@@ -24,7 +24,8 @@ message(STATUS "DLPACK include path: " ${DLPACK_INCLUDE})
 message(STATUS "DMLC include path: " ${DMLC_INCLUDE})
 message(STATUS "TVM runtime DLL path: " ${TVM_RUNTIME_DLL})
 
-file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp
+                            ${PROJECT_SOURCE_DIR}/src/*.cc)
 
 add_library(${PROJECT_NAME} SHARED ${SRC_FILES})
 
