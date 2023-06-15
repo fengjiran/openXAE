@@ -7,19 +7,20 @@
  * \brief Common type system AST nodes throughout the IR.
  */
 #include "ir/type.h"
+
 #include "tvm/runtime/registry.h"
 
 namespace tvm {
-PrimType::PrimType(runtime::DataType dtype) {
-  ObjectPtr<PrimTypeNode> n = make_object<PrimTypeNode>();
-  n->dtype = dtype;
-  data_ = std::move(n);
-}
+    PrimType::PrimType(runtime::DataType dtype) {
+        ObjectPtr<PrimTypeNode> n = make_object<PrimTypeNode>();
+        n->dtype = dtype;
+        data_ = std::move(n);
+    }
 
-TVM_REGISTER_NODE_TYPE(PrimTypeNode);
+    TVM_REGISTER_NODE_TYPE(PrimTypeNode);
 
-TVM_REGISTER_GLOBAL("ir.PrimType")
-    .set_body_typed([](runtime::DataType dtype) -> PrimType {
-      return PrimType(dtype);
-    });
-} // namespace tvm
+    TVM_REGISTER_GLOBAL("ir.PrimType")
+            .set_body_typed([](runtime::DataType dtype) -> PrimType {
+                return PrimType(dtype);
+            });
+}// namespace tvm
