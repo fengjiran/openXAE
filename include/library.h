@@ -18,4 +18,5 @@ void test_toy_add(float a, float b);
 void test_toy_sub(float a, float b);
 
 void ListTypeTable();
+
 #endif// OPENXAE_LIBRARY_H
