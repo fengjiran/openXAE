@@ -25,7 +25,7 @@ namespace tvm {
     class TypeNode : public tvm::runtime::Object {
     public:
         mutable Span span;
-        static constexpr const char* _type_key = "Type";
+        static constexpr const char *_type_key = "Type";
         static constexpr const bool _type_has_method_sequal_reduce = true;
         static constexpr const bool _type_has_method_shash_reduce = true;
         static constexpr const uint32_t _type_child_slots = 14;
@@ -56,15 +56,15 @@ namespace tvm {
          */
         runtime::DataType dtype;
 
-        void VisitAttrs(AttrVisitor* v) { v->Visit("dtype", &dtype); }
+        void VisitAttrs(AttrVisitor *v) { v->Visit("dtype", &dtype); }
 
-        bool SEqualReduce(const PrimTypeNode* other, SEqualReducer equal) const {
+        bool SEqualReduce(const PrimTypeNode *other, SEqualReducer equal) const {
             return equal(dtype, other->dtype);
         }
 
         void SHashReduce(SHashReducer hash_reduce) const { hash_reduce(dtype); }
 
-        static constexpr const char* _type_key = "PrimType";
+        static constexpr const char *_type_key = "PrimType";
         TVM_DECLARE_FINAL_OBJECT_INFO(PrimTypeNode, TypeNode);
     };
 
