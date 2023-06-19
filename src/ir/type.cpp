@@ -17,6 +17,9 @@ namespace tvm {
         data_ = std::move(n);
     }
 
+    // uint32_t t = PrimTypeNode::_GetOrAllocRuntimeTypeIndex();
+    uint32_t t = TypeNode::_GetOrAllocRuntimeTypeIndex();
+
     // TVM_REGISTER_NODE_TYPE(PrimTypeNode);
 
     // TVM_REGISTER_GLOBAL("ir.PrimType")
