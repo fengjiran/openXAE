@@ -17,10 +17,10 @@ namespace tvm {
         data_ = std::move(n);
     }
 
-    TVM_REGISTER_NODE_TYPE(PrimTypeNode);
+    // TVM_REGISTER_NODE_TYPE(PrimTypeNode);
 
-    TVM_REGISTER_GLOBAL("ir.PrimType")
-            .set_body_typed([](runtime::DataType dtype) -> PrimType {
-                return PrimType(dtype);
-            });
+    // TVM_REGISTER_GLOBAL("ir.PrimType")
+    //         .set_body_typed([](runtime::DataType dtype) -> PrimType {
+    //             return PrimType(dtype);
+    //         });
 }// namespace tvm
