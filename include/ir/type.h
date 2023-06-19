@@ -56,13 +56,17 @@ namespace tvm {
          */
         runtime::DataType dtype;
 
-        void VisitAttrs(AttrVisitor *v) { v->Visit("dtype", &dtype); }
+        void VisitAttrs(AttrVisitor *v) {
+            v->Visit("dtype", &dtype);
+        }
 
         bool SEqualReduce(const PrimTypeNode *other, SEqualReducer equal) const {
             return equal(dtype, other->dtype);
         }
 
-        void SHashReduce(SHashReducer hash_reduce) const { hash_reduce(dtype); }
+        void SHashReduce(SHashReducer hash_reduce) const {
+            hash_reduce(dtype);
+        }
 
         static constexpr const char *_type_key = "PrimType";
         TVM_DECLARE_FINAL_OBJECT_INFO(PrimTypeNode, TypeNode);
