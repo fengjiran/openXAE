@@ -87,6 +87,66 @@ namespace tvm {
         TVM_DEFINE_OBJECT_REF_METHODS(PrimType, Type, PrimTypeNode);
     };
 
+    /*!
+     * \brief Low-level raw pointer type.
+     *
+     *  PointerType represents type hints in the TIR to be
+     *  passed to the final code generator.
+     *
+     *  PointerType should not occur in the high-level analysis.
+     *
+     * \sa PointerType
+     */
+
+    class PointerTypeNode : public TypeNode {
+    public:
+        /*!
+         * \brief The type of the element which the pointer points to.
+         */
+        Type element_type;
+        /*!
+         * \brief The storage scope of the pointer
+         */
+        String storage_scope;
+
+        void VisitAttrs(AttrVisitor *v) {
+            v->Visit("element_type", &element_type);
+            v->Visit("storage_scope", &storage_scope);
+        }
+
+        bool SEqualReduce(const PointerTypeNode *other, SEqualReducer equal) const {
+            // Make "global" equal to ""
+            String lhs_scope = storage_scope.empty() ? "global" : storage_scope;
+            String rhs_scope = other->storage_scope.empty() ? "global" : other->storage_scope;
+            return equal(element_type, other->element_type) && equal(lhs_scope, rhs_scope);
+        }
+
+        void SHashReduce(SHashReducer hash_reduce) const {
+            hash_reduce(element_type);
+            // Make "global" equal to ""
+            hash_reduce(storage_scope.empty() ? "global" : storage_scope);
+        }
+
+        static constexpr const char *_type_key = "PointerType";
+        TVM_DECLARE_FINAL_OBJECT_INFO(PointerTypeNode, TypeNode);
+    };
+
+    /*
+     * \brief Managed reference to PointerTypeNode.
+     * \sa PointerTypeNode
+     */
+    class PointerType : public Type {
+    public:
+        /*!
+       * \brief Constructor
+       * \param element_type The type of the element which the pointer points to.
+       * \param storage_scope The storage scope into which the pointer addresses
+       */
+        TVM_DLL explicit PointerType(Type element_type, String storage_scope = "");
+
+        TVM_DEFINE_OBJECT_REF_METHODS(PointerType, Type, PointerTypeNode);
+    };
+
 }// namespace tvm
 
 #endif// OPENXAE_TYPE_H
