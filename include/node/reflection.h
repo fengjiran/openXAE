@@ -23,8 +23,8 @@
 #ifndef TVM_NODE_REFLECTION_H_
 #define TVM_NODE_REFLECTION_H_
 
-#include <tvm/node/structural_equal.h>
-#include <tvm/node/structural_hash.h>
+#include <node/structural_equal.h>
+#include <node/structural_hash.h>
 #include <tvm/runtime/c_runtime_api.h>
 #include <tvm/runtime/data_type.h>
 #include <tvm/runtime/memory.h>

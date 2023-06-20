@@ -5,8 +5,8 @@
 #ifndef OPENXAE_TYPE_H
 #define OPENXAE_TYPE_H
 
-#include "tvm/ir/source_map.h"
-#include "tvm/node/node.h"
+#include "ir/source_map.h"
+#include "node/node.h"
 #include "tvm/runtime/object.h"
 
 namespace tvm {
