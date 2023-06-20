@@ -225,6 +225,123 @@ namespace tvm {
         TVM_DECLARE_FINAL_OBJECT_INFO(TypeVarNode, TypeNode);
     };
 
+    /*!
+     * \brief Managed reference to TypeVarNode
+     * \sa TypeVarNode
+     */
+    class TypeVar : public Type {
+    public:
+        /*!
+         * \brief Constructor
+         * \param name_hint The name of the type var.
+         * \param kind The kind of the type var.
+         * \param span The span information.
+         */
+        TVM_DLL TypeVar(String name_hint, TypeKind kind, Span span = Span());
+
+        TVM_DEFINE_OBJECT_REF_METHODS(TypeVar, Type, TypeVarNode);
+    };
+
+    /*!
+     * \brief A global type variable that is used for defining new types or type aliases.
+     * \sa GlobalTypeVar
+     */
+    class GlobalTypeVarNode : public TypeNode {
+    public:
+        /*!
+         * \brief The name of the variable,
+         *  this only acts as a hint to the user,
+         *  and is not used for equality.
+         */
+        String name_hint;
+        /*! \brief The kind of type parameter */
+        TypeKind kind;
+
+        void VisitAttrs(AttrVisitor *v) {
+            v->Visit("name_hint", &name_hint);
+            v->Visit("kind", &kind);
+        }
+
+        bool SEqualReduce(const GlobalTypeVarNode *other, SEqualReducer equal) const {
+            // name matters for now in global type var.
+            return equal(name_hint, other->name_hint) && equal.FreeVarEqualImpl(this, other);
+        }
+
+        void SHashReduce(SHashReducer hash_reduce) const {
+            hash_reduce(name_hint);
+            hash_reduce.FreeVarHashImpl(this);
+        }
+
+        static constexpr const char *_type_key = "GlobalTypeVar";
+        TVM_DECLARE_FINAL_OBJECT_INFO(GlobalTypeVarNode, TypeNode);
+    };
+
+    /*!
+     * \brief Managed reference to GlobalTypeVarNode
+     * \sa GlobalTypeVarNode
+     */
+    class GlobalTypeVar : public Type {
+    public:
+        /*!
+         * \brief Constructor
+         * \param name_hint The name of the type var.
+         * \param kind The kind of the type var.
+         * \param span The span of the type.
+         */
+        TVM_DLL GlobalTypeVar(String name_hint, TypeKind kind, Span span = Span());
+
+        TVM_DEFINE_OBJECT_REF_METHODS(GlobalTypeVar, Type, GlobalTypeVarNode);
+    };
+
+    /*!
+     * \brief The type of tuple values.
+     * \sa TupleType
+     */
+    class TupleTypeNode : public TypeNode {
+    public:
+        /*! \brief The type of each field in the tuple. */
+        Array<Type> fields;
+
+        TupleTypeNode() {}
+
+        void VisitAttrs(AttrVisitor* v) {
+            v->Visit("fields", &fields);
+            v->Visit("span", &span);
+        }
+
+        bool SEqualReduce(const TupleTypeNode* other, SEqualReducer equal) const {
+            return equal(fields, other->fields);
+        }
+
+        void SHashReduce(SHashReducer hash_reduce) const { hash_reduce(fields); }
+
+        static constexpr const char* _type_key = "TupleType";
+        TVM_DECLARE_FINAL_OBJECT_INFO(TupleTypeNode, TypeNode);
+    };
+
+    /*!
+     * \brief Managed reference to TupleTypeNode.
+     * \sa TupleTypeNode.
+     */
+    class TupleType : public Type {
+    public:
+        /*!
+         * \brief Constructor
+         * \param fields Fields in the tuple.
+         * \param span The span of the type.
+         */
+        TVM_DLL explicit TupleType(Array<Type> fields, Span span = Span());
+
+        /*!
+         * \brief Create an empty tuple type that constains nothing.
+         * \return A empty tuple type.
+         */
+        TVM_DLL TupleType static Empty();
+
+        TVM_DEFINE_OBJECT_REF_METHODS(TupleType, Type, TupleTypeNode);
+    };
+
+
 
 }// namespace tvm
 

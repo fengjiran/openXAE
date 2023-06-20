@@ -34,4 +34,40 @@ namespace tvm {
                 return PointerType(element_type, storage_scope);
             });
 
+    TypeVar::TypeVar(String name, TypeKind kind, Span span) {
+        ObjectPtr<TypeVarNode> n = make_object<TypeVarNode>();
+        n->name_hint = std::move(name);
+        n->kind = std::move(kind);
+        n->span = std::move(span);
+        data_ = std::move(n);
+    }
+    TVM_REGISTER_NODE_TYPE(TypeVarNode);
+    TVM_REGISTER_GLOBAL("ir.TypeVar").set_body_typed([](String name, int kind) {
+        return TypeVar(name, static_cast<TypeKind>(kind));
+    });
+
+    GlobalTypeVar::GlobalTypeVar(String name, TypeKind kind, Span span) {
+        ObjectPtr<GlobalTypeVarNode> n = make_object<GlobalTypeVarNode>();
+        n->name_hint = std::move(name);
+        n->kind = std::move(kind);
+        n->span = std::move(span);
+        data_ = std::move(n);
+    }
+    TVM_REGISTER_NODE_TYPE(GlobalTypeVarNode);
+    TVM_REGISTER_GLOBAL("ir.GlobalTypeVar").set_body_typed([](String name, int kind) {
+        return GlobalTypeVar(name, static_cast<TypeKind>(kind));
+    });
+
+    TupleType::TupleType(Array<Type> fields, Span span) {
+        ObjectPtr<TupleTypeNode> n = make_object<TupleTypeNode>();
+        n->fields = std::move(fields);
+        n->span = std::move(span);
+        data_ = std::move(n);
+    }
+    TupleType TupleType::Empty() { return TupleType(Array<Type>()); }
+    TVM_REGISTER_NODE_TYPE(TupleTypeNode);
+    TVM_REGISTER_GLOBAL("ir.TupleType").set_body_typed([](Array<Type> fields) {
+        return TupleType(fields);
+    });
+
 }// namespace tvm
