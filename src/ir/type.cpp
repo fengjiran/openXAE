@@ -98,5 +98,16 @@ namespace tvm {
         return IncompleteType(static_cast<TypeKind>(kind));
     });
 
+    RelayRefType::RelayRefType(Type value, Span span) {
+        ObjectPtr<RelayRefTypeNode> n = make_object<RelayRefTypeNode>();
+        n->value = std::move(value);
+        n->span = std::move(span);
+        data_ = std::move(n);
+    }
+    TVM_REGISTER_GLOBAL("ir.RelayRefType").set_body_typed([](Type value) {
+        return RelayRefType(value);
+    });
+    TVM_REGISTER_NODE_TYPE(RelayRefTypeNode);
+
 
 }// namespace tvm

@@ -350,8 +350,8 @@ namespace tvm {
      * \brief Check whether the tyep represents void.
      * \return The check result.
      */
-    inline bool IsVoidType(const Type& type) {
-        auto* n = type.as<TupleTypeNode>();
+    inline bool IsVoidType(const Type &type) {
+        auto *n = type.as<TupleTypeNode>();
         return n && n->fields.size() == 0;
     }
 
@@ -361,7 +361,7 @@ namespace tvm {
      */
     class TypeConstraintNode : public TypeNode {
     public:
-        static constexpr const char* _type_key = "TypeConstraint";
+        static constexpr const char *_type_key = "TypeConstraint";
         static constexpr const uint32_t _type_child_slots = 1;
         TVM_DECLARE_BASE_OBJECT_INFO(TypeConstraintNode, TypeNode);
     };
@@ -399,7 +399,7 @@ namespace tvm {
          */
         Array<TypeConstraint> type_constraints;
 
-        void VisitAttrs(AttrVisitor* v) {
+        void VisitAttrs(AttrVisitor *v) {
             v->Visit("arg_types", &arg_types);
             v->Visit("ret_type", &ret_type);
             v->Visit("type_params", &type_params);
@@ -407,7 +407,7 @@ namespace tvm {
             v->Visit("span", &span);
         }
 
-        bool SEqualReduce(const FuncTypeNode* other, SEqualReducer equal) const {
+        bool SEqualReduce(const FuncTypeNode *other, SEqualReducer equal) const {
             // type params first as they defines type vars.
             return equal.DefEqual(type_params, other->type_params) && equal(arg_types, other->arg_types) &&
                    equal(ret_type, other->ret_type) && equal(type_constraints, other->type_constraints);
@@ -420,7 +420,7 @@ namespace tvm {
             hash_reduce(type_constraints);
         }
 
-        static constexpr const char* _type_key = "FuncType";
+        static constexpr const char *_type_key = "FuncType";
         TVM_DECLARE_FINAL_OBJECT_INFO(FuncTypeNode, TypeNode);
     };
 
@@ -460,18 +460,18 @@ namespace tvm {
         /*! \brief kind of the type. */
         TypeKind kind;
 
-        void VisitAttrs(tvm::AttrVisitor* v) {
+        void VisitAttrs(tvm::AttrVisitor *v) {
             v->Visit("kind", &kind);
             v->Visit("span", &span);
         }
 
-        bool SEqualReduce(const IncompleteTypeNode* other, SEqualReducer equal) const {
+        bool SEqualReduce(const IncompleteTypeNode *other, SEqualReducer equal) const {
             return equal(kind, other->kind) && equal.FreeVarEqualImpl(this, other);
         }
 
         void SHashReduce(SHashReducer hash_reduce) const { hash_reduce(kind); }
 
-        static constexpr const char* _type_key = "IncompleteType";
+        static constexpr const char *_type_key = "IncompleteType";
         TVM_DECLARE_FINAL_OBJECT_INFO(IncompleteTypeNode, TypeNode);
     };
 
@@ -489,6 +489,45 @@ namespace tvm {
         TVM_DLL explicit IncompleteType(TypeKind kind, Span span = Span());
 
         TVM_DEFINE_OBJECT_REF_METHODS(IncompleteType, Type, IncompleteTypeNode);
+    };
+
+    /*!
+     * \brief Reference Type High-level Relay IR.
+     *
+     * \sa RelayRefType.
+     */
+    class RelayRefTypeNode : public TypeNode {
+    public:
+        /*! \brief The type of value in the Reference. */
+        Type value;
+
+        RelayRefTypeNode() {}
+
+        void VisitAttrs(tvm::AttrVisitor *v) {
+            v->Visit("value", &value);
+            v->Visit("span", &span);
+        }
+
+        bool SEqualReduce(const RelayRefTypeNode *other, SEqualReducer equal) const {
+            return equal(value, other->value);
+        }
+
+        void SHashReduce(SHashReducer hash_reduce) const { hash_reduce(value); }
+
+        // Keep the relay prefix in the type as this type is specific
+        // to the relay itself.
+        static constexpr const char *_type_key = "relay.RefType";
+        TVM_DECLARE_FINAL_OBJECT_INFO(RelayRefTypeNode, TypeNode);
+    };
+
+    /*!
+     * \brief Managed reference to RelayRefTypeNode.
+     * \sa RelayRefTypeNode.
+     */
+    class RelayRefType : public Type {
+    public:
+        TVM_DLL explicit RelayRefType(Type value, Span span = Span());
+        TVM_DEFINE_OBJECT_REF_METHODS(RelayRefType, Type, RelayRefTypeNode);
     };
 
 
