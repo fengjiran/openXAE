@@ -304,18 +304,18 @@ namespace tvm {
 
         TupleTypeNode() {}
 
-        void VisitAttrs(AttrVisitor* v) {
+        void VisitAttrs(AttrVisitor *v) {
             v->Visit("fields", &fields);
             v->Visit("span", &span);
         }
 
-        bool SEqualReduce(const TupleTypeNode* other, SEqualReducer equal) const {
+        bool SEqualReduce(const TupleTypeNode *other, SEqualReducer equal) const {
             return equal(fields, other->fields);
         }
 
         void SHashReduce(SHashReducer hash_reduce) const { hash_reduce(fields); }
 
-        static constexpr const char* _type_key = "TupleType";
+        static constexpr const char *_type_key = "TupleType";
         TVM_DECLARE_FINAL_OBJECT_INFO(TupleTypeNode, TypeNode);
     };
 
@@ -341,6 +341,39 @@ namespace tvm {
         TVM_DEFINE_OBJECT_REF_METHODS(TupleType, Type, TupleTypeNode);
     };
 
+    /*!
+     * \return a type that represents void.
+     */
+    inline Type VoidType() { return TupleType::Empty(); }
+
+    /*!
+     * \brief Check whether the tyep represents void.
+     * \return The check result.
+     */
+    inline bool IsVoidType(const Type& type) {
+        auto* n = type.as<TupleTypeNode>();
+        return n && n->fields.size() == 0;
+    }
+
+    /*!
+     * \brief Potential Constraints in a function.
+     * \sa TypeConstraint
+     */
+    class TypeConstraintNode : public TypeNode {
+    public:
+        static constexpr const char* _type_key = "TypeConstraint";
+        static constexpr const uint32_t _type_child_slots = 1;
+        TVM_DECLARE_BASE_OBJECT_INFO(TypeConstraintNode, TypeNode);
+    };
+
+    /*!
+     * \brief Managed reference to TypeConstraintNode.
+     * \sa TypeConstraintNode, TypeRelation
+     */
+    class TypeConstraint : public Type {
+    public:
+        TVM_DEFINE_OBJECT_REF_METHODS(TypeConstraint, Type, TypeConstraintNode);
+    };
 
 
 }// namespace tvm
