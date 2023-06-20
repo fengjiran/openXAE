@@ -375,6 +375,122 @@ namespace tvm {
         TVM_DEFINE_OBJECT_REF_METHODS(TypeConstraint, Type, TypeConstraintNode);
     };
 
+    /*!
+     * \brief Function type.
+     *
+     * We support polymorphic function type.
+     * This can be roughly viewed as template function in C++.
+     *
+     * \sa FuncType, TypeVar, TypeConstraint
+     */
+    class FuncTypeNode : public TypeNode {
+    public:
+        /*! \brief type type of arguments */
+        Array<Type> arg_types;
+        /*! \brief The type of return value. */
+        Type ret_type;
+        // The following fields are used in polymorphic(template) functions
+        // For normal functions, the following two fields will be empty.
+        /*! \brief The type parameters of the function */
+        Array<TypeVar> type_params;
+        /*!
+         * \brief potential constraint the type need to obey
+         * \note this field is reserved for further purposes.
+         */
+        Array<TypeConstraint> type_constraints;
+
+        void VisitAttrs(AttrVisitor* v) {
+            v->Visit("arg_types", &arg_types);
+            v->Visit("ret_type", &ret_type);
+            v->Visit("type_params", &type_params);
+            v->Visit("type_constraints", &type_constraints);
+            v->Visit("span", &span);
+        }
+
+        bool SEqualReduce(const FuncTypeNode* other, SEqualReducer equal) const {
+            // type params first as they defines type vars.
+            return equal.DefEqual(type_params, other->type_params) && equal(arg_types, other->arg_types) &&
+                   equal(ret_type, other->ret_type) && equal(type_constraints, other->type_constraints);
+        }
+
+        void SHashReduce(SHashReducer hash_reduce) const {
+            hash_reduce.DefHash(type_params);
+            hash_reduce(arg_types);
+            hash_reduce(ret_type);
+            hash_reduce(type_constraints);
+        }
+
+        static constexpr const char* _type_key = "FuncType";
+        TVM_DECLARE_FINAL_OBJECT_INFO(FuncTypeNode, TypeNode);
+    };
+
+    /*!
+     * \brief Managed reference to FuncTypeNode.
+     * \sa FuncTypeNode
+     */
+    class FuncType : public Type {
+    public:
+        /*!
+         * \brief Constructor
+         * \param arg_types The types of the arguments.
+         * \param ret_type The type of the return value.
+         * \param type_params The type parameters.
+         * \param type_constraints The type constraints.
+         * \param span The span information.
+         * \sa FuncTypeNode for more docs about these fields.
+         */
+        TVM_DLL FuncType(Array<Type> arg_types, Type ret_type, Array<TypeVar> type_params,
+                         Array<TypeConstraint> type_constraints, Span span = Span());
+
+        TVM_DEFINE_OBJECT_REF_METHODS(FuncType, Type, FuncTypeNode);
+    };
+
+    /*!
+     * \brief Intermediate values that is used to indicate incomplete type
+     *         during type inference.
+     *
+     * If we view the type relations as "computational graph of types",
+     * then IncompleteType represents intermediate values of the graph,
+     * TypeVar represents the input to the graph.
+     *
+     * \sa IncompleteType
+     */
+    class IncompleteTypeNode : public TypeNode {
+    public:
+        /*! \brief kind of the type. */
+        TypeKind kind;
+
+        void VisitAttrs(tvm::AttrVisitor* v) {
+            v->Visit("kind", &kind);
+            v->Visit("span", &span);
+        }
+
+        bool SEqualReduce(const IncompleteTypeNode* other, SEqualReducer equal) const {
+            return equal(kind, other->kind) && equal.FreeVarEqualImpl(this, other);
+        }
+
+        void SHashReduce(SHashReducer hash_reduce) const { hash_reduce(kind); }
+
+        static constexpr const char* _type_key = "IncompleteType";
+        TVM_DECLARE_FINAL_OBJECT_INFO(IncompleteTypeNode, TypeNode);
+    };
+
+    /*!
+     * \brief Managed reference to IncompleteTypeNode.
+     * \sa IncompleteTypeNode
+     */
+    class IncompleteType : public Type {
+    public:
+        /*!
+         * \brief Constructor.
+         * \param kind kind of the type.
+         * \param span The span information.
+         */
+        TVM_DLL explicit IncompleteType(TypeKind kind, Span span = Span());
+
+        TVM_DEFINE_OBJECT_REF_METHODS(IncompleteType, Type, IncompleteTypeNode);
+    };
+
 
 }// namespace tvm
 

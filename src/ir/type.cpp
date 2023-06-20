@@ -70,4 +70,33 @@ namespace tvm {
         return TupleType(fields);
     });
 
+    FuncType::FuncType(tvm::Array<Type> arg_types, Type ret_type, tvm::Array<TypeVar> type_params,
+                       tvm::Array<TypeConstraint> type_constraints, Span span) {
+        ObjectPtr<FuncTypeNode> n = make_object<FuncTypeNode>();
+        n->arg_types = std::move(arg_types);
+        n->ret_type = std::move(ret_type);
+        n->type_params = std::move(type_params);
+        n->type_constraints = std::move(type_constraints);
+        n->span = std::move(span);
+        data_ = std::move(n);
+    }
+    TVM_REGISTER_NODE_TYPE(FuncTypeNode);
+    TVM_REGISTER_GLOBAL("ir.FuncType")
+            .set_body_typed([](tvm::Array<Type> arg_types, Type ret_type, tvm::Array<TypeVar> type_params,
+                               tvm::Array<TypeConstraint> type_constraints) {
+                return FuncType(arg_types, ret_type, type_params, type_constraints);
+            });
+
+    IncompleteType::IncompleteType(TypeKind kind, Span span) {
+        auto n = make_object<IncompleteTypeNode>();
+        n->kind = std::move(kind);
+        n->span = std::move(span);
+        data_ = std::move(n);
+    }
+    TVM_REGISTER_NODE_TYPE(IncompleteTypeNode);
+    TVM_REGISTER_GLOBAL("ir.IncompleteType").set_body_typed([](int kind) {
+        return IncompleteType(static_cast<TypeKind>(kind));
+    });
+
+
 }// namespace tvm
