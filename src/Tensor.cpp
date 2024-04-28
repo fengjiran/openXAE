@@ -4,7 +4,8 @@
 #include "Tensor.hpp"
 #include "glog/logging.h"
 
-namespace InferEngine {
+namespace XAcceleratorEngine {
+
 template<typename T>
 Tensor<T>::Tensor(uint32_t size) {
     data_ = arma::Cube<T>(1, size, 1);
@@ -381,4 +382,4 @@ void Tensor<T>::Show() {
 template class Tensor<float>;
 template class Tensor<uint32_t>;
 template class Tensor<uint8_t>;
-}// namespace InferEngine
+}// namespace XAcceleratorEngine

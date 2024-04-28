@@ -6,7 +6,8 @@
 #include "gtest/gtest.h"
 #include "glog/logging.h"
 
-namespace InferEngine {
+namespace XAcceleratorEngine {
+
 TEST(TensorTest, init1D) {
     Tensor<float> f1(4);
     f1.Fill(1.f);
@@ -55,4 +56,4 @@ TEST(TensorTest, moveCtor) {
     f3.Show();
 }
 
-}// namespace InferEngine
+}// namespace XAcceleratorEngine

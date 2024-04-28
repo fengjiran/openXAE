@@ -8,7 +8,7 @@
 #include <armadillo>
 #include <vector>
 
-namespace InferEngine {
+namespace XAcceleratorEngine {
 
 template<typename T>
 class Tensor {
@@ -316,5 +316,5 @@ private:
     /// Tensor data
     arma::Cube<T> data_;
 };
-}// namespace InferEngine
+}// namespace XAcceleratorEngine
 #endif//OPENXAE_TENSOR_HPP
