@@ -8,7 +8,9 @@ find_package(GTest REQUIRED)
 find_package(Armadillo REQUIRED)
 
 file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp
-                            ${PROJECT_SOURCE_DIR}/src/*.cc)
+                            ${PROJECT_SOURCE_DIR}/src/*.cc
+                            ${PROJECT_SOURCE_DIR}/test/*.cpp
+)
 
 add_library(${PROJECT_NAME} SHARED ${SRC_FILES})
 
