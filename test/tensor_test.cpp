@@ -4,6 +4,7 @@
 
 #include "Tensor.hpp"
 #include "gtest/gtest.h"
+#include "glog/logging.h"
 
 namespace InferEngine {
 TEST(TensorTest, init1D) {

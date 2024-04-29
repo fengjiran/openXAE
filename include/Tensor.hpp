@@ -5,8 +5,6 @@
 #ifndef OPENXAE_TENSOR_HPP
 #define OPENXAE_TENSOR_HPP
 
-#include <glog/logging.h>
-
 #include <armadillo>
 #include <vector>
 

@@ -2,6 +2,7 @@
 // Created by richard on 4/28/24.
 //
 #include "Tensor.hpp"
+#include "glog/logging.h"
 
 namespace InferEngine {
 template<typename T>
