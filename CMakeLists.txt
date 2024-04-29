@@ -27,6 +27,9 @@ message(STATUS "TVM runtime DLL path: " ${TVM_RUNTIME_DLL})
 file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp
                             ${PROJECT_SOURCE_DIR}/src/*.cc)
 
+find_package(Armadillo REQUIRED)
+message(${ARMADILLO_LIBRARY})
+
 add_library(${PROJECT_NAME} SHARED ${SRC_FILES})
 
 include_directories(
@@ -39,4 +42,5 @@ include_directories(
 target_link_libraries(
         ${PROJECT_NAME}
         ${TVM_RUNTIME_DLL}
+        ${ARMADILLO_LIBRARY}
 )
