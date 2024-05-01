@@ -377,7 +377,29 @@ void Tensor<T>::Reshape(const std::vector<uint32_t>& shape, bool rowMajor) {
     size_t currentSize = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>());
     CHECK_LE(shape.size(), 3);
     CHECK_EQ(GetSize(), currentSize);
-    //
+    if (!rowMajor) {
+        if (shape.size() == 3) {
+            data_.reshape(shape[1], shape[2], shape[0]);
+            rawDims_ = {shape[0], shape[1], shape[2]};
+        } else if (shape.size() == 2) {
+            data_.reshape(shape[0], shape[1], 1);
+            rawDims_ = {shape[0], shape[1]};
+        } else {
+            data_.reshape(1, shape[0], 1);
+            rawDims_ = {shape[0]};
+        }
+    } else {
+        if (shape.size() == 3) {
+            Review(shape);
+            rawDims_ = shape;
+        } else if (shape.size() == 2) {
+            Review({1, shape[0], shape[1]});
+            rawDims_ = shape;
+        } else {
+            Review({1, 1, shape[0]});
+            rawDims_ = shape;
+        }
+    }
 }
 
 template<typename T>
