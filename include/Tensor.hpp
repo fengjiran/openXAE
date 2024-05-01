@@ -314,9 +314,16 @@ public:
      * @brief Reshape the tensor
      *
      * @param shape New shape
-     * @param rowMajor row major or col major
+     * @param rowMajor row-major or col-major
      */
     void Reshape(const std::vector<uint32_t>& shape, bool rowMajor = false);
+
+    /**
+     * @brief Flatten the tensor
+     *
+     * @param rowMajor row-major or col-major
+     */
+    void Flatten(bool rowMajor = false);
 
 private:
     /// Raw tensor dimensions
@@ -325,7 +332,7 @@ private:
     arma::Cube<T> data_;
 
     /**
-     * @brief Check the tensor shape
+     * @brief Convert tensor from col-major to row-major
      *
      * @param shape Tensor shape
      */
