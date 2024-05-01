@@ -310,11 +310,27 @@ public:
      */
     const T* RawPtr(uint32_t offset) const;
 
+    /**
+     * @brief Reshape the tensor
+     *
+     * @param shape New shape
+     * @param rowMajor row major or col major
+     */
+    void Reshape(const std::vector<uint32_t>& shape, bool rowMajor = false);
+
 private:
     /// Raw tensor dimensions
     std::vector<uint32_t> rawDims_;
     /// Tensor data
     arma::Cube<T> data_;
+
+    /**
+     * @brief Check the tensor shape
+     *
+     * @param shape Tensor shape
+     */
+    void Review(const std::vector<uint32_t>& shape);
 };
+
 }// namespace XAcceleratorEngine
 #endif//OPENXAE_TENSOR_HPP

@@ -371,11 +371,50 @@ const T* Tensor<T>::RawPtr(uint32_t offset) const {
 }
 
 template<typename T>
+void Tensor<T>::Reshape(const std::vector<uint32_t>& shape, bool rowMajor) {
+    CHECK(!data_.empty()) << "The data area of the tensor is empty.";
+    CHECK(!shape.empty());
+    size_t currentSize = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>());
+    CHECK_LE(shape.size(), 3);
+    CHECK_EQ(GetSize(), currentSize);
+    //
+}
+
+template<typename T>
+void Tensor<T>::Review(const std::vector<uint32_t>& shape) {
+    CHECK(!data_.empty()) << "The data area of the tensor is empty.";
+    CHECK_EQ(shape.size(), 3);
+    uint32_t targetCh = shape[0];
+    uint32_t targetRows = shape[1];
+    uint32_t targetCols = shape[2];
+
+    CHECK_EQ(GetSize(), targetCh * targetRows * targetCols);
+    arma::Cube<T> newData(targetRows, targetCols, targetCh);
+    uint32_t targetPlaneSize = targetRows * targetCols;
+#pragma omp parallel for
+    for (uint32_t ch = 0; ch < GetChannels(); ++ch) {
+        uint32_t planeStart = ch * GetRows() * GetCols();
+        for (uint32_t srcCol = 0; srcCol < GetCols(); ++srcCol) {
+            const T* colPtr = data_.slice_colptr(ch, srcCol);
+            for (uint32_t srcRow = 0; srcRow < GetRows(); ++srcRow) {
+                uint32_t idx = planeStart + srcRow * GetCols() + srcCol;
+                uint32_t dstCh = idx / targetPlaneSize;
+                uint32_t dstChOffset = idx % targetPlaneSize;
+                uint32_t dstRow = dstChOffset / targetCols;
+                uint32_t dstCol = dstChOffset % targetCols;
+                newData.at(dstRow, dstCol, dstCh) = *(colPtr + srcRow);
+            }
+        }
+    }
+    data_ = std::move(newData);
+}
+
+template<typename T>
 void Tensor<T>::Show() {
     for (uint32_t i = 0; i < GetChannels(); ++i) {
         LOG(INFO) << "Channel: " << i
                   << "\n"
-                  << data_.slice(i);
+                  << slice(i);
     }
 }
 
