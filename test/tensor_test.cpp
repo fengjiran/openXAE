@@ -56,4 +56,12 @@ TEST(TensorTest, moveCtor) {
     f3.Show();
 }
 
+TEST(TensorTest, review1) {
+    std::vector<float> vec(10);
+    std::iota(vec.begin(), vec.end(), 0);
+    Tensor<float> f1(5, 2);
+    f1.Fill(vec, true);
+    f1.Show();
+}
+
 }// namespace XAcceleratorEngine
