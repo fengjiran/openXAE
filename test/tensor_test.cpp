@@ -3,8 +3,8 @@
 //
 
 #include "Tensor.hpp"
-#include "gtest/gtest.h"
 #include "glog/logging.h"
+#include "gtest/gtest.h"
 
 namespace XAcceleratorEngine {
 
@@ -57,11 +57,25 @@ TEST(TensorTest, moveCtor) {
 }
 
 TEST(TensorTest, review1) {
-    std::vector<float> vec(10);
+    std::cout << "TensorTest_review1\n";
+    size_t totalElems = 10;
+    size_t rows = 5;
+    size_t cols = totalElems / rows;
+    CHECK_EQ(totalElems, rows * cols);
+    std::vector<float> vec(totalElems);
     std::iota(vec.begin(), vec.end(), 0);
-    Tensor<float> f1(5, 2);
+    std::cout << "original data: \n";
+    for (auto& it: vec) {
+        std::cout << it << " ";
+    }
+
+    Tensor<float> f1(rows, cols);
     f1.Fill(vec, true);
     f1.Show();
+    std::cout << "\ndata after review: \n";
+    for (size_t i = 0; i < totalElems; ++i) {
+        std::cout << *(f1.RawPtr() + i) << " ";
+    }
 }
 
 }// namespace XAcceleratorEngine
