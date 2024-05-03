@@ -9,13 +9,11 @@
 namespace XAcceleratorEngine {
 
 TEST(TensorTest, init1D) {
-    Tensor<float> f1(4);
-    f1.Fill(1.f);
-
-    LOG(INFO) << "--------------------Tensor1D--------------------";
-    LOG(INFO) << "raw shape size: " << f1.GetRawShape().size();
-    LOG(INFO) << "data numbers: " << f1.GetRawShape()[0];
-    f1.Show();
+    Tensor<float> f1(3, 224, 224);
+    EXPECT_EQ(f1.GetChannels(), 3);
+    EXPECT_EQ(f1.GetRows(), 224);
+    EXPECT_EQ(f1.GetCols(), 224);
+    EXPECT_EQ(f1.GetSize(), 3 * 224 * 224);
 }
 
 TEST(TensorTest, init2D) {
