@@ -430,12 +430,52 @@ bool TensorIsSame(const std::shared_ptr<Tensor<T>>& a, const std::shared_ptr<Ten
 
 /**
  * @brief Clone a tensor
+ *
  * @param tensor Tensor to clone
  * @return Deep copy of a tensor
  */
 template<typename T>
 std::shared_ptr<Tensor<T>> CloneTensor(const std::shared_ptr<Tensor<T>>& tensor) {
     return std::make_shared<Tensor<T>>(*tensor);
+}
+
+/**
+ * @brief Broadcast two tensors
+ *
+ * @param tensor1 Tensor1
+ * @param tensor2 Tensor2
+ * @return Two tensors with the same shape
+ */
+template<typename T>
+std::tuple<std::shared_ptr<Tensor<T>>, std::shared_ptr<Tensor<T>>> BroadcastTensor(
+        const std::shared_ptr<Tensor<T>>& tensor1, const std::shared_ptr<Tensor<T>>& tensor2) {
+    CHECK(tensor1 != nullptr && tensor2 != nullptr);
+    if (tensor1->GetShape() == tensor2->GetShape()) {
+        return {tensor1, tensor2};
+    } else {
+        CHECK(tensor1->GetChannels() == tensor2->GetChannels());
+        if (tensor2->GetRows() == 1 && tensor2->GetCols() == 1) {
+            std::shared_ptr<Tensor<T>> newTensor = CreateTensor<T>(tensor2->GetChannels(),
+                                                                   tensor1->GetRows(),
+                                                                   tensor1->GetCols());
+            for (uint32_t i = 0; i < tensor2->GetChannels(); ++i) {
+                T* ptr = newTensor->MatrixRawPtr(i);
+                std::fill(ptr, ptr + newTensor->GetPlaneSize(), tensor2->index(i));
+            }
+            return {tensor1, newTensor};
+        } else if (tensor1->GetRows() == 1 && tensor1->GetCols() == 1) {
+            std::shared_ptr<Tensor<T>> newTensor = CreateTensor<T>(tensor1->GetChannels(),
+                                                                   tensor2->GetRows(),
+                                                                   tensor2->GetCols());
+            for (uint32_t i = 0; i < tensor1->GetChannels(); ++i) {
+                T* ptr = newTensor->MatrixRawPtr(i);
+                std::fill(ptr, ptr + newTensor->GetPlaneSize(), tensor1->index(i));
+            }
+            return {newTensor, tensor2};
+        } else {
+            LOG(FATAL) << "Broadcast shape is not adapting." return {tensor1, tensor2};
+        }
+    }
 }
 
 
