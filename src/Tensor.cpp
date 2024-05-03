@@ -469,6 +469,74 @@ void Tensor<T>::Show() {
     }
 }
 
+template<typename T>
+std::shared_ptr<Tensor<T>> CreateTensor(uint32_t channels, uint32_t rows, uint32_t cols) {
+    return std::make_shared<Tensor<T>>(channels, rows, cols);
+}
+
+template<typename T>
+std::shared_ptr<Tensor<T>> CreateTensor(uint32_t rows, uint32_t cols) {
+    return std::make_shared<Tensor<T>>(1, rows, cols);
+}
+
+template<typename T>
+std::shared_ptr<Tensor<T>> CreateTensor(uint32_t size) {
+    return std::make_shared<Tensor<T>>(1, 1, size);
+}
+
+template<typename T>
+std::shared_ptr<Tensor<T>> CreateTensor(const std::vector<uint32_t>& shape) {
+    return std::make_shared<Tensor<T>>(shape);
+}
+
+template<typename T>
+bool TensorIsSame(const std::shared_ptr<Tensor<T>>& a, const std::shared_ptr<Tensor<T>>& b, T threshold) {
+    CHECK(a != nullptr);
+    CHECK(b != nullptr);
+    if (a->GetShape() != b->GetShape()) {
+        return false;
+    }
+    return arma::approx_equal(a->data(), b->data(), "absdiff", threshold);
+}
+
+template<typename T>
+std::shared_ptr<Tensor<T>> CloneTensor(const std::shared_ptr<Tensor<T>>& tensor) {
+    return std::make_shared<Tensor<T>>(*tensor);
+}
+
+template<typename T>
+std::tuple<std::shared_ptr<Tensor<T>>, std::shared_ptr<Tensor<T>>> BroadcastTensor(
+        const std::shared_ptr<Tensor<T>>& tensor1, const std::shared_ptr<Tensor<T>>& tensor2) {
+    CHECK(tensor1 != nullptr && tensor2 != nullptr);
+    if (tensor1->GetShape() == tensor2->GetShape()) {
+        return {tensor1, tensor2};
+    } else {
+        CHECK(tensor1->GetChannels() == tensor2->GetChannels());
+        if (tensor2->GetRows() == 1 && tensor2->GetCols() == 1) {
+            std::shared_ptr<Tensor<T>> newTensor = CreateTensor<T>(tensor2->GetChannels(),
+                                                                   tensor1->GetRows(),
+                                                                   tensor1->GetCols());
+            for (uint32_t i = 0; i < tensor2->GetChannels(); ++i) {
+                T* ptr = newTensor->MatrixRawPtr(i);
+                std::fill(ptr, ptr + newTensor->GetPlaneSize(), tensor2->index(i));
+            }
+            return {tensor1, newTensor};
+        } else if (tensor1->GetRows() == 1 && tensor1->GetCols() == 1) {
+            std::shared_ptr<Tensor<T>> newTensor = CreateTensor<T>(tensor1->GetChannels(),
+                                                                   tensor2->GetRows(),
+                                                                   tensor2->GetCols());
+            for (uint32_t i = 0; i < tensor1->GetChannels(); ++i) {
+                T* ptr = newTensor->MatrixRawPtr(i);
+                std::fill(ptr, ptr + newTensor->GetPlaneSize(), tensor1->index(i));
+            }
+            return {newTensor, tensor2};
+        } else {
+            LOG(FATAL) << "Broadcast shape is not adapting.";
+            return {tensor1, tensor2};
+        }
+    }
+}
+
 template class Tensor<float>;
 template class Tensor<uint32_t>;
 template class Tensor<uint8_t>;
