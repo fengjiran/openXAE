@@ -371,6 +371,22 @@ const T* Tensor<T>::RawPtr(uint32_t offset) const {
 }
 
 template<typename T>
+const T* Tensor<T>::MatrixRawPtr(uint32_t index) const {
+    CHECK_LT(index, GetChannels());
+    size_t offset = index * GetPlaneSize();
+    CHECK_LE(offset, GetSize());
+    return RawPtr(offset);
+}
+
+template<typename T>
+T* Tensor<T>::MatrixRawPtr(uint32_t index) {
+    CHECK_LT(index, GetChannels());
+    size_t offset = index * GetPlaneSize();
+    CHECK_LE(offset, GetSize());
+    return RawPtr(offset);
+}
+
+template<typename T>
 void Tensor<T>::Reshape(const std::vector<uint32_t>& shape, bool rowMajor) {
     CHECK(!data_.empty()) << "The data area of the tensor is empty.";
     CHECK(!shape.empty());
@@ -400,6 +416,19 @@ void Tensor<T>::Reshape(const std::vector<uint32_t>& shape, bool rowMajor) {
             rawDims_ = shape;
         }
     }
+}
+
+template<typename T>
+void Tensor<T>::Flatten(bool rowMajor) {
+    CHECK(!data_.empty()) << "The data area of the tensor is empty.";
+    uint32_t size = GetSize();
+    Reshape({size}, rowMajor);
+}
+
+template<typename T>
+void Tensor<T>::Transform(const std::function<T(T)>& filter) {
+    CHECK(!data_.empty()) << "The data area of the tensor is empty.";
+    data_.transform(filter);
 }
 
 template<typename T>

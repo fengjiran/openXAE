@@ -311,6 +311,22 @@ public:
     const T* RawPtr(uint32_t offset) const;
 
     /**
+     * @brief Get matrix raw pointer
+     *
+     * @param index Matrix index
+     * @return Raw matrix pointer
+     */
+    T* MatrixRawPtr(uint32_t index);
+
+    /**
+     * @brief Get matrix raw pointer
+     *
+     * @param index Matrix index
+     * @return Raw matrix pointer
+     */
+    const T* MatrixRawPtr(uint32_t index) const;
+
+    /**
      * @brief Reshape the tensor
      *
      * @param shape New shape
@@ -325,6 +341,13 @@ public:
      */
     void Flatten(bool rowMajor = false);
 
+    /**
+     * @brief Apply elem-wise transform
+     *
+     * @param filter Transform function
+     */
+    void Transform(const std::function<T(T)>& filter);
+
 private:
     /// Raw tensor dimensions
     std::vector<uint32_t> rawDims_;
@@ -338,6 +361,8 @@ private:
      */
     void Review(const std::vector<uint32_t>& shape);
 };
+
+
 
 }// namespace XAcceleratorEngine
 #endif//OPENXAE_TENSOR_HPP
