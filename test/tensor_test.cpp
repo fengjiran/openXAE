@@ -14,6 +14,9 @@ TEST(TensorTest, init1D) {
     EXPECT_EQ(f1.GetRows(), 224);
     EXPECT_EQ(f1.GetCols(), 224);
     EXPECT_EQ(f1.GetSize(), 3 * 224 * 224);
+
+    EXPECT_EQ(f1.GetRawShape().size(), 3);
+    EXPECT_EQ(f1.GetRawShape()[0], 3);
 }
 
 TEST(TensorTest, init2D) {
