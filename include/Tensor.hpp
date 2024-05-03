@@ -433,6 +433,28 @@ template<typename T>
 std::tuple<std::shared_ptr<Tensor<T>>, std::shared_ptr<Tensor<T>>> BroadcastTensor(
         const std::shared_ptr<Tensor<T>>& tensor1, const std::shared_ptr<Tensor<T>>& tensor2);
 
+/**
+ * @brief Element-wise tensor add
+ *
+ * @param tensor1 Tensor1
+ * @param tensor2 Tensor2
+ * @return Output tensor
+ */
+template<typename T>
+std::shared_ptr<Tensor<T>> TensorElementAdd(const std::shared_ptr<Tensor<T>>& tensor1,
+                                            const std::shared_ptr<Tensor<T>>& tensor2);
+
+/**
+ * @brief Inplace element-wise tensor add
+ *
+ * @param tensor1 Tensor1
+ * @param tensor2 Tensor2
+ * @param output Output tensor
+ */
+template<typename T>
+void TensorElementAdd(const std::shared_ptr<Tensor<T>>& tensor1,
+                      const std::shared_ptr<Tensor<T>>& tensor2,
+                      const std::shared_ptr<Tensor<T>>& output);
 
 }// namespace XAcceleratorEngine
 #endif//OPENXAE_TENSOR_HPP

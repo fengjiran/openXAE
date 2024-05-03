@@ -531,9 +531,44 @@ std::tuple<std::shared_ptr<Tensor<T>>, std::shared_ptr<Tensor<T>>> BroadcastTens
             }
             return {newTensor, tensor2};
         } else {
-            LOG(FATAL) << "Broadcast shape is not adapting.";
+            LOG(FATAL) << "Broadcast shapes are not adapting.";
             return {tensor1, tensor2};
         }
+    }
+}
+
+template<typename T>
+std::shared_ptr<Tensor<T>> TensorElementAdd(const std::shared_ptr<Tensor<T>>& tensor1,
+                                            const std::shared_ptr<Tensor<T>>& tensor2) {
+    CHECK(tensor1 != nullptr && tensor2 != nullptr);
+    if (tensor1->GetShape() == tensor2->GetShape()) {
+        std::shared_ptr<Tensor<T>> output = CreateTensor<Tensor<T>>(tensor1->GetShape());
+        output->SetData(tensor1->data() + tensor2->data());
+        return output;
+    } else {
+        // broadcast
+        CHECK(tensor1->GetChannels() == tensor2->GetChannels()) << "Tensor shapes are not adapting.";
+        const auto& [inputTensor1, inputTensor2] = BroadcastTensor(tensor1, tensor2);
+        std::shared_ptr<Tensor<T>> output = CreateTensor<Tensor<T>>(inputTensor1->GetShape());
+        output->SetData(inputTensor1->data() + inputTensor2->data());
+        return output;
+    }
+}
+
+template<typename T>
+void TensorElementAdd(const std::shared_ptr<Tensor<T>>& tensor1,
+                      const std::shared_ptr<Tensor<T>>& tensor2,
+                      const std::shared_ptr<Tensor<T>>& output) {
+    CHECK(tensor1 != nullptr && tensor2 != nullptr && output != nullptr);
+    if (tensor1->GetShape() == tensor2->GetShape()) {
+        CHECK(tensor1->GetShape() == output->GetShape());
+        output->SetData(tensor1->data() + tensor2->data());
+    } else {
+        // broadcast
+        CHECK(tensor1->GetChannels() == tensor2->GetChannels()) << "Tensor shapes are not adapting.";
+        const auto& [inputTensor1, inputTensor2] = BroadcastTensor(tensor1, tensor2);
+        CHECK(inputTensor1->GetShape() == output->GetShape());
+        output->SetData(inputTensor1->data() + inputTensor2->data());
     }
 }
 
