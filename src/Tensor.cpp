@@ -542,14 +542,14 @@ std::shared_ptr<Tensor<T>> TensorElementAdd(const std::shared_ptr<Tensor<T>>& te
                                             const std::shared_ptr<Tensor<T>>& tensor2) {
     CHECK(tensor1 != nullptr && tensor2 != nullptr);
     if (tensor1->GetShape() == tensor2->GetShape()) {
-        std::shared_ptr<Tensor<T>> output = CreateTensor<Tensor<T>>(tensor1->GetShape());
+        std::shared_ptr<Tensor<T>> output = CreateTensor<T>(tensor1->GetShape());
         output->SetData(tensor1->data() + tensor2->data());
         return output;
     } else {
         // broadcast
         CHECK(tensor1->GetChannels() == tensor2->GetChannels()) << "Tensor shapes are not adapting.";
         const auto& [inputTensor1, inputTensor2] = BroadcastTensor(tensor1, tensor2);
-        std::shared_ptr<Tensor<T>> output = CreateTensor<Tensor<T>>(inputTensor1->GetShape());
+        std::shared_ptr<Tensor<T>> output = CreateTensor<T>(inputTensor1->GetShape());
         output->SetData(inputTensor1->data() + inputTensor2->data());
         return output;
     }
@@ -577,14 +577,14 @@ std::shared_ptr<Tensor<T>> TensorElementMultiply(const std::shared_ptr<Tensor<T>
                                                  const std::shared_ptr<Tensor<T>>& tensor2) {
     CHECK(tensor1 != nullptr && tensor2 != nullptr);
     if (tensor1->GetShape() == tensor2->GetShape()) {
-        std::shared_ptr<Tensor<T>> output = CreateTensor<Tensor<T>>(tensor1->GetShape());
+        std::shared_ptr<Tensor<T>> output = CreateTensor<T>(tensor1->GetShape());
         output->SetData(tensor1->data() % tensor2->data());
         return output;
     } else {
         // broadcast
         CHECK(tensor1->GetChannels() == tensor2->GetChannels()) << "Tensor shapes are not adapting.";
         const auto& [inputTensor1, inputTensor2] = BroadcastTensor(tensor1, tensor2);
-        std::shared_ptr<Tensor<T>> output = CreateTensor<Tensor<T>>(inputTensor1->GetShape());
+        std::shared_ptr<Tensor<T>> output = CreateTensor<T>(inputTensor1->GetShape());
         output->SetData(inputTensor1->data() % inputTensor2->data());
         return output;
     }
@@ -607,6 +607,55 @@ void TensorElementMultiply(const std::shared_ptr<Tensor<T>>& tensor1,
     }
 }
 
+template<typename T>
+std::shared_ptr<Tensor<T>> TensorPadding(std::shared_ptr<Tensor<T>>& tensor,
+                                         const std::vector<uint32_t>& pads,
+                                         T value) {
+    CHECK(tensor != nullptr && !tensor->empty());
+    CHECK_EQ(pads.size(), 4);
+    uint32_t up = pads[0];
+    uint32_t bottom = pads[1];
+    uint32_t left = pads[2];
+    uint32_t right = pads[3];
+    std::shared_ptr<Tensor<T>> output = CreateTensor<T>({tensor->GetChannels(),
+                                                         tensor->GetRows() + up + bottom,
+                                                         tensor->GetCols() + left + right});
+    for (uint32_t ch = 0; ch < tensor->GetChannels(); ++ch) {
+        const auto& inSlice = tensor->slice(ch);
+        auto& outSlice = output->slice(ch);
+        for (uint32_t w = 0; w < tensor->GetCols(); ++w) {
+            const T* inSliceColPtr = inSlice.colptr(w);
+            T* outSliceColPtr = outSlice.colptr(w + left);
+
+            for (uint32_t h = 0; h < tensor->GetRows(); ++h) {
+                *(outSliceColPtr + h + up) = *(inSliceColPtr + h);
+            }
+
+            for (uint32_t h = 0; h < up; ++h) {
+                *(outSliceColPtr + h) = value;
+            }
+
+            for (uint32_t h = 0; h < bottom; ++h) {
+                *(outSliceColPtr + tensor->GetRows() + up + h) = value;
+            }
+        }
+
+        for (uint32_t w = 0; w < left; ++w) {
+            T* outSliceColPtr = outSlice.colptr(w);
+            for (uint32_t h = 0; h < output->GetRows(); ++h) {
+                *(outSliceColPtr + h) = value;
+            }
+        }
+
+        for (uint32_t w = 0; w < right; ++w) {
+            T* outSliceColPtr = outSlice.colptr(w + tensor->GetCols() + left);
+            for (uint32_t h = 0; h < output->GetRows(); ++h) {
+                *(outSliceColPtr + h) = value;
+            }
+        }
+    }
+    return output;
+}
 
 template class Tensor<float>;
 template class Tensor<uint32_t>;

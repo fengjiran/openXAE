@@ -479,5 +479,18 @@ void TensorElementMultiply(const std::shared_ptr<Tensor<T>>& tensor1,
                            const std::shared_ptr<Tensor<T>>& tensor2,
                            const std::shared_ptr<Tensor<T>>& output);
 
+/**
+ * @brief Pad a tensor
+ *
+ * @param tensor Tensor to pad
+ * @param pads Padding amount for dims
+ * @param value Padding value
+ * @return Padded tensor
+ */
+template<typename T>
+std::shared_ptr<Tensor<T>> TensorPadding(std::shared_ptr<Tensor<T>>& tensor,
+                                         const std::vector<uint32_t>& pads,
+                                         T value);
+
 }// namespace XAcceleratorEngine
 #endif//OPENXAE_TENSOR_HPP
