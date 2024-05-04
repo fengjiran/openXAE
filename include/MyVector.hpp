@@ -6,6 +6,8 @@
 
 #include "glog/logging.h"
 
+namespace XAcceleratorEngine {
+
 template<typename T, typename Allocator = std::allocator<T>>
 class vec {
 public:
@@ -233,4 +235,5 @@ void vec<T, Allocator>::free() {
     }
 }
 
+}// namespace XAcceleratorEngine
 #endif
