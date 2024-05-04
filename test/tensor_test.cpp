@@ -103,6 +103,47 @@ TEST(TensorTest, clone) {
     }
 }
 
+TEST(TensorTest, rawPtr) {
+    Tensor<float> t(3, 3, 3);
+    EXPECT_EQ(t.RawPtr(), t.data().memptr());
+    EXPECT_EQ(t.RawPtr(1), t.data().memptr() + 1);
+}
+
+TEST(TensorTest, index) {
+    Tensor<float> t(3, 3, 3);
+    std::vector<float> values(27, 1);
+    t.Fill(values);
+
+    for (int i = 0; i < 27; ++i) {
+        EXPECT_FLOAT_EQ(t.index(i), 1.f);
+    }
+}
+
+TEST(TensorTest, flatten) {
+    Tensor<float> t(3, 3, 3);
+    std::vector<float> values(27);
+    for (int i = 0; i < 27; ++i) {
+        values[i] = (float) i;
+    }
+
+    t.Fill(values);
+    t.Flatten(false);
+    EXPECT_EQ(t.GetChannels(), 1);
+    EXPECT_EQ(t.GetRows(), 1);
+    EXPECT_EQ(t.GetCols(), 27);
+    EXPECT_FLOAT_EQ(t.index(0), 0);
+    EXPECT_FLOAT_EQ(t.index(1), 3);
+    EXPECT_FLOAT_EQ(t.index(2), 6);
+
+    EXPECT_FLOAT_EQ(t.index(3), 1);
+    EXPECT_FLOAT_EQ(t.index(4), 4);
+    EXPECT_FLOAT_EQ(t.index(5), 7);
+
+    EXPECT_FLOAT_EQ(t.index(6), 2);
+    EXPECT_FLOAT_EQ(t.index(7), 5);
+    EXPECT_FLOAT_EQ(t.index(8), 8);
+}
+
 TEST(TensorTest, review1) {
     std::cout << "TensorTest_review1\n";
     size_t totalElems = 10;
