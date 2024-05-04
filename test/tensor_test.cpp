@@ -9,6 +9,18 @@
 namespace XAcceleratorEngine {
 
 TEST(TensorTest, init1D) {
+    Tensor<float> f1(3);// row vector
+    const auto& rawShape = f1.GetRawShape();
+    EXPECT_EQ(rawShape.size(), 1);
+    EXPECT_EQ(rawShape[0], 3);
+}
+//
+//TEST(TensorTest, init2D) {
+//    Tensor<float> f1(10, 25);
+//    const auto& rawShape = f1.GetRawShape();
+//}
+
+TEST(TensorTest, init3D) {
     Tensor<float> f1(3, 224, 224);
     EXPECT_EQ(f1.GetChannels(), 3);
     EXPECT_EQ(f1.GetRows(), 224);
