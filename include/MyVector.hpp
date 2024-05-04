@@ -11,10 +11,29 @@ namespace XAcceleratorEngine {
 template<typename T, typename Allocator = std::allocator<T>>
 class vec {
 public:
+    /**
+     * @brief Default constructor
+     */
     vec() : start(nullptr), cap(nullptr), firstFree(nullptr) {}
-    vec(std::initializer_list<T> il);
+
+    /**
+     * @brief Constructor with size and default initialization
+     * @param n Size
+     */
     explicit vec(size_t n);
+
+    /**
+     * @brief Constructor with size and initial value
+     * @param n Size
+     * @param t Initial value
+     */
     vec(size_t n, const T& t);
+
+    /**
+     * @brief Constructor with initializer list
+     * @param il Initializer list
+     */
+    vec(std::initializer_list<T> il);
 
     // copy ctor
     vec(const vec& rhs);
@@ -64,7 +83,7 @@ template<typename T, typename Allocator>
 template<typename... Args>
 void vec<T, Allocator>::emplace_back(Args&&... args) {
     CheckAndAlloc();
-    allocTraits::allocate(alloc, firstFree++, std::forward<Args>(args)...);
+    allocTraits::construct(alloc, firstFree++, std::forward<Args>(args)...);
 }
 
 template<typename T, typename Allocator>
