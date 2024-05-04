@@ -5,7 +5,8 @@
 #ifndef OPENXAE_MYITERATOR_HPP
 #define OPENXAE_MYITERATOR_HPP
 
-#include <__iterator/iterator_traits.h>
+//#include <__iterator/iterator_traits.h>
+#include <iterator>
 
 namespace XAcceleratorEngine {
 
