@@ -5,6 +5,7 @@
 #ifndef OPENXAE_TENSOR_HPP
 #define OPENXAE_TENSOR_HPP
 
+#include "glog/logging.h"
 #include <armadillo>
 #include <memory>
 #include <vector>
@@ -372,7 +373,9 @@ private:
  * @return The shared_ptr of new tensor
  */
 template<typename T>
-std::shared_ptr<Tensor<T>> CreateTensor(uint32_t channels, uint32_t rows, uint32_t cols);
+std::shared_ptr<Tensor<T>> CreateTensor(uint32_t channels, uint32_t rows, uint32_t cols) {
+    return std::make_shared<Tensor<T>>(channels, rows, cols);
+}
 
 /**
  * @brief Create a 2D tensor
@@ -382,7 +385,9 @@ std::shared_ptr<Tensor<T>> CreateTensor(uint32_t channels, uint32_t rows, uint32
  * @return The shared_ptr of new tensor
  */
 template<typename T>
-std::shared_ptr<Tensor<T>> CreateTensor(uint32_t rows, uint32_t cols);
+std::shared_ptr<Tensor<T>> CreateTensor(uint32_t rows, uint32_t cols) {
+    return std::make_shared<Tensor<T>>(1, rows, cols);
+}
 
 /**
  * @brief Create a 1D tensor(vector)
@@ -391,7 +396,9 @@ std::shared_ptr<Tensor<T>> CreateTensor(uint32_t rows, uint32_t cols);
  * @return The shared_ptr of new tensor
  */
 template<typename T>
-std::shared_ptr<Tensor<T>> CreateTensor(uint32_t size);
+std::shared_ptr<Tensor<T>> CreateTensor(uint32_t size) {
+    return std::make_shared<Tensor<T>>(1, 1, size);
+}
 
 /**
  * @brief Create a tensor with shape
@@ -400,7 +407,9 @@ std::shared_ptr<Tensor<T>> CreateTensor(uint32_t size);
  * @return The shared_ptr of new tensor
  */
 template<typename T>
-std::shared_ptr<Tensor<T>> CreateTensor(const std::vector<uint32_t>& shape);
+std::shared_ptr<Tensor<T>> CreateTensor(const std::vector<uint32_t>& shape) {
+    return std::make_shared<Tensor<T>>(shape);
+}
 
 /**
  * @brief Check tensor equality
@@ -411,7 +420,14 @@ std::shared_ptr<Tensor<T>> CreateTensor(const std::vector<uint32_t>& shape);
  * @return True if equal within tolerance
  */
 template<typename T>
-bool TensorIsSame(const std::shared_ptr<Tensor<T>>& a, const std::shared_ptr<Tensor<T>>& b, T threshold = 1e-5);
+bool TensorIsSame(const std::shared_ptr<Tensor<T>>& a, const std::shared_ptr<Tensor<T>>& b, T threshold = 1e-5) {
+    CHECK(a != nullptr);
+    CHECK(b != nullptr);
+    if (a->GetShape() != b->GetShape()) {
+        return false;
+    }
+    return arma::approx_equal(a->data(), b->data(), "absdiff", threshold);
+}
 
 /**
  * @brief Clone a tensor
@@ -420,7 +436,9 @@ bool TensorIsSame(const std::shared_ptr<Tensor<T>>& a, const std::shared_ptr<Ten
  * @return Deep copy of a tensor
  */
 template<typename T>
-std::shared_ptr<Tensor<T>> CloneTensor(const std::shared_ptr<Tensor<T>>& tensor);
+std::shared_ptr<Tensor<T>> CloneTensor(const std::shared_ptr<Tensor<T>>& tensor) {
+    return std::make_shared<Tensor<T>>(*tensor);
+}
 
 /**
  * @brief Broadcast two tensors
@@ -431,7 +449,36 @@ std::shared_ptr<Tensor<T>> CloneTensor(const std::shared_ptr<Tensor<T>>& tensor)
  */
 template<typename T>
 std::tuple<std::shared_ptr<Tensor<T>>, std::shared_ptr<Tensor<T>>> BroadcastTensor(
-        const std::shared_ptr<Tensor<T>>& tensor1, const std::shared_ptr<Tensor<T>>& tensor2);
+        const std::shared_ptr<Tensor<T>>& tensor1, const std::shared_ptr<Tensor<T>>& tensor2) {
+    CHECK(tensor1 != nullptr && tensor2 != nullptr);
+    if (tensor1->GetShape() == tensor2->GetShape()) {
+        return {tensor1, tensor2};
+    } else {
+        CHECK(tensor1->GetChannels() == tensor2->GetChannels());
+        if (tensor2->GetRows() == 1 && tensor2->GetCols() == 1) {
+            std::shared_ptr<Tensor<T>> newTensor = CreateTensor<T>(tensor2->GetChannels(),
+                                                                   tensor1->GetRows(),
+                                                                   tensor1->GetCols());
+            for (uint32_t i = 0; i < tensor2->GetChannels(); ++i) {
+                T* ptr = newTensor->MatrixRawPtr(i);
+                std::fill(ptr, ptr + newTensor->GetPlaneSize(), tensor2->index(i));
+            }
+            return {tensor1, newTensor};
+        } else if (tensor1->GetRows() == 1 && tensor1->GetCols() == 1) {
+            std::shared_ptr<Tensor<T>> newTensor = CreateTensor<T>(tensor1->GetChannels(),
+                                                                   tensor2->GetRows(),
+                                                                   tensor2->GetCols());
+            for (uint32_t i = 0; i < tensor1->GetChannels(); ++i) {
+                T* ptr = newTensor->MatrixRawPtr(i);
+                std::fill(ptr, ptr + newTensor->GetPlaneSize(), tensor1->index(i));
+            }
+            return {newTensor, tensor2};
+        } else {
+            LOG(FATAL) << "Broadcast shapes are not adapting.";
+            return {tensor1, tensor2};
+        }
+    }
+}
 
 /**
  * @brief Element-wise tensor add
@@ -442,7 +489,21 @@ std::tuple<std::shared_ptr<Tensor<T>>, std::shared_ptr<Tensor<T>>> BroadcastTens
  */
 template<typename T>
 std::shared_ptr<Tensor<T>> TensorElementAdd(const std::shared_ptr<Tensor<T>>& tensor1,
-                                            const std::shared_ptr<Tensor<T>>& tensor2);
+                                            const std::shared_ptr<Tensor<T>>& tensor2) {
+    CHECK(tensor1 != nullptr && tensor2 != nullptr);
+    if (tensor1->GetShape() == tensor2->GetShape()) {
+        std::shared_ptr<Tensor<T>> output = CreateTensor<T>(tensor1->GetShape());
+        output->SetData(tensor1->data() + tensor2->data());
+        return output;
+    } else {
+        // broadcast
+        CHECK(tensor1->GetChannels() == tensor2->GetChannels()) << "Tensor shapes are not adapting.";
+        const auto& [inputTensor1, inputTensor2] = BroadcastTensor(tensor1, tensor2);
+        std::shared_ptr<Tensor<T>> output = CreateTensor<T>(inputTensor1->GetShape());
+        output->SetData(inputTensor1->data() + inputTensor2->data());
+        return output;
+    }
+}
 
 /**
  * @brief Inplace element-wise tensor add
@@ -454,7 +515,19 @@ std::shared_ptr<Tensor<T>> TensorElementAdd(const std::shared_ptr<Tensor<T>>& te
 template<typename T>
 void TensorElementAdd(const std::shared_ptr<Tensor<T>>& tensor1,
                       const std::shared_ptr<Tensor<T>>& tensor2,
-                      const std::shared_ptr<Tensor<T>>& output);
+                      const std::shared_ptr<Tensor<T>>& output) {
+    CHECK(tensor1 != nullptr && tensor2 != nullptr && output != nullptr);
+    if (tensor1->GetShape() == tensor2->GetShape()) {
+        CHECK(tensor1->GetShape() == output->GetShape());
+        output->SetData(tensor1->data() + tensor2->data());
+    } else {
+        // broadcast
+        CHECK(tensor1->GetChannels() == tensor2->GetChannels()) << "Tensor shapes are not adapting.";
+        const auto& [inputTensor1, inputTensor2] = BroadcastTensor(tensor1, tensor2);
+        CHECK(inputTensor1->GetShape() == output->GetShape());
+        output->SetData(inputTensor1->data() + inputTensor2->data());
+    }
+}
 
 /**
  * @brief Element-wise tensor multiply
@@ -465,7 +538,21 @@ void TensorElementAdd(const std::shared_ptr<Tensor<T>>& tensor1,
  */
 template<typename T>
 std::shared_ptr<Tensor<T>> TensorElementMultiply(const std::shared_ptr<Tensor<T>>& tensor1,
-                                                 const std::shared_ptr<Tensor<T>>& tensor2);
+                                                 const std::shared_ptr<Tensor<T>>& tensor2) {
+    CHECK(tensor1 != nullptr && tensor2 != nullptr);
+    if (tensor1->GetShape() == tensor2->GetShape()) {
+        std::shared_ptr<Tensor<T>> output = CreateTensor<T>(tensor1->GetShape());
+        output->SetData(tensor1->data() % tensor2->data());
+        return output;
+    } else {
+        // broadcast
+        CHECK(tensor1->GetChannels() == tensor2->GetChannels()) << "Tensor shapes are not adapting.";
+        const auto& [inputTensor1, inputTensor2] = BroadcastTensor(tensor1, tensor2);
+        std::shared_ptr<Tensor<T>> output = CreateTensor<T>(inputTensor1->GetShape());
+        output->SetData(inputTensor1->data() % inputTensor2->data());
+        return output;
+    }
+}
 
 /**
  * @brief Inplace element-wise tensor multiply
@@ -477,7 +564,19 @@ std::shared_ptr<Tensor<T>> TensorElementMultiply(const std::shared_ptr<Tensor<T>
 template<typename T>
 void TensorElementMultiply(const std::shared_ptr<Tensor<T>>& tensor1,
                            const std::shared_ptr<Tensor<T>>& tensor2,
-                           const std::shared_ptr<Tensor<T>>& output);
+                           const std::shared_ptr<Tensor<T>>& output) {
+    CHECK(tensor1 != nullptr && tensor2 != nullptr && output != nullptr);
+    if (tensor1->GetShape() == tensor2->GetShape()) {
+        CHECK(tensor1->GetShape() == output->GetShape());
+        output->SetData(tensor1->data() % tensor2->data());
+    } else {
+        // broadcast
+        CHECK(tensor1->GetChannels() == tensor2->GetChannels()) << "Tensor shapes are not adapting.";
+        const auto& [inputTensor1, inputTensor2] = BroadcastTensor(tensor1, tensor2);
+        CHECK(inputTensor1->GetShape() == output->GetShape());
+        output->SetData(inputTensor1->data() % inputTensor2->data());
+    }
+}
 
 /**
  * @brief Pad a tensor
@@ -490,7 +589,53 @@ void TensorElementMultiply(const std::shared_ptr<Tensor<T>>& tensor1,
 template<typename T>
 std::shared_ptr<Tensor<T>> TensorPadding(std::shared_ptr<Tensor<T>>& tensor,
                                          const std::vector<uint32_t>& pads,
-                                         T value);
+                                         T value) {
+    CHECK(tensor != nullptr && !tensor->empty());
+    CHECK_EQ(pads.size(), 4);
+    uint32_t up = pads[0];
+    uint32_t bottom = pads[1];
+    uint32_t left = pads[2];
+    uint32_t right = pads[3];
+    std::shared_ptr<Tensor<T>> output = CreateTensor<T>({tensor->GetChannels(),
+                                                         tensor->GetRows() + up + bottom,
+                                                         tensor->GetCols() + left + right});
+
+    for (uint32_t ch = 0; ch < tensor->GetChannels(); ++ch) {
+        const auto& inSlice = tensor->slice(ch);
+        auto& outSlice = output->slice(ch);
+        for (uint32_t w = 0; w < tensor->GetCols(); ++w) {
+            const T* inSliceColPtr = inSlice.colptr(w);
+            T* outSliceColPtr = outSlice.colptr(w + left);
+
+            for (uint32_t h = 0; h < tensor->GetRows(); ++h) {
+                *(outSliceColPtr + h + up) = *(inSliceColPtr + h);
+            }
+
+            for (uint32_t h = 0; h < up; ++h) {
+                *(outSliceColPtr + h) = value;
+            }
+
+            for (uint32_t h = 0; h < bottom; ++h) {
+                *(outSliceColPtr + tensor->GetRows() + up + h) = value;
+            }
+        }
+
+        for (uint32_t w = 0; w < left; ++w) {
+            T* outSliceColPtr = outSlice.colptr(w);
+            for (uint32_t h = 0; h < output->GetRows(); ++h) {
+                *(outSliceColPtr + h) = value;
+            }
+        }
+
+        for (uint32_t w = 0; w < right; ++w) {
+            T* outSliceColPtr = outSlice.colptr(w + tensor->GetCols() + left);
+            for (uint32_t h = 0; h < output->GetRows(); ++h) {
+                *(outSliceColPtr + h) = value;
+            }
+        }
+    }
+    return output;
+}
 
 }// namespace XAcceleratorEngine
 #endif//OPENXAE_TENSOR_HPP

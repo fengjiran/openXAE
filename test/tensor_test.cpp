@@ -90,6 +90,19 @@ TEST(TensorTest, transform1) {
     }
 }
 
+TEST(TensorTest, clone) {
+    std::shared_ptr<Tensor<float>> t1 = std::make_shared<Tensor<float>>(3, 3, 3);
+    EXPECT_FALSE(t1->empty());
+    t1->RandN();
+
+    const auto& t2 = CloneTensor(t1);
+    EXPECT_TRUE(t1->RawPtr() != t2->RawPtr());
+    EXPECT_EQ(t1->GetSize(), t2->GetSize());
+    for (size_t i = 0; i < t1->GetSize(); ++i) {
+        EXPECT_FLOAT_EQ(t1->index(i), t2->index(i));
+    }
+}
+
 TEST(TensorTest, review1) {
     std::cout << "TensorTest_review1\n";
     size_t totalElems = 10;
