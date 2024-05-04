@@ -380,5 +380,15 @@ void vec<T, Allocator>::free() {
     }
 }
 
+template<typename T, typename Allocator>
+bool operator==(const vec<T, Allocator>& x, const vec<T, Allocator>& y) {
+    return x.size() == y.size() && std::equal(x.begin(), x.end(), y.begin());
+}
+
+template<typename T, typename Allocator>
+bool operator!=(const vec<T, Allocator>& x, const vec<T, Allocator>& y) {
+    return !(x == y);
+}
+
 }// namespace XAcceleratorEngine
 #endif
