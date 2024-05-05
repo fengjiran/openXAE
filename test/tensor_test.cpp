@@ -73,6 +73,14 @@ TEST(TensorTest, moveCtor) {
     EXPECT_EQ(t1.data().memptr(), nullptr);
 }
 
+TEST(TensorTest, setData) {
+    Tensor<float> t1(5, 10, 10);
+    arma::fcube cube(10, 10, 5);
+    cube.randn();
+    t1.SetData(cube);
+    EXPECT_TRUE(arma::approx_equal(t1.data(), cube, "absdiff", 1e-4));
+}
+
 TEST(TensorTest, review1) {
     std::cout << "TensorTest_review1\n";
     size_t totalElems = 10;
