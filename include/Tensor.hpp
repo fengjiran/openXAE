@@ -5,6 +5,7 @@
 #ifndef OPENXAE_TENSOR_HPP
 #define OPENXAE_TENSOR_HPP
 
+#include "glog/logging.h"
 #include <armadillo>
 #include <vector>
 
@@ -408,6 +409,26 @@ template<typename T>
 std::shared_ptr<Tensor<T>> CreateTensor(const std::vector<uint32_t>& shape) {
     return std::make_shared<Tensor<T>>(shape);
 }
+
+/**
+ * @brief Check tensor equality
+ *
+ * @param a Tensor1
+ * @param b Tensor2
+ * @param threshold Threshold tolerance
+ * @return True if equal within tolerance
+ */
+template<typename T>
+bool TensorIsSame(const std::shared_ptr<Tensor<T>>& a, const std::shared_ptr<Tensor<T>>& b, T threshold = 1e-5) {
+    CHECK(a != nullptr);
+    CHECK(b != nullptr);
+    if (a->GetShape() != b->GetShape()) {
+        return false;
+    }
+    return arma::approx_equal(a->data(), b->data(), "absdiff", threshold);
+}
+
+
 
 }// namespace XAcceleratorEngine
 #endif//OPENXAE_TENSOR_HPP
