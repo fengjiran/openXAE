@@ -71,10 +71,8 @@ public:
      * @param first first ptr
      * @param last last ptr
      */
-//    vec(const_pointer first, const_pointer last);
-
     template<typename InputIterator,
-             typename has_input_iterator_category<InputIterator, iterator>::type = 0>
+             typename has_input_iterator_category<InputIterator>::type = 0>
     vec(InputIterator first, InputIterator last, const allocator_type& alloc_ = allocator_type());
 
 
@@ -149,8 +147,6 @@ public:
      *
      * @return The ptr to the element following the last element of the vector
      */
-    //    pointer end() const { return firstFree; }
-
     iterator end() noexcept { return MakeIter(firstFree); }
 
     const_iterator end() const noexcept { return MakeIter(firstFree); }
@@ -194,10 +190,8 @@ public:
     ~vec();
 
 private:
-//    std::pair<pointer, pointer> Allocate(const_pointer b, const_pointer e);
-
     template<typename InputIterator,
-             typename has_input_iterator_category<InputIterator, iterator>::type = 0>
+             typename has_input_iterator_category<InputIterator>::type = 0>
     std::pair<pointer, pointer> Allocate(InputIterator first, InputIterator last);
 
     void free();
@@ -435,7 +429,7 @@ vec<T, Allocator>::vec(size_type n, const_reference value, const allocator_type&
 
 template<typename T, typename Allocator>
 template<typename InputIterator,
-         typename has_input_iterator_category<InputIterator, typename vec<T, Allocator>::iterator>::type>
+         typename has_input_iterator_category<InputIterator>::type>
 vec<T, Allocator>::vec(InputIterator first, InputIterator last, const allocator_type& alloc_)
     : alloc(alloc_) {
     auto data = Allocate(first, last);
@@ -492,16 +486,9 @@ vec<T, Allocator>& vec<T, Allocator>::operator=(const vec<T, Allocator>& rhs) {
     return *this;
 }
 
-//template<typename T, typename Allocator>
-//std::pair<typename vec<T, Allocator>::pointer, typename vec<T, Allocator>::pointer>
-//vec<T, Allocator>::Allocate(const_pointer b, const_pointer e) {
-//    auto dst = alloc_traits::allocate(alloc, e - b);
-//    return {dst, std::uninitialized_copy(b, e, dst)};
-//}
-
 template<typename T, typename Allocator>
 template<typename InputIterator,
-         typename has_input_iterator_category<InputIterator, typename vec<T, Allocator>::iterator>::type>
+         typename has_input_iterator_category<InputIterator>::type>
 std::pair<typename vec<T, Allocator>::pointer, typename vec<T, Allocator>::pointer>
 vec<T, Allocator>::Allocate(InputIterator first, InputIterator last) {
     auto dst = alloc_traits::allocate(alloc, last - first);
