@@ -362,7 +362,41 @@ private:
     void Review(const std::vector<uint32_t>& shape);
 };
 
+/**
+ * @brief Create a 3D tensor
+ *
+ * @param channels number of channels
+ * @param rows number of rows
+ * @param cols number of cols
+ * @return The shared_ptr of new tensor
+ */
+template<typename T>
+std::shared_ptr<Tensor<T>> CreateTensor(uint32_t channels, uint32_t rows, uint32_t cols) {
+    return std::make_shared<Tensor<T>>(channels, rows, cols);
+}
 
+/**
+ * @brief Create a 2D tensor
+ *
+ * @param rows number of rows
+ * @param cols number of cols
+ * @return The shared_ptr of new tensor
+ */
+template<typename T>
+std::shared_ptr<Tensor<T>> CreateTensor(uint32_t rows, uint32_t cols) {
+    return std::make_shared<Tensor<T>>(1, rows, cols);
+}
+
+/**
+ * @brief Create a 1D tensor(vector)
+ *
+ * @param size vector size
+ * @return The shared_ptr of new tensor
+ */
+template<typename T>
+std::shared_ptr<Tensor<T>> CreateTensor(uint32_t size) {
+    return std::make_shared<Tensor<T>>(1, 1, size);
+}
 
 }// namespace XAcceleratorEngine
 #endif//OPENXAE_TENSOR_HPP
