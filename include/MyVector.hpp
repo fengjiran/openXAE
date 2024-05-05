@@ -71,7 +71,7 @@ public:
      * @param first first ptr
      * @param last last ptr
      */
-    vec(const_pointer first, const_pointer last);
+//    vec(const_pointer first, const_pointer last);
 
     template<typename InputIterator,
              typename has_input_iterator_category<InputIterator, iterator>::type = 0>
@@ -194,7 +194,7 @@ public:
     ~vec();
 
 private:
-    std::pair<pointer, pointer> Allocate(const_pointer b, const_pointer e);
+//    std::pair<pointer, pointer> Allocate(const_pointer b, const_pointer e);
 
     template<typename InputIterator,
              typename has_input_iterator_category<InputIterator, iterator>::type = 0>
@@ -425,13 +425,13 @@ vec<T, Allocator>::vec(size_type n, const_reference value, const allocator_type&
     }
 }
 
-template<typename T, typename Allocator>
-vec<T, Allocator>::vec(const_pointer first, const_pointer last) {
-    auto data = Allocate(first, last);
-    start = data.first;
-    firstFree = data.second;
-    cap = data.second;
-}
+//template<typename T, typename Allocator>
+//vec<T, Allocator>::vec(const_pointer first, const_pointer last) {
+//    auto data = Allocate(first, last);
+//    start = data.first;
+//    firstFree = data.second;
+//    cap = data.second;
+//}
 
 template<typename T, typename Allocator>
 template<typename InputIterator,
@@ -492,12 +492,12 @@ vec<T, Allocator>& vec<T, Allocator>::operator=(const vec<T, Allocator>& rhs) {
     return *this;
 }
 
-template<typename T, typename Allocator>
-std::pair<typename vec<T, Allocator>::pointer, typename vec<T, Allocator>::pointer>
-vec<T, Allocator>::Allocate(const_pointer b, const_pointer e) {
-    auto dst = alloc_traits::allocate(alloc, e - b);
-    return {dst, std::uninitialized_copy(b, e, dst)};
-}
+//template<typename T, typename Allocator>
+//std::pair<typename vec<T, Allocator>::pointer, typename vec<T, Allocator>::pointer>
+//vec<T, Allocator>::Allocate(const_pointer b, const_pointer e) {
+//    auto dst = alloc_traits::allocate(alloc, e - b);
+//    return {dst, std::uninitialized_copy(b, e, dst)};
+//}
 
 template<typename T, typename Allocator>
 template<typename InputIterator,
