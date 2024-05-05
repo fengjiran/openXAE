@@ -72,9 +72,8 @@ public:
      * @param last last ptr
      */
     template<typename InputIterator,
-             typename has_input_iterator_category<InputIterator>::type = 0>
+             typename has_input_iterator_category<InputIterator, value_type>::type = 0>
     vec(InputIterator first, InputIterator last, const allocator_type& alloc_ = allocator_type());
-
 
     /**
      * @brief Constructor with initializer list
@@ -191,7 +190,7 @@ public:
 
 private:
     template<typename InputIterator,
-             typename has_input_iterator_category<InputIterator>::type = 0>
+             typename has_input_iterator_category<InputIterator, value_type>::type = 0>
     std::pair<pointer, pointer> Allocate(InputIterator first, InputIterator last);
 
     void free();
@@ -419,17 +418,9 @@ vec<T, Allocator>::vec(size_type n, const_reference value, const allocator_type&
     }
 }
 
-//template<typename T, typename Allocator>
-//vec<T, Allocator>::vec(const_pointer first, const_pointer last) {
-//    auto data = Allocate(first, last);
-//    start = data.first;
-//    firstFree = data.second;
-//    cap = data.second;
-//}
-
 template<typename T, typename Allocator>
 template<typename InputIterator,
-         typename has_input_iterator_category<InputIterator>::type>
+         typename has_input_iterator_category<InputIterator, T>::type>
 vec<T, Allocator>::vec(InputIterator first, InputIterator last, const allocator_type& alloc_)
     : alloc(alloc_) {
     auto data = Allocate(first, last);
@@ -488,7 +479,7 @@ vec<T, Allocator>& vec<T, Allocator>::operator=(const vec<T, Allocator>& rhs) {
 
 template<typename T, typename Allocator>
 template<typename InputIterator,
-         typename has_input_iterator_category<InputIterator>::type>
+         typename has_input_iterator_category<InputIterator, T>::type>
 std::pair<typename vec<T, Allocator>::pointer, typename vec<T, Allocator>::pointer>
 vec<T, Allocator>::Allocate(InputIterator first, InputIterator last) {
     auto dst = alloc_traits::allocate(alloc, last - first);
