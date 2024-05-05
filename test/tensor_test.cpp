@@ -34,24 +34,15 @@ TEST(TensorTest, init3D) {
     EXPECT_EQ(f1.GetRows(), 224);
     EXPECT_EQ(f1.GetCols(), 224);
     EXPECT_EQ(f1.GetSize(), 3 * 224 * 224);
-
     EXPECT_EQ(f1.GetRawShape().size(), 3);
     EXPECT_EQ(f1.GetRawShape()[0], 3);
-}
 
-//TEST(TensorTest, init2D) {
-//    Tensor<float> f1(5, 5);
-//    f1.Fill(1.0);
-//    LOG(INFO) << "--------------------Tensor2D--------------------";
-//    LOG(INFO) << "raw shape size: " << f1.GetRawShape().size();
-//    uint32_t rows = f1.GetRawShape()[0];
-//    uint32_t cols = f1.GetRawShape()[1];
-//    LOG(INFO) << "data rows: " << rows;
-//    LOG(INFO) << "data cols: " << cols;
-//    LOG(INFO) << "data size: " << f1.GetSize();
-//    LOG(INFO) << "data plane size: " << f1.GetPlaneSize();
-//    f1.Show();
-//}
+    Tensor<float> f2(std::vector<uint32_t>{1, 13, 14});
+    EXPECT_EQ(f2.GetChannels(), 1);
+    EXPECT_EQ(f2.GetRows(), 13);
+    EXPECT_EQ(f2.GetCols(), 14);
+    EXPECT_EQ(f2.GetSize(), 13 * 14);
+}
 
 TEST(TensorTest, copyCtor) {
     Tensor<float> f1(5, 5);
