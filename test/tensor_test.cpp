@@ -81,6 +81,15 @@ TEST(TensorTest, setData) {
     EXPECT_TRUE(arma::approx_equal(t1.data(), cube, "absdiff", 1e-4));
 }
 
+TEST(TensorTest, transform1) {
+    Tensor<float> t1(5, 10, 10);
+    t1.Fill(1.0f);
+    t1.Transform([](const float& value) { return value * 2.0f; });
+    for (size_t i = 0; i < t1.GetSize(); ++i) {
+        EXPECT_EQ(t1.index(i), 2.0f);
+    }
+}
+
 TEST(TensorTest, review1) {
     std::cout << "TensorTest_review1\n";
     size_t totalElems = 10;
