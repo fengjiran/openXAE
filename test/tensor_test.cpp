@@ -45,27 +45,32 @@ TEST(TensorTest, init3D) {
 }
 
 TEST(TensorTest, copyCtor) {
-    Tensor<float> f1(5, 5);
-    f1.Fill(2.0);
-
+    Tensor<float> f1(10, 5, 5);
+    f1.RandN();
     Tensor<float> f2(f1);
-    Tensor<float> f3 = f1;
-    f1.Show();
-    f2.Show();
-    f3.Show();
+    EXPECT_EQ(f2.GetChannels(), 10);
+    EXPECT_EQ(f2.GetRows(), 5);
+    EXPECT_EQ(f2.GetCols(), 5);
+    EXPECT_TRUE(arma::approx_equal(f1.data(), f2.data(), "absdiff", 1e-4));
+
+    Tensor<float> f3(3, 2, 1);
+    f3 = f1;
+    EXPECT_EQ(f3.GetChannels(), 10);
+    EXPECT_EQ(f3.GetRows(), 5);
+    EXPECT_EQ(f3.GetCols(), 5);
+    EXPECT_TRUE(arma::approx_equal(f1.data(), f3.data(), "absdiff", 1e-4));
 }
 
 TEST(TensorTest, moveCtor) {
-    Tensor<float> f1(5, 5);
-    f1.Fill(3.0);
+    Tensor<float> t1(5, 5);
+    Tensor<float> t2(3, 4);
+    t2 = std::move(t1);
 
-    Tensor<float> f2(std::move(f1));
-    CHECK(f1.empty());
-    f2.Show();
+    EXPECT_EQ(t2.GetChannels(), 1);
+    EXPECT_EQ(t2.GetRows(), 5);
+    EXPECT_EQ(t2.GetRows(), 5);
 
-    Tensor<float> f3 = std::move(f2);
-    CHECK(f2.empty());
-    f3.Show();
+    EXPECT_EQ(t1.data().memptr(), nullptr);
 }
 
 TEST(TensorTest, review1) {
