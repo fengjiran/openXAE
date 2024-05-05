@@ -398,5 +398,16 @@ std::shared_ptr<Tensor<T>> CreateTensor(uint32_t size) {
     return std::make_shared<Tensor<T>>(1, 1, size);
 }
 
+/**
+ * @brief Create a tensor with shape
+ *
+ * @param shape tensor dimension
+ * @return The shared_ptr of new tensor
+ */
+template<typename T>
+std::shared_ptr<Tensor<T>> CreateTensor(const std::vector<uint32_t>& shape) {
+    return std::make_shared<Tensor<T>>(shape);
+}
+
 }// namespace XAcceleratorEngine
 #endif//OPENXAE_TENSOR_HPP
