@@ -434,9 +434,10 @@ bool TensorIsSame(const std::shared_ptr<Tensor<T>>& a, const std::shared_ptr<Ten
  * @return Deep copy of a tensor
  */
 template<typename T>
-std::shared_ptr<Tensor<T>> CloneTensor(std::shared_ptr<Tensor<T>> tensor) {
+std::shared_ptr<Tensor<T>> CloneTensor(const std::shared_ptr<Tensor<T>>& tensor) {
     return std::make_shared<Tensor<T>>(*tensor);
 }
+
 
 }// namespace XAcceleratorEngine
 #endif//OPENXAE_TENSOR_HPP
