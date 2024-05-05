@@ -482,7 +482,8 @@ template<typename InputIterator,
          typename has_input_iterator_category<InputIterator, T>::type>
 std::pair<typename vec<T, Allocator>::pointer, typename vec<T, Allocator>::pointer>
 vec<T, Allocator>::Allocate(InputIterator first, InputIterator last) {
-    auto dst = alloc_traits::allocate(alloc, last - first);
+    auto n = std::distance(first, last);
+    auto dst = alloc_traits::allocate(alloc, n);
     return {dst, std::uninitialized_copy(first, last, dst)};
 }
 

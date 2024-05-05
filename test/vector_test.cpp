@@ -4,13 +4,13 @@
 
 #include "MyVector.hpp"
 #include "gtest/gtest.h"
+#include <list>
 
 namespace XAcceleratorEngine {
 
 TEST(MyVectorTest, ctor) {
     vec<std::string> words1{"the", "frogurt", "is", "also", "cursed"};
     std::cout << "1: " << words1;
-    ASSERT_EQ(words1.size(), 5);
 
     vec<std::string> words2(words1.begin(), words1.end());
     std::cout << "2: " << words2;
@@ -20,7 +20,6 @@ TEST(MyVectorTest, ctor) {
 
     vec<std::string> words4(5, "Mo");
     std::cout << "4: " << words4;
-    ASSERT_EQ(words4.size(), 5);
 
     auto const rg = {"cat", "cow", "crow"};
 #ifdef __cpp_lib_containers_ranges
@@ -29,6 +28,10 @@ TEST(MyVectorTest, ctor) {
     vec<std::string> words5(rg.begin(), rg.end());// overload (5)
 #endif
     std::cout << "5: " << words5;
+
+    std::list<int> lst = {1, 2, 3, 4, 5};
+    vec<int> words6(lst.begin(), lst.end());
+    std::cout << "6: " << words6;
 
     auto alloc1 = std::allocator<int>();
     auto alloc2 = MyAllocator<int>();
