@@ -210,4 +210,39 @@ TEST(TensorTest, review1) {
     }
 }
 
+TEST(TensorTest, createTensor) {
+    std::shared_ptr<Tensor<float>> tensor = CreateTensor<float>(3, 10, 10);
+    EXPECT_FALSE(tensor->empty());
+    EXPECT_EQ(tensor->GetChannels(), 3);
+    EXPECT_EQ(tensor->GetRows(), 10);
+    EXPECT_EQ(tensor->GetCols(), 10);
+}
+
+TEST(TensorTest, broadcast) {
+    std::shared_ptr<Tensor<float>> tensor1 = CreateTensor<float>(3, 10, 10);
+    std::shared_ptr<Tensor<float>> tensor2 = CreateTensor<float>(3, 1, 1);
+    const auto& [tensor11, tensor21] = BroadcastTensor(tensor1, tensor2);
+
+    EXPECT_EQ(tensor11->GetChannels(), 3);
+    EXPECT_EQ(tensor11->GetRows(), 10);
+    EXPECT_EQ(tensor11->GetCols(), 10);
+
+    EXPECT_EQ(tensor21->GetChannels(), 3);
+    EXPECT_EQ(tensor21->GetRows(), 10);
+    EXPECT_EQ(tensor21->GetCols(), 10);
+
+    EXPECT_TRUE(arma::approx_equal(tensor1->data(), tensor11->data(), "absdiff", 1e-4));
+}
+
+TEST(TensorTest, add1) {
+    std::shared_ptr<Tensor<float>> tensor1 = CreateTensor<float>(3, 10, 10);
+    std::shared_ptr<Tensor<float>> tensor2 = CreateTensor<float>(3, 10, 10);
+    tensor1->Fill(1.0f);
+    tensor2->Fill(2.0f);
+    const auto& tensor3 = TensorElementAdd(tensor1, tensor2);
+    for (size_t i = 0; i < tensor3->GetSize(); ++i) {
+        EXPECT_FLOAT_EQ(tensor3->index(i), 3.0f);
+    }
+}
+
 }// namespace XAcceleratorEngine
