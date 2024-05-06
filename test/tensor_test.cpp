@@ -245,4 +245,52 @@ TEST(TensorTest, add1) {
     }
 }
 
+TEST(TensorTest, add2) {
+    std::shared_ptr<Tensor<float>> tensor1 = CreateTensor<float>(3, 10, 10);
+    std::shared_ptr<Tensor<float>> tensor2 = CreateTensor<float>(3, 1, 1);
+    tensor1->Fill(1.0f);
+    tensor2->Fill(2.0f);
+    const auto& tensor3 = TensorElementAdd(tensor1, tensor2);
+    for (size_t i = 0; i < tensor3->GetSize(); ++i) {
+        EXPECT_FLOAT_EQ(tensor3->index(i), 3.0f);
+    }
+}
+
+TEST(TensorTest, add3) {
+    std::shared_ptr<Tensor<float>> tensor1 = CreateTensor<float>(3, 10, 10);
+    std::shared_ptr<Tensor<float>> tensor2 = CreateTensor<float>(3, 1, 1);
+    tensor1->Fill(1.0f);
+    tensor2->Fill(2.0f);
+    const auto& tensor3 = TensorElementAdd(tensor2, tensor1);
+    for (size_t i = 0; i < tensor3->GetSize(); ++i) {
+        EXPECT_FLOAT_EQ(tensor3->index(i), 3.0f);
+    }
+}
+
+TEST(TensorTest, add4) {
+    std::shared_ptr<Tensor<float>> tensor1 = CreateTensor<float>(3, 10, 10);
+    std::shared_ptr<Tensor<float>> tensor2 = CreateTensor<float>(3, 1, 1);
+    tensor1->Fill(1.0f);
+    tensor2->Fill(2.0f);
+
+    std::shared_ptr<Tensor<float>> tensor3 = CreateTensor<float>(3, 10, 10);
+    TensorElementAdd(tensor1, tensor2, tensor3);
+    for (size_t i = 0; i < tensor3->GetSize(); ++i) {
+        EXPECT_FLOAT_EQ(tensor3->index(i), 3.0f);
+    }
+}
+
+TEST(TensorTest, add5) {
+    std::shared_ptr<Tensor<float>> tensor1 = CreateTensor<float>(3, 10, 10);
+    std::shared_ptr<Tensor<float>> tensor2 = CreateTensor<float>(3, 1, 1);
+    tensor1->Fill(1.0f);
+    tensor2->Fill(2.0f);
+
+    std::shared_ptr<Tensor<float>> tensor3 = CreateTensor<float>(3, 10, 10);
+    TensorElementAdd(tensor2, tensor1, tensor3);
+    for (size_t i = 0; i < tensor3->GetSize(); ++i) {
+        EXPECT_FLOAT_EQ(tensor3->index(i), 3.0f);
+    }
+}
+
 }// namespace XAcceleratorEngine
