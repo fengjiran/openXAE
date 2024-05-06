@@ -119,7 +119,7 @@ TEST(TensorTest, index) {
     }
 }
 
-TEST(TensorTest, flatten) {
+TEST(TensorTest, flatten1) {
     Tensor<float> t(3, 3, 3);
     std::vector<float> values(27);
     for (int i = 0; i < 27; ++i) {
@@ -142,6 +142,50 @@ TEST(TensorTest, flatten) {
     EXPECT_FLOAT_EQ(t.index(6), 2);
     EXPECT_FLOAT_EQ(t.index(7), 5);
     EXPECT_FLOAT_EQ(t.index(8), 8);
+}
+
+TEST(TensorTest, flatten2) {
+    Tensor<float> t(3, 3, 3);
+    std::vector<float> values(27);
+    for (int i = 0; i < 27; ++i) {
+        values[i] = (float) i;
+    }
+
+    t.Fill(values);
+    t.Flatten(true);
+    for (size_t i = 0; i < 27; ++i) {
+        EXPECT_FLOAT_EQ(t.index(i), i);
+    }
+}
+
+TEST(TensorTest, fillRowMajor) {
+    Tensor<float> t(3, 3, 3);
+    std::vector<float> values(27);
+    for (int i = 0; i < 27; ++i) {
+        values[i] = (float) i;
+    }
+    t.Fill(values);
+    for (uint32_t ch = 0; ch < t.GetChannels(); ++ch) {
+        for (uint32_t row = 0; row < t.GetRows(); ++row) {
+            for (uint32_t col = 0; col < t.GetCols(); ++col) {
+                uint32_t idx = ch * 9 + row * 3 + col;
+                EXPECT_FLOAT_EQ(t.at(ch, row, col), values[idx]);
+            }
+        }
+    }
+}
+
+TEST(TensorTest, fillColMajor) {
+    Tensor<float> t(3, 3, 3);
+    std::vector<float> values(27);
+    for (int i = 0; i < 27; ++i) {
+        values[i] = (float) i;
+    }
+
+    t.Fill(values, false);
+    for (uint32_t i = 0; i < 27; ++i) {
+        EXPECT_FLOAT_EQ(t.index(i), values[i]);
+    }
 }
 
 TEST(TensorTest, review1) {
