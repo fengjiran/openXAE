@@ -293,4 +293,72 @@ TEST(TensorTest, add5) {
     }
 }
 
+TEST(TensorTest, mul1) {
+    std::shared_ptr<Tensor<float>> tensor1 = CreateTensor<float>(3, 10, 10);
+    std::shared_ptr<Tensor<float>> tensor2 = CreateTensor<float>(3, 10, 10);
+    tensor1->Fill(3.0f);
+    tensor2->Fill(2.0f);
+    const auto& tensor3 = TensorElementMultiply(tensor1, tensor2);
+    for (size_t i = 0; i < tensor3->GetSize(); ++i) {
+        EXPECT_FLOAT_EQ(tensor3->index(i), 6.0f);
+    }
+}
+
+TEST(TensorTest, mul2) {
+    std::shared_ptr<Tensor<float>> tensor1 = CreateTensor<float>(3, 10, 10);
+    std::shared_ptr<Tensor<float>> tensor2 = CreateTensor<float>(3, 10, 10);
+    tensor1->Fill(3.0f);
+    tensor2->Fill(2.0f);
+    const auto& tensor3 = TensorElementMultiply(tensor2, tensor1);
+    for (size_t i = 0; i < tensor3->GetSize(); ++i) {
+        EXPECT_FLOAT_EQ(tensor3->index(i), 6.0f);
+    }
+}
+
+TEST(TensorTest, mul3) {
+    std::shared_ptr<Tensor<float>> tensor1 = CreateTensor<float>(3, 10, 10);
+    std::shared_ptr<Tensor<float>> tensor2 = CreateTensor<float>(3, 1, 1);
+    tensor1->Fill(3.0f);
+    tensor2->Fill(2.0f);
+    const auto& tensor3 = TensorElementMultiply(tensor1, tensor2);
+    for (size_t i = 0; i < tensor3->GetSize(); ++i) {
+        EXPECT_FLOAT_EQ(tensor3->index(i), 6.0f);
+    }
+}
+
+TEST(TensorTest, mul4) {
+    std::shared_ptr<Tensor<float>> tensor1 = CreateTensor<float>(3, 10, 10);
+    std::shared_ptr<Tensor<float>> tensor2 = CreateTensor<float>(3, 1, 1);
+    tensor1->Fill(3.0f);
+    tensor2->Fill(2.0f);
+    const auto& tensor3 = TensorElementMultiply(tensor2, tensor1);
+    for (size_t i = 0; i < tensor3->GetSize(); ++i) {
+        EXPECT_FLOAT_EQ(tensor3->index(i), 6.0f);
+    }
+}
+
+TEST(TensorTest, mul5) {
+    std::shared_ptr<Tensor<float>> tensor1 = CreateTensor<float>(3, 10, 10);
+    std::shared_ptr<Tensor<float>> tensor2 = CreateTensor<float>(3, 1, 1);
+    tensor1->Fill(3.0f);
+    tensor2->Fill(2.0f);
+    std::shared_ptr<Tensor<float>> tensor3 = CreateTensor<float>(3, 10, 10);
+    TensorElementMultiply(tensor2, tensor1, tensor3);
+    for (size_t i = 0; i < tensor3->GetSize(); ++i) {
+        EXPECT_FLOAT_EQ(tensor3->index(i), 6.0f);
+    }
+}
+
+TEST(TensorTest, mul6) {
+    std::shared_ptr<Tensor<float>> tensor1 = CreateTensor<float>(3, 10, 10);
+    std::shared_ptr<Tensor<float>> tensor2 = CreateTensor<float>(3, 1, 1);
+    tensor1->Fill(3.0f);
+    tensor2->Fill(2.0f);
+    std::shared_ptr<Tensor<float>> tensor3 = CreateTensor<float>(3, 10, 10);
+    TensorElementMultiply(tensor1, tensor2, tensor3);
+    for (size_t i = 0; i < tensor3->GetSize(); ++i) {
+        EXPECT_FLOAT_EQ(tensor3->index(i), 6.0f);
+    }
+}
+
 }// namespace XAcceleratorEngine
