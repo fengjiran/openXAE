@@ -38,6 +38,8 @@ public:
      */
     vec(std::initializer_list<T> il);
 
+    vec& operator=(std::initializer_list<T> il);
+
     /**
      * @brief Copy constructor
      *
@@ -82,12 +84,26 @@ public:
      */
     size_t capacity() const { return cap - start; }
 
-
+    /**
+     * @brief Get the first element pointer of the vector
+     *
+     * @return The pointer of the first element
+     */
     T* begin() const { return start; }
+
+    /**
+     * @brief Get the pointer to the element following the last element of the vector
+     *
+     * @return The pointer to the element following the last element of the vector
+     */
     T* end() const { return firstFree; }
+
+    bool empty() const { return firstFree == start; }
+
     void reserve(size_t n);
     void resize(size_t n);
     void resize(size_t n, const T& t);
+    T* data() { return start; }
 
     void push_back(const T& t);
     void push_back(T&& t);
@@ -95,8 +111,17 @@ public:
     template<typename... Args>
     void emplace_back(Args&&... args);
 
-    T& operator[](size_t pos);
-    const T& operator[](size_t pos) const;
+    T& operator[](size_t pos) noexcept;
+    const T& operator[](size_t pos) const noexcept;
+
+    T& at(size_t pos);
+    const T& at(size_t pos) const;
+
+    T& front() noexcept;
+    const T& front() const noexcept;
+
+    T& back() noexcept;
+    const T& back() const noexcept;
 
     ~vec();
 
@@ -117,6 +142,57 @@ private:
     T* cap;
     T* firstFree;
 };
+
+template<typename T, typename Allocator>
+const T& vec<T, Allocator>::back() const noexcept {
+    CHECK(!empty()) << "back() called on an empty vector";
+    return *--firstFree;
+}
+
+template<typename T, typename Allocator>
+T& vec<T, Allocator>::back() noexcept {
+    CHECK(!empty()) << "back() called on an empty vector";
+    return *--firstFree;
+}
+
+template<typename T, typename Allocator>
+const T& vec<T, Allocator>::front() const noexcept {
+    CHECK(!empty()) << "front() called on an empty vector";
+    return *start;
+}
+template<typename T, typename Allocator>
+T& vec<T, Allocator>::front() noexcept {
+    CHECK(!empty()) << "front() called on an empty vector";
+    return *start;
+}
+
+template<typename T, typename Allocator>
+const T& vec<T, Allocator>::operator[](size_t pos) const noexcept {
+    CHECK(pos < size()) << "vector[] index out of bounds";
+    return start[pos];
+}
+
+template<typename T, typename Allocator>
+T& vec<T, Allocator>::operator[](size_t pos) noexcept {
+    CHECK(pos < size()) << "vector[] index out of bounds";
+    return start[pos];
+}
+
+template<typename T, typename Allocator>
+T& vec<T, Allocator>::at(size_t pos) {
+    if (pos >= size()) {
+        throw std::out_of_range("index out of bounds");
+    }
+    return (*this)[pos];
+}
+
+template<typename T, typename Allocator>
+const T& vec<T, Allocator>::at(size_t pos) const {
+    if (pos >= size()) {
+        throw std::out_of_range("index out of bounds");
+    }
+    return (*this)[pos];
+}
 
 template<typename T, typename Allocator>
 template<typename... Args>
@@ -221,6 +297,7 @@ vec<T, Allocator>& vec<T, Allocator>::operator=(vec&& rhs) noexcept {
 
 template<typename T, typename Allocator>
 vec<T, Allocator>::vec(vec&& rhs) noexcept : start(rhs.start), firstFree(rhs.firstFree), cap(rhs.cap) {
+    LOG(INFO) << " use move constructor";
     rhs.start = nullptr;
     rhs.firstFree = nullptr;
     rhs.cap = nullptr;
@@ -254,6 +331,16 @@ vec<T, Allocator>::vec(std::initializer_list<T> il) {
     start = data.first;
     firstFree = data.second;
     cap = data.second;
+}
+
+template<typename T, typename Allocator>
+vec<T, Allocator>& vec<T, Allocator>::operator=(std::initializer_list<T> il) {
+    auto data = Allocate(il.begin(), il.end());
+    free();
+    start = data.first;
+    firstFree = data.second;
+    cap = data.second;
+    return *this;
 }
 
 template<typename T, typename Allocator>
