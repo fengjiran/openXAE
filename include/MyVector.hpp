@@ -68,8 +68,21 @@ public:
      */
     vec& operator=(vec&& rhs) noexcept;
 
+    /**
+     * @brief Get the number of elements in the container
+     *
+     * @return The number of elements in the container.
+     */
     size_t size() const { return firstFree - start; }
+
+    /**
+     * @brief Get the number of elements that the container has currently allocated space for
+     *
+     * @return Capacity of the currently allocated storage.
+     */
     size_t capacity() const { return cap - start; }
+
+
     T* begin() const { return start; }
     T* end() const { return firstFree; }
     void reserve(size_t n);
