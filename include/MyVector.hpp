@@ -18,12 +18,14 @@ public:
 
     /**
      * @brief Constructor with size and default initialization
+     *
      * @param n Size
      */
     explicit vec(size_t n);
 
     /**
      * @brief Constructor with size and initial value
+     *
      * @param n Size
      * @param t Initial value
      */
@@ -31,15 +33,39 @@ public:
 
     /**
      * @brief Constructor with initializer list
+     *
      * @param il Initializer list
      */
     vec(std::initializer_list<T> il);
 
-    // copy ctor
+    /**
+     * @brief Copy constructor
+     *
+     * @param rhs Right Hand Side
+     */
     vec(const vec& rhs);
+
+    /**
+     * @brief Copy assignment operator
+     *
+     * @param rhs Right Hand Side
+     * @return The self reference
+     */
     vec& operator=(const vec& rhs);
-    // move ctor
+
+    /**
+     * @brief Move constructor
+     *
+     * @param rhs Right Hand Side
+     */
     vec(vec&& rhs) noexcept;
+
+    /**
+     * @brief Move assignment
+     *
+     * @param rhs Right Hand Side
+     * @return The self reference
+     */
     vec& operator=(vec&& rhs) noexcept;
 
     size_t size() const { return firstFree - start; }
