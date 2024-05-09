@@ -15,11 +15,14 @@ TEST(MyVectorTest, general) {
 
     vec<int> ans{8, 4, -1, 9, 6, 9};
 
+    std::cout << v;
+
     ASSERT_TRUE(v == ans);
 }
 
 TEST(MyVectorTest, back) {
     vec<char> letters{'a', 'b', 'c', 'd', 'e', 'f'};
+    std::cout << letters;
     ASSERT_EQ(letters.back(), 'f');
     if (!letters.empty())
         std::cout << "The last character is '" << letters.back() << "'.\n";

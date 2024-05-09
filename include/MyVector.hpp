@@ -405,5 +405,14 @@ bool operator!=(const vec<T, Allocator>& x, const vec<T, Allocator>& y) {
     return !(x == y);
 }
 
+template<typename T>
+std::ostream& operator<<(std::ostream& s, const vec<T>& v)
+{
+    s.put('{');
+    for (char comma[]{'\0', ' ', '\0'}; const auto& e : v)
+        s << comma << e, comma[0] = ',';
+    return s << "}\n";
+}
+
 }// namespace XAcceleratorEngine
 #endif
