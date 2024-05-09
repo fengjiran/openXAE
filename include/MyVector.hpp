@@ -11,6 +11,10 @@ namespace XAcceleratorEngine {
 template<typename T, typename Allocator = std::allocator<T>>
 class vec {
 public:
+    using allocTraits = std::allocator_traits<Allocator>;
+    using size_type = typename allocTraits::size_type;
+
+public:
     /**
      * @brief Default constructor
      */
@@ -21,7 +25,7 @@ public:
      *
      * @param n Size
      */
-    explicit vec(size_t n);
+    explicit vec(size_type n);
 
     /**
      * @brief Constructor with size and initial value
@@ -29,7 +33,7 @@ public:
      * @param n Size
      * @param t Initial value
      */
-    vec(size_t n, const T& t);
+    vec(size_type n, const T& t);
 
     /**
      * @brief Constructor with initializer list
@@ -75,14 +79,14 @@ public:
      *
      * @return The number of elements in the container.
      */
-    size_t size() const { return firstFree - start; }
+    size_type size() const { return firstFree - start; }
 
     /**
      * @brief Get the number of elements that the container has currently allocated space for
      *
      * @return Capacity of the currently allocated storage.
      */
-    size_t capacity() const { return cap - start; }
+    size_type capacity() const { return cap - start; }
 
     /**
      * @brief Get the first element pointer of the vector
@@ -100,9 +104,9 @@ public:
 
     bool empty() const { return firstFree == start; }
 
-    void reserve(size_t n);
-    void resize(size_t n);
-    void resize(size_t n, const T& t);
+    void reserve(size_type n);
+    void resize(size_type n);
+    void resize(size_type n, const T& t);
     T* data() { return start; }
 
     void push_back(const T& t);
@@ -111,11 +115,11 @@ public:
     template<typename... Args>
     void emplace_back(Args&&... args);
 
-    T& operator[](size_t pos) noexcept;
-    const T& operator[](size_t pos) const noexcept;
+    T& operator[](size_type pos) noexcept;
+    const T& operator[](size_type pos) const noexcept;
 
-    T& at(size_t pos);
-    const T& at(size_t pos) const;
+    T& at(size_type pos);
+    const T& at(size_type pos) const;
 
     T& front() noexcept;
     const T& front() const noexcept;
@@ -129,14 +133,13 @@ private:
     std::pair<T*, T*> Allocate(const T* b, const T* e);
     void free();
     void reallocate();
-    void reallocate(size_t newCap);
+    void reallocate(size_type newCap);
     void CheckAndAlloc() {
         if (firstFree == cap) {
             reallocate();
         }
     }
 
-    using allocTraits = std::allocator_traits<Allocator>;
     Allocator alloc;
     T* start;
     T* cap;
@@ -167,19 +170,19 @@ T& vec<T, Allocator>::front() noexcept {
 }
 
 template<typename T, typename Allocator>
-const T& vec<T, Allocator>::operator[](size_t pos) const noexcept {
+const T& vec<T, Allocator>::operator[](size_type pos) const noexcept {
     CHECK(pos < size()) << "vector[] index out of bounds";
     return start[pos];
 }
 
 template<typename T, typename Allocator>
-T& vec<T, Allocator>::operator[](size_t pos) noexcept {
+T& vec<T, Allocator>::operator[](size_type pos) noexcept {
     CHECK(pos < size()) << "vector[] index out of bounds";
     return start[pos];
 }
 
 template<typename T, typename Allocator>
-T& vec<T, Allocator>::at(size_t pos) {
+T& vec<T, Allocator>::at(size_type pos) {
     if (pos >= size()) {
         throw std::out_of_range("index out of bounds");
     }
@@ -187,7 +190,7 @@ T& vec<T, Allocator>::at(size_t pos) {
 }
 
 template<typename T, typename Allocator>
-const T& vec<T, Allocator>::at(size_t pos) const {
+const T& vec<T, Allocator>::at(size_type pos) const {
     if (pos >= size()) {
         throw std::out_of_range("index out of bounds");
     }
@@ -214,7 +217,7 @@ void vec<T, Allocator>::push_back(const T& t) {
 }
 
 template<typename T, typename Allocator>
-void vec<T, Allocator>::resize(size_t n) {
+void vec<T, Allocator>::resize(size_type n) {
     if (n > size()) {
         while (size() < n) {
             push_back(T());
@@ -227,7 +230,7 @@ void vec<T, Allocator>::resize(size_t n) {
 }
 
 template<typename T, typename Allocator>
-void vec<T, Allocator>::resize(size_t n, const T& t) {
+void vec<T, Allocator>::resize(size_type n, const T& t) {
     if (n > size()) {
         while (size() < n) {
             push_back(t);
@@ -236,7 +239,7 @@ void vec<T, Allocator>::resize(size_t n, const T& t) {
 }
 
 template<typename T, typename Allocator>
-void vec<T, Allocator>::reserve(size_t n) {
+void vec<T, Allocator>::reserve(size_type n) {
     if (n > capacity()) {
         reallocate(n);
     }
@@ -248,11 +251,11 @@ vec<T, Allocator>::~vec() {
 }
 
 template<typename T, typename Allocator>
-void vec<T, Allocator>::reallocate(size_t newCap) {
+void vec<T, Allocator>::reallocate(size_type newCap) {
     auto data = allocTraits::allocate(alloc, newCap);
     auto src = start;
     auto dst = data;
-    for (size_t i = 0; i < size(); ++i) {
+    for (size_type i = 0; i < size(); ++i) {
         allocTraits::construct(alloc, dst, std::move(*src));
         ++src;
         ++dst;
@@ -265,11 +268,11 @@ void vec<T, Allocator>::reallocate(size_t newCap) {
 
 template<typename T, typename Allocator>
 void vec<T, Allocator>::reallocate() {
-    size_t newCap = size() != 0 ? 2 * size() : 1;
+    size_type newCap = size() != 0 ? 2 * size() : 1;
     auto data = allocTraits::allocate(alloc, newCap);
     auto src = start;
     auto dst = data;
-    for (size_t i = 0; i < size(); ++i) {
+    for (size_type i = 0; i < size(); ++i) {
         allocTraits::construct(alloc, dst, std::move(*src));
         ++src;
         ++dst;
@@ -304,23 +307,23 @@ vec<T, Allocator>::vec(vec&& rhs) noexcept : start(rhs.start), firstFree(rhs.fir
 }
 
 template<typename T, typename Allocator>
-vec<T, Allocator>::vec(size_t n) {
+vec<T, Allocator>::vec(size_type n) {
     auto data = allocTraits::allocate(alloc, n);
     start = data;
     firstFree = data;
     cap = start + n;
-    for (size_t i = 0; i < n; ++i) {
+    for (size_type i = 0; i < n; ++i) {
         allocTraits::construct(alloc, firstFree++, T());
     }
 }
 
 template<typename T, typename Allocator>
-vec<T, Allocator>::vec(size_t n, const T& t) {
+vec<T, Allocator>::vec(size_type n, const T& t) {
     auto data = allocTraits::allocate(alloc, n);
     start = data;
     firstFree = data;
     cap = start + n;
-    for (size_t i = 0; i < n; ++i) {
+    for (size_type i = 0; i < n; ++i) {
         allocTraits::construct(alloc, firstFree++, t);
     }
 }
