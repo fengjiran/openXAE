@@ -20,6 +20,7 @@ TEST(MyVectorTest, general) {
 
 TEST(MyVectorTest, back) {
     vec<char> letters{'a', 'b', 'c', 'd', 'e', 'f'};
+    ASSERT_EQ(letters.back(), 'f');
     if (!letters.empty())
         std::cout << "The last character is '" << letters.back() << "'.\n";
 }

@@ -96,9 +96,9 @@ public:
     T* begin() const { return start; }
 
     /**
-     * @brief Get the pointer to the element following the last element of the vector
+     * @brief Get the ptr to the element following the last element of the vector
      *
-     * @return The pointer to the element following the last element of the vector
+     * @return The ptr to the element following the last element of the vector
      */
     T* end() const { return firstFree; }
 
@@ -124,7 +124,18 @@ public:
     T& front() noexcept;
     const T& front() const noexcept;
 
+    /**
+     * @brief Get the reference to the last element in the container.
+     *
+     * @return Reference to the last element.
+     */
     T& back() noexcept;
+
+    /**
+     * @brief Get the reference to the last element in the container.
+     *
+     * @return Reference to the last element.
+     */
     const T& back() const noexcept;
 
     ~vec();
@@ -149,13 +160,13 @@ private:
 template<typename T, typename Allocator>
 const T& vec<T, Allocator>::back() const noexcept {
     CHECK(!empty()) << "back() called on an empty vector";
-    return *--firstFree;
+    return *(firstFree - 1);
 }
 
 template<typename T, typename Allocator>
 T& vec<T, Allocator>::back() noexcept {
     CHECK(!empty()) << "back() called on an empty vector";
-    return *--firstFree;
+    return *(firstFree - 1);
 }
 
 template<typename T, typename Allocator>
@@ -163,6 +174,7 @@ const T& vec<T, Allocator>::front() const noexcept {
     CHECK(!empty()) << "front() called on an empty vector";
     return *start;
 }
+
 template<typename T, typename Allocator>
 T& vec<T, Allocator>::front() noexcept {
     CHECK(!empty()) << "front() called on an empty vector";
