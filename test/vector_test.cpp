@@ -15,8 +15,6 @@ TEST(MyVectorTest, general) {
 
     vec<int> ans{8, 4, -1, 9, 6, 9};
 
-    std::cout << v;
-
     ASSERT_TRUE(v == ans);
 }
 

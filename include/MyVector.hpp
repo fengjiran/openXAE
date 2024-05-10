@@ -405,12 +405,21 @@ bool operator!=(const vec<T, Allocator>& x, const vec<T, Allocator>& y) {
     return !(x == y);
 }
 
-template<typename T>
-std::ostream& operator<<(std::ostream& s, const vec<T>& v)
-{
+template<typename T, typename Allocator>
+std::ostream& operator<<(std::ostream& s, const vec<T, Allocator>& v) {
     s.put('{');
-    for (char comma[]{'\0', ' ', '\0'}; const auto& e : v)
-        s << comma << e, comma[0] = ',';
+
+    //    // Range-based for loop initialization statements(c++ 20)
+    //    for (char comma[]{'\0', ' ', '\0'}; const auto& e : v) {
+    //        s << comma << e;
+    //        comma[0] = ',';
+    //    }
+
+    char comma[]{'\0', ' ', '\0'};
+    for (const auto& e: v) {
+        s << comma << e;
+        comma[0] = ',';
+    }
     return s << "}\n";
 }
 
