@@ -35,6 +35,10 @@ public:
      */
     vec(size_type n, const T& t);
 
+    vec(const T* first, const T* last);
+
+    //    vec(const char* const* first, const char* const* last);
+
     /**
      * @brief Constructor with initializer list
      *
@@ -338,6 +342,14 @@ vec<T, Allocator>::vec(size_type n, const T& t) {
     for (size_type i = 0; i < n; ++i) {
         allocTraits::construct(alloc, firstFree++, t);
     }
+}
+
+template<typename T, typename Allocator>
+vec<T, Allocator>::vec(const T* first, const T* last) {
+    auto data = Allocate(first, last);
+    start = data.first;
+    firstFree = data.second;
+    cap = data.second;
 }
 
 template<typename T, typename Allocator>
