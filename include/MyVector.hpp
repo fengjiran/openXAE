@@ -4,9 +4,10 @@
 #ifndef OPENXAE_MYVECTOR_HPP
 #define OPENXAE_MYVECTOR_HPP
 
+#include "MyAllocator.hpp"
+#include "MyIterator.hpp"
 #include "config.hpp"
 #include "glog/logging.h"
-#include "MyAllocator.hpp"
 
 namespace XAcceleratorEngine {
 
