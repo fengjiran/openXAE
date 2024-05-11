@@ -27,9 +27,9 @@ public:
     template<typename U>
     explicit MyAllocator(const MyAllocator<U>&) noexcept {}
 
-    pointer allocate(size_type n) noexcept {
+    pointer allocate(size_type n) {
         if (n > std::allocator_traits<MyAllocator>::max_size(*this)) {
-            throw std::bad_alloc();
+            throw std::bad_array_new_length();
         }
         return static_cast<pointer>(::operator new(n * sizeof(value_type)));
     }

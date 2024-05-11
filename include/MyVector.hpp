@@ -6,10 +6,11 @@
 
 #include "config.hpp"
 #include "glog/logging.h"
+#include "MyAllocator.hpp"
 
 namespace XAcceleratorEngine {
 
-template<typename T, typename Allocator = std::allocator<T>>
+template<typename T, typename Allocator = MyAllocator<T> /* = std::allocator<T>*/>
 class vec {
 public:
     using allocTraits = std::allocator_traits<Allocator>;
