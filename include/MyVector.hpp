@@ -4,6 +4,7 @@
 #ifndef OPENXAE_MYVECTOR_HPP
 #define OPENXAE_MYVECTOR_HPP
 
+#include "config.hpp"
 #include "glog/logging.h"
 
 namespace XAcceleratorEngine {
@@ -106,7 +107,7 @@ public:
      */
     T* end() const { return firstFree; }
 
-    bool empty() const { return firstFree == start; }
+    CPP_NODISCARD bool empty() const { return firstFree == start; }
 
     void reserve(size_type n);
     void resize(size_type n);

@@ -47,6 +47,7 @@ TEST(MyVectorTest, back) {
     ASSERT_EQ(letters.back(), 'f');
     if (!letters.empty())
         std::cout << "The last character is '" << letters.back() << "'.\n";
+    std::cout << __cplusplus;
 }
 
 }// namespace XAcceleratorEngine
