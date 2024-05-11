@@ -90,6 +90,11 @@ private:
     explicit MyIterator(iterator_type x) noexcept : i(x) {}
 };
 
+template<typename Iter>
+bool operator==(const MyIterator<Iter>& lhs, const MyIterator<Iter>& rhs) noexcept {
+    return lhs.base() == rhs.base();
+}
+
 }// namespace XAcceleratorEngine
 
 #endif//OPENXAE_MYITERATOR_HPP

@@ -14,8 +14,15 @@ namespace XAcceleratorEngine {
 template<typename T, typename Allocator = MyAllocator<T> /* = std::allocator<T>*/>
 class vec {
 public:
-    using allocTraits = std::allocator_traits<Allocator>;
-    using size_type = typename allocTraits::size_type;
+    using value_type = T;
+    using allocator_type = Allocator;
+    using alloc_traits = std::allocator_traits<allocator_type>;
+    using size_type = typename alloc_traits::size_type;
+    using difference_type = typename alloc_traits::difference_type;
+    using pointer = typename alloc_traits::pointer;
+    using const_pointer = typename alloc_traits::const_pointer;
+    using reference = value_type&;
+    using const_reference = const value_type&;
 
 public:
     /**
@@ -36,11 +43,15 @@ public:
      * @param n Size
      * @param t Initial value
      */
-    vec(size_type n, const T& t);
+    vec(size_type n, const_reference t);
 
-    vec(const T* first, const T* last);
-
-    //    vec(const char* const* first, const char* const* last);
+    /**
+     * @brief Constructor with range [first, last)
+     *
+     * @param first first ptr
+     * @param last last ptr
+     */
+    vec(const_pointer first, const_pointer last);
 
     /**
      * @brief Constructor with initializer list
@@ -100,55 +111,55 @@ public:
      *
      * @return The pointer of the first element
      */
-    T* begin() const { return start; }
+    pointer begin() const { return start; }
 
     /**
      * @brief Get the ptr to the element following the last element of the vector
      *
      * @return The ptr to the element following the last element of the vector
      */
-    T* end() const { return firstFree; }
+    pointer end() const { return firstFree; }
 
     CPP_NODISCARD bool empty() const { return firstFree == start; }
 
     void reserve(size_type n);
     void resize(size_type n);
-    void resize(size_type n, const T& t);
-    T* data() { return start; }
+    void resize(size_type n, const_reference t);
+    pointer data() { return start; }
 
-    void push_back(const T& t);
-    void push_back(T&& t);
+    void push_back(const_reference t);
+    void push_back(value_type&& t);
 
     template<typename... Args>
     void emplace_back(Args&&... args);
 
-    T& operator[](size_type pos) noexcept;
-    const T& operator[](size_type pos) const noexcept;
+    reference operator[](size_type pos) noexcept;
+    const_reference operator[](size_type pos) const noexcept;
 
-    T& at(size_type pos);
-    const T& at(size_type pos) const;
+    reference at(size_type pos);
+    const_reference at(size_type pos) const;
 
-    T& front() noexcept;
-    const T& front() const noexcept;
-
-    /**
-     * @brief Get the reference to the last element in the container.
-     *
-     * @return Reference to the last element.
-     */
-    T& back() noexcept;
+    reference front() noexcept;
+    const_reference front() const noexcept;
 
     /**
      * @brief Get the reference to the last element in the container.
      *
      * @return Reference to the last element.
      */
-    const T& back() const noexcept;
+    reference back() noexcept;
+
+    /**
+     * @brief Get the reference to the last element in the container.
+     *
+     * @return Reference to the last element.
+     */
+    const_reference back() const noexcept;
 
     ~vec();
 
 private:
-    std::pair<T*, T*> Allocate(const T* b, const T* e);
+    std::pair<pointer, pointer> Allocate(const_pointer b, const_pointer e);
     void free();
     void reallocate();
     void reallocate(size_type newCap);
@@ -158,50 +169,57 @@ private:
         }
     }
 
-    Allocator alloc;
-    T* start;
-    T* cap;
-    T* firstFree;
+    allocator_type alloc;
+    pointer start;
+    pointer cap;
+    pointer firstFree;
 };
 
 template<typename T, typename Allocator>
-const T& vec<T, Allocator>::back() const noexcept {
+typename vec<T, Allocator>::const_reference
+vec<T, Allocator>::back() const noexcept {
     CHECK(!empty()) << "back() called on an empty vector";
     return *(firstFree - 1);
 }
 
 template<typename T, typename Allocator>
-T& vec<T, Allocator>::back() noexcept {
+typename vec<T, Allocator>::reference
+vec<T, Allocator>::back() noexcept {
     CHECK(!empty()) << "back() called on an empty vector";
     return *(firstFree - 1);
 }
 
 template<typename T, typename Allocator>
-const T& vec<T, Allocator>::front() const noexcept {
+typename vec<T, Allocator>::const_reference
+vec<T, Allocator>::front() const noexcept {
     CHECK(!empty()) << "front() called on an empty vector";
     return *start;
 }
 
 template<typename T, typename Allocator>
-T& vec<T, Allocator>::front() noexcept {
+typename vec<T, Allocator>::reference
+vec<T, Allocator>::front() noexcept {
     CHECK(!empty()) << "front() called on an empty vector";
     return *start;
 }
 
 template<typename T, typename Allocator>
-const T& vec<T, Allocator>::operator[](size_type pos) const noexcept {
+typename vec<T, Allocator>::const_reference
+vec<T, Allocator>::operator[](size_type pos) const noexcept {
     CHECK(pos < size()) << "vector[] index out of bounds";
     return start[pos];
 }
 
 template<typename T, typename Allocator>
-T& vec<T, Allocator>::operator[](size_type pos) noexcept {
+typename vec<T, Allocator>::reference
+vec<T, Allocator>::operator[](size_type pos) noexcept {
     CHECK(pos < size()) << "vector[] index out of bounds";
     return start[pos];
 }
 
 template<typename T, typename Allocator>
-T& vec<T, Allocator>::at(size_type pos) {
+typename vec<T, Allocator>::reference
+vec<T, Allocator>::at(size_type pos) {
     if (pos >= size()) {
         throw std::out_of_range("index out of bounds");
     }
@@ -209,7 +227,8 @@ T& vec<T, Allocator>::at(size_type pos) {
 }
 
 template<typename T, typename Allocator>
-const T& vec<T, Allocator>::at(size_type pos) const {
+typename vec<T, Allocator>::const_reference
+vec<T, Allocator>::at(size_type pos) const {
     if (pos >= size()) {
         throw std::out_of_range("index out of bounds");
     }
@@ -220,19 +239,19 @@ template<typename T, typename Allocator>
 template<typename... Args>
 void vec<T, Allocator>::emplace_back(Args&&... args) {
     CheckAndAlloc();
-    allocTraits::construct(alloc, firstFree++, std::forward<Args>(args)...);
+    alloc_traits::construct(alloc, firstFree++, std::forward<Args>(args)...);
 }
 
 template<typename T, typename Allocator>
-void vec<T, Allocator>::push_back(T&& t) {
+void vec<T, Allocator>::push_back(value_type&& t) {
     CheckAndAlloc();
-    allocTraits::construct(alloc, firstFree++, std::move(t));
+    alloc_traits::construct(alloc, firstFree++, std::move(t));
 }
 
 template<typename T, typename Allocator>
-void vec<T, Allocator>::push_back(const T& t) {
+void vec<T, Allocator>::push_back(const_reference t) {
     CheckAndAlloc();
-    allocTraits::construct(alloc, firstFree++, t);
+    alloc_traits::construct(alloc, firstFree++, t);
 }
 
 template<typename T, typename Allocator>
@@ -243,13 +262,13 @@ void vec<T, Allocator>::resize(size_type n) {
         }
     } else {
         while (size() > n) {
-            allocTraits::destroy(alloc, --firstFree);
+            alloc_traits::destroy(alloc, --firstFree);
         }
     }
 }
 
 template<typename T, typename Allocator>
-void vec<T, Allocator>::resize(size_type n, const T& t) {
+void vec<T, Allocator>::resize(size_type n, const_reference t) {
     if (n > size()) {
         while (size() < n) {
             push_back(t);
@@ -271,11 +290,11 @@ vec<T, Allocator>::~vec() {
 
 template<typename T, typename Allocator>
 void vec<T, Allocator>::reallocate(size_type newCap) {
-    auto data = allocTraits::allocate(alloc, newCap);
+    auto data = alloc_traits::allocate(alloc, newCap);
     auto src = start;
     auto dst = data;
     for (size_type i = 0; i < size(); ++i) {
-        allocTraits::construct(alloc, dst, std::move(*src));
+        alloc_traits::construct(alloc, dst, std::move(*src));
         ++src;
         ++dst;
     }
@@ -288,11 +307,11 @@ void vec<T, Allocator>::reallocate(size_type newCap) {
 template<typename T, typename Allocator>
 void vec<T, Allocator>::reallocate() {
     size_type newCap = size() != 0 ? 2 * size() : 1;
-    auto data = allocTraits::allocate(alloc, newCap);
+    auto data = alloc_traits::allocate(alloc, newCap);
     auto src = start;
     auto dst = data;
     for (size_type i = 0; i < size(); ++i) {
-        allocTraits::construct(alloc, dst, std::move(*src));
+        alloc_traits::construct(alloc, dst, std::move(*src));
         ++src;
         ++dst;
     }
@@ -327,28 +346,28 @@ vec<T, Allocator>::vec(vec&& rhs) noexcept : start(rhs.start), firstFree(rhs.fir
 
 template<typename T, typename Allocator>
 vec<T, Allocator>::vec(size_type n) {
-    auto data = allocTraits::allocate(alloc, n);
+    auto data = alloc_traits::allocate(alloc, n);
     start = data;
     firstFree = data;
     cap = start + n;
     for (size_type i = 0; i < n; ++i) {
-        allocTraits::construct(alloc, firstFree++, T());
+        alloc_traits::construct(alloc, firstFree++, T());
     }
 }
 
 template<typename T, typename Allocator>
-vec<T, Allocator>::vec(size_type n, const T& t) {
-    auto data = allocTraits::allocate(alloc, n);
+vec<T, Allocator>::vec(size_type n, const_reference t) {
+    auto data = alloc_traits::allocate(alloc, n);
     start = data;
     firstFree = data;
     cap = start + n;
     for (size_type i = 0; i < n; ++i) {
-        allocTraits::construct(alloc, firstFree++, t);
+        alloc_traits::construct(alloc, firstFree++, t);
     }
 }
 
 template<typename T, typename Allocator>
-vec<T, Allocator>::vec(const T* first, const T* last) {
+vec<T, Allocator>::vec(const_pointer first, const_pointer last) {
     auto data = Allocate(first, last);
     start = data.first;
     firstFree = data.second;
@@ -394,8 +413,9 @@ vec<T, Allocator>& vec<T, Allocator>::operator=(const vec<T, Allocator>& rhs) {
 }
 
 template<typename T, typename Allocator>
-std::pair<T*, T*> vec<T, Allocator>::Allocate(const T* b, const T* e) {
-    auto dst = allocTraits::allocate(alloc, e - b);
+std::pair<typename vec<T, Allocator>::pointer, typename vec<T, Allocator>::pointer>
+vec<T, Allocator>::Allocate(const_pointer b, const_pointer e) {
+    auto dst = alloc_traits::allocate(alloc, e - b);
     return {dst, std::uninitialized_copy(b, e, dst)};
 }
 
@@ -404,9 +424,9 @@ void vec<T, Allocator>::free() {
     if (start) {
         auto p = firstFree;
         while (p != start) {
-            allocTraits::destroy(alloc, --p);
+            alloc_traits::destroy(alloc, --p);
         }
-        allocTraits::deallocate(alloc, start, cap - start);
+        alloc_traits::deallocate(alloc, start, cap - start);
     }
 }
 
