@@ -23,10 +23,8 @@ public:
 public:
     MyIterator() noexcept : i() {}
 
-    explicit MyIterator(iterator_type x) noexcept : i(x) {}
-
     template<typename U,
-             typename = typename std::enable_if<std::is_convertible<U, iterator_type>::value>::type>
+             typename std::enable_if<std::is_convertible<U, iterator_type>::value>::type* = nullptr>
     explicit MyIterator(const MyIterator<U>& u) noexcept : i(u.base()) {}
 
     reference operator*() const noexcept {
@@ -89,6 +87,11 @@ public:
 
 private:
     iterator_type i;
+
+    explicit MyIterator(iterator_type x) noexcept : i(x) {}
+
+    template<typename T, typename Allocator>
+    friend class vec;
 };
 
 template<typename Iter>
