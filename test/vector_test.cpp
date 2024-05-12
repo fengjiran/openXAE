@@ -10,6 +10,7 @@ namespace XAcceleratorEngine {
 TEST(MyVectorTest, ctor) {
     vec<std::string> words1{"the", "frogurt", "is", "also", "cursed"};
     std::cout << "1: " << words1;
+    ASSERT_EQ(words1.size(), 5);
 
     vec<std::string> words2(words1.begin(), words1.end());
     std::cout << "2: " << words2;
@@ -19,6 +20,7 @@ TEST(MyVectorTest, ctor) {
 
     vec<std::string> words4(5, "Mo");
     std::cout << "4: " << words4;
+    ASSERT_EQ(words4.size(), 5);
 
     auto const rg = {"cat", "cow", "crow"};
 #ifdef __cpp_lib_containers_ranges

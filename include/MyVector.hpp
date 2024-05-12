@@ -46,7 +46,7 @@ public:
      *
      * @param n Size
      */
-    explicit vec(size_type n);
+    explicit vec(size_type n, const allocator_type& alloc_ = allocator_type());
 
     /**
      * @brief Constructor with size and initial value
@@ -54,7 +54,7 @@ public:
      * @param n Size
      * @param t Initial value
      */
-    vec(size_type n, const_reference t);
+    vec(size_type n, const_reference value, const allocator_type& alloc_ = allocator_type());
 
     /**
      * @brief Constructor with range [first, last)
@@ -66,7 +66,7 @@ public:
 
     template<typename InputIterator,
              typename has_input_iterator_category<InputIterator, iterator>::type = 0>
-    vec(InputIterator first, InputIterator last);
+    vec(InputIterator first, InputIterator last, const allocator_type& alloc_ = allocator_type());
 
 
     /**
@@ -85,6 +85,8 @@ public:
      */
     vec(const vec& rhs);
 
+    vec(const vec& rhs, const allocator_type& alloc_);
+
     /**
      * @brief Copy assignment operator
      *
@@ -99,6 +101,8 @@ public:
      * @param rhs Right Hand Side
      */
     vec(vec&& rhs) noexcept;
+
+    //    vec(vec&& rhs, const allocator_type& alloc_);
 
     /**
      * @brief Move assignment
@@ -374,14 +378,13 @@ vec<T, Allocator>& vec<T, Allocator>::operator=(vec&& rhs) noexcept {
 
 template<typename T, typename Allocator>
 vec<T, Allocator>::vec(vec&& rhs) noexcept : start(rhs.start), firstFree(rhs.firstFree), cap(rhs.cap) {
-    LOG(INFO) << " use move constructor";
     rhs.start = nullptr;
     rhs.firstFree = nullptr;
     rhs.cap = nullptr;
 }
 
 template<typename T, typename Allocator>
-vec<T, Allocator>::vec(size_type n) {
+vec<T, Allocator>::vec(size_type n, const allocator_type& alloc_) : alloc(alloc_) {
     auto data = alloc_traits::allocate(alloc, n);
     start = data;
     firstFree = data;
@@ -392,13 +395,13 @@ vec<T, Allocator>::vec(size_type n) {
 }
 
 template<typename T, typename Allocator>
-vec<T, Allocator>::vec(size_type n, const_reference t) {
+vec<T, Allocator>::vec(size_type n, const_reference value, const allocator_type& alloc_) : alloc(alloc_) {
     auto data = alloc_traits::allocate(alloc, n);
     start = data;
     firstFree = data;
     cap = start + n;
     for (size_type i = 0; i < n; ++i) {
-        alloc_traits::construct(alloc, firstFree++, t);
+        alloc_traits::construct(alloc, firstFree++, value);
     }
 }
 
@@ -413,7 +416,7 @@ vec<T, Allocator>::vec(const_pointer first, const_pointer last) {
 template<typename T, typename Allocator>
 template<typename InputIterator,
          typename has_input_iterator_category<InputIterator, typename vec<T, Allocator>::iterator>::type>
-vec<T, Allocator>::vec(InputIterator first, InputIterator last) {
+vec<T, Allocator>::vec(InputIterator first, InputIterator last, const allocator_type& alloc_) : alloc(alloc_) {
     auto data = Allocate(first, last);
     start = data.first;
     firstFree = data.second;
@@ -440,6 +443,14 @@ vec<T, Allocator>& vec<T, Allocator>::operator=(std::initializer_list<T> il) {
 
 template<typename T, typename Allocator>
 vec<T, Allocator>::vec(const vec<T, Allocator>& rhs) {
+    auto data = Allocate(rhs.begin(), rhs.end());
+    start = data.first;
+    firstFree = data.second;
+    cap = data.second;
+}
+
+template<typename T, typename Allocator>
+vec<T, Allocator>::vec(const vec<T, Allocator>& rhs, const allocator_type& alloc_) : alloc(alloc_) {
     auto data = Allocate(rhs.begin(), rhs.end());
     start = data.first;
     firstFree = data.second;
