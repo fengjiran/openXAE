@@ -36,7 +36,10 @@ public:
     /**
      * @brief Default constructor
      */
-    vec() : start(nullptr), cap(nullptr), firstFree(nullptr) {}
+    vec() noexcept(noexcept(allocator_type())) : start(nullptr), cap(nullptr), firstFree(nullptr) {}
+
+    explicit vec(const allocator_type& alloc_) noexcept
+        : start(nullptr), cap(nullptr), firstFree(nullptr), alloc(alloc_) {}
 
     /**
      * @brief Constructor with size and default initialization
@@ -120,12 +123,10 @@ public:
     size_type capacity() const { return cap - start; }
 
     /**
-     * @brief Get the first element pointer of the vector
+     * @brief Get the first element iterator of the vector
      *
      * @return The pointer of the first element
      */
-    //    pointer begin() const { return start; }
-
     iterator begin() noexcept { return MakeIter(start); }
 
     const_iterator begin() const noexcept { return MakeIter(start); }

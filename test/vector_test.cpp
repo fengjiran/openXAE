@@ -27,6 +27,19 @@ TEST(MyVectorTest, ctor) {
     vec<std::string> words5(rg.begin(), rg.end());// overload (5)
 #endif
     std::cout << "5: " << words5;
+
+    auto alloc1 = std::allocator<int>();
+    auto alloc2 = MyAllocator<int>();
+    std::vector<int> a(alloc1);
+    vec<int, std::allocator<int>> b(alloc1);
+
+    std::vector<int, MyAllocator<int>> aa(alloc2);
+    vec<int, MyAllocator<int>> bb(alloc2);
+
+    ASSERT_TRUE(a.empty());
+    ASSERT_TRUE(b.empty());
+    ASSERT_TRUE(aa.empty());
+    ASSERT_TRUE(bb.empty());
 }
 
 TEST(MyVectorTest, general) {
@@ -36,7 +49,6 @@ TEST(MyVectorTest, general) {
     v[2] = -1;
 
     vec<int> ans{8, 4, -1, 9, 6, 9};
-
     ASSERT_TRUE(v == ans);
 }
 
