@@ -111,38 +111,70 @@ bool operator!=(const MyIterator<Iter1>& lhs, const MyIterator<Iter2>& rhs) noex
     return !(lhs == rhs);
 }
 
+template<typename Iter>
+bool operator<(const MyIterator<Iter>& lhs, const MyIterator<Iter>& rhs) noexcept {
+    return lhs.base() < rhs.base();
+}
+
+template<typename Iter1, typename Iter2>
+bool operator<(const MyIterator<Iter1>& lhs, const MyIterator<Iter2>& rhs) noexcept {
+    return lhs.base() < rhs.base();
+}
+
+template<typename Iter>
+bool operator>(const MyIterator<Iter>& lhs, const MyIterator<Iter>& rhs) noexcept {
+    return rhs < lhs;
+}
+
+template<typename Iter1, typename Iter2>
+bool operator>(const MyIterator<Iter1>& lhs, const MyIterator<Iter2>& rhs) noexcept {
+    return rhs < lhs;
+}
+
+template<typename Iter>
+bool operator>=(const MyIterator<Iter>& lhs, const MyIterator<Iter>& rhs) noexcept {
+    return !(lhs < rhs);
+}
+
+template<typename Iter1, typename Iter2>
+bool operator>=(const MyIterator<Iter1>& lhs, const MyIterator<Iter2>& rhs) noexcept {
+    return !(lhs < rhs);
+}
+
+template<typename Iter>
+bool operator<=(const MyIterator<Iter>& lhs, const MyIterator<Iter>& rhs) noexcept {
+    return !(rhs < lhs);
+}
+
+template<typename Iter1, typename Iter2>
+bool operator<=(const MyIterator<Iter1>& lhs, const MyIterator<Iter2>& rhs) noexcept {
+    return !(rhs < lhs);
+}
+
+
 template<typename Iter1, typename Iter2>
 auto operator-(const MyIterator<Iter1>& lhs, const MyIterator<Iter2>& rhs) noexcept
         -> decltype(lhs.base() - rhs.base()) {
     return lhs.base() - rhs.base();
 }
 
-//using true_type = std::integral_constant<bool, true>;
-//using false_type = std::integral_constant<bool, false>;
-//
-//template<typename T>
-//struct has_iterator_category {
-//private:
-//    template<class _Up>
-//    static false_type __test(...);
-//
-//    template<class _Up>
-//    static true_type __test(typename _Up::iterator_category* = nullptr);
-//
-//public:
-//    static const bool value = decltype(__test<T>(nullptr))::value;
-//};
+template<typename Iter>
+MyIterator<Iter> operator+(typename MyIterator<Iter>::difference_type n, MyIterator<Iter> x) {
+    x += n;
+    return x;
+}
+
+template<typename Iter>
+MyIterator<Iter> operator+(MyIterator<Iter> x, typename MyIterator<Iter>::difference_type n) {
+    x += n;
+    return x;
+}
 
 template<typename Iter>
 using has_input_iterator_category = typename std::enable_if<
         std::is_convertible<typename std::iterator_traits<Iter>::iterator_category,
                             std::input_iterator_tag>::value,
         int>;
-
-template<typename Iter>
-using has_input_iterator_category1 = std::is_convertible<typename std::iterator_traits<Iter>::iterator_category,
-                                                         std::input_iterator_tag>;
-
 }// namespace XAcceleratorEngine
 
 #endif//OPENXAE_MYITERATOR_HPP

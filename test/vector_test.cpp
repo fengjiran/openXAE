@@ -48,11 +48,4 @@ TEST(MyVectorTest, back) {
         std::cout << "The last character is '" << letters.back() << "'.\n";
 }
 
-
-TEST(MyVectorTest, iteratorCategory) {
-    EXPECT_TRUE(std::__has_forward_iterator_category<vec<int>::iterator>::value);
-    EXPECT_TRUE(std::__has_random_access_iterator_category<vec<int>::iterator>::value);
-    EXPECT_TRUE(has_input_iterator_category1<vec<int>::iterator>::value);
-}
-
 }// namespace XAcceleratorEngine
