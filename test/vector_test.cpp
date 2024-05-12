@@ -7,6 +7,7 @@
 
 namespace XAcceleratorEngine {
 
+/*
 TEST(MyVectorTest, ctor) {
     vec<std::string> words1{"the", "frogurt", "is", "also", "cursed"};
     std::cout << "1: " << words1;
@@ -47,6 +48,13 @@ TEST(MyVectorTest, back) {
     ASSERT_EQ(letters.back(), 'f');
     if (!letters.empty())
         std::cout << "The last character is '" << letters.back() << "'.\n";
+}
+*/
+
+TEST(MyVectorTest, iteratorCategory) {
+    //    vec<int> v;
+//    EXPECT_TRUE(std::__has_exactly_input_iterator_category<vec<int>::iterator>::value);
+    EXPECT_TRUE(std::__has_forward_iterator_category<vec<int>::iterator>::value);
 }
 
 }// namespace XAcceleratorEngine

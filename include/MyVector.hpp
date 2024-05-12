@@ -24,6 +24,14 @@ public:
     using reference = value_type&;
     using const_reference = const value_type&;
 
+    using iterator = MyIterator<pointer>;
+    using const_iterator = MyIterator<const_pointer>;
+    using reverse_iterator = std::reverse_iterator<iterator>;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+    static_assert((std::is_same<typename allocator_type::value_type, value_type>::value),
+                  "Allocator::value_type must be same type as value_type");
+
 public:
     /**
      * @brief Default constructor
@@ -111,14 +119,22 @@ public:
      *
      * @return The pointer of the first element
      */
-    pointer begin() const { return start; }
+    //    pointer begin() const { return start; }
+
+    iterator begin() noexcept { return MakeIter(start); }
+
+    const_iterator begin() const noexcept { return MakeIter(start); }
 
     /**
      * @brief Get the ptr to the element following the last element of the vector
      *
      * @return The ptr to the element following the last element of the vector
      */
-    pointer end() const { return firstFree; }
+    //    pointer end() const { return firstFree; }
+
+    iterator end() noexcept { return MakeIter(firstFree); }
+
+    const_iterator end() const noexcept { MakeIter(firstFree); }
 
     CPP_NODISCARD bool empty() const { return firstFree == start; }
 
@@ -169,6 +185,15 @@ private:
         }
     }
 
+    iterator MakeIter(pointer p) noexcept {
+        return iterator(p);
+    }
+
+    const_iterator MakeIter(const_pointer p) const noexcept {
+        return const_iterator(p);
+    }
+
+private:
     allocator_type alloc;
     pointer start;
     pointer cap;
