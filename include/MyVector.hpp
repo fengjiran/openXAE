@@ -61,6 +61,11 @@ public:
      */
     vec(const_pointer first, const_pointer last);
 
+    template<typename InputIterator,
+             typename has_input_iterator_category<InputIterator>::type = 0>
+    vec(InputIterator first, InputIterator last);
+
+
     /**
      * @brief Constructor with initializer list
      *
@@ -134,7 +139,7 @@ public:
 
     iterator end() noexcept { return MakeIter(firstFree); }
 
-    const_iterator end() const noexcept { MakeIter(firstFree); }
+    const_iterator end() const noexcept { return MakeIter(firstFree); }
 
     CPP_NODISCARD bool empty() const { return firstFree == start; }
 
@@ -176,6 +181,11 @@ public:
 
 private:
     std::pair<pointer, pointer> Allocate(const_pointer b, const_pointer e);
+
+    template<typename InputIterator,
+             typename has_input_iterator_category<InputIterator>::type = 0>
+    std::pair<pointer, pointer> Allocate(InputIterator first, InputIterator last);
+
     void free();
     void reallocate();
     void reallocate(size_type newCap);
@@ -400,6 +410,16 @@ vec<T, Allocator>::vec(const_pointer first, const_pointer last) {
 }
 
 template<typename T, typename Allocator>
+template<typename InputIterator,
+         typename has_input_iterator_category<InputIterator>::type>
+vec<T, Allocator>::vec(InputIterator first, InputIterator last) {
+    auto data = Allocate(first, last);
+    start = data.first;
+    firstFree = data.second;
+    cap = data.second;
+}
+
+template<typename T, typename Allocator>
 vec<T, Allocator>::vec(std::initializer_list<T> il) {
     auto data = Allocate(il.begin(), il.end());
     start = data.first;
@@ -442,6 +462,15 @@ std::pair<typename vec<T, Allocator>::pointer, typename vec<T, Allocator>::point
 vec<T, Allocator>::Allocate(const_pointer b, const_pointer e) {
     auto dst = alloc_traits::allocate(alloc, e - b);
     return {dst, std::uninitialized_copy(b, e, dst)};
+}
+
+template<typename T, typename Allocator>
+template<typename InputIterator,
+         typename has_input_iterator_category<InputIterator>::type>
+std::pair<typename vec<T, Allocator>::pointer, typename vec<T, Allocator>::pointer>
+vec<T, Allocator>::Allocate(InputIterator first, InputIterator last) {
+    auto dst = alloc_traits::allocate(alloc, last - first);
+    return {dst, std::uninitialized_copy(first, last, dst)};
 }
 
 template<typename T, typename Allocator>

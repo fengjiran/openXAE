@@ -5,8 +5,8 @@
 #ifndef OPENXAE_MYITERATOR_HPP
 #define OPENXAE_MYITERATOR_HPP
 
-//#include <__iterator/iterator_traits.h>
 #include <iterator>
+#include <type_traits>
 
 namespace XAcceleratorEngine {
 
@@ -22,6 +22,8 @@ public:
 
 public:
     MyIterator() noexcept : i() {}
+
+    explicit MyIterator(iterator_type x) noexcept : i(x) {}
 
     template<typename U,
              typename = typename std::enable_if<std::is_convertible<U, iterator_type>::value>::type>
@@ -87,14 +89,59 @@ public:
 
 private:
     iterator_type i;
-
-    explicit MyIterator(iterator_type x) noexcept : i(x) {}
 };
 
 template<typename Iter>
 bool operator==(const MyIterator<Iter>& lhs, const MyIterator<Iter>& rhs) noexcept {
     return lhs.base() == rhs.base();
 }
+
+template<typename Iter1, typename Iter2>
+bool operator==(const MyIterator<Iter1>& lhs, const MyIterator<Iter2>& rhs) noexcept {
+    return lhs.base() == rhs.base();
+}
+
+template<typename Iter>
+bool operator!=(const MyIterator<Iter>& lhs, const MyIterator<Iter>& rhs) noexcept {
+    return !(lhs == rhs);
+}
+
+template<typename Iter1, typename Iter2>
+bool operator!=(const MyIterator<Iter1>& lhs, const MyIterator<Iter2>& rhs) noexcept {
+    return !(lhs == rhs);
+}
+
+template<typename Iter1, typename Iter2>
+auto operator-(const MyIterator<Iter1>& lhs, const MyIterator<Iter2>& rhs) noexcept
+        -> decltype(lhs.base() - rhs.base()) {
+    return lhs.base() - rhs.base();
+}
+
+//using true_type = std::integral_constant<bool, true>;
+//using false_type = std::integral_constant<bool, false>;
+//
+//template<typename T>
+//struct has_iterator_category {
+//private:
+//    template<class _Up>
+//    static false_type __test(...);
+//
+//    template<class _Up>
+//    static true_type __test(typename _Up::iterator_category* = nullptr);
+//
+//public:
+//    static const bool value = decltype(__test<T>(nullptr))::value;
+//};
+
+template<typename Iter>
+using has_input_iterator_category = typename std::enable_if<
+        std::is_convertible<typename std::iterator_traits<Iter>::iterator_category,
+                            std::input_iterator_tag>::value,
+        int>;
+
+template<typename Iter>
+using has_input_iterator_category1 = std::is_convertible<typename std::iterator_traits<Iter>::iterator_category,
+                                                         std::input_iterator_tag>;
 
 }// namespace XAcceleratorEngine
 

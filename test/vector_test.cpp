@@ -7,7 +7,6 @@
 
 namespace XAcceleratorEngine {
 
-/*
 TEST(MyVectorTest, ctor) {
     vec<std::string> words1{"the", "frogurt", "is", "also", "cursed"};
     std::cout << "1: " << words1;
@@ -21,14 +20,13 @@ TEST(MyVectorTest, ctor) {
     vec<std::string> words4(5, "Mo");
     std::cout << "4: " << words4;
 
-    //    auto const rg = {"cat", "cow", "crow"};
-    //#ifdef __cpp_lib_containers_ranges
-    //    vec<std::string> words5(std::from_range, rg); // overload (11)
-    //#else
-    //    vec<std::string> words5(rg.begin(), rg.end()); // overload (5)
-    //    std::vector<std::string> x(rg.begin(), rg.end());
-    //#endif
-    //    std::cout << "5: " << words5;
+    auto const rg = {"cat", "cow", "crow"};
+#ifdef __cpp_lib_containers_ranges
+    vec<std::string> words5(std::from_range, rg);// overload (11)
+#else
+    vec<std::string> words5(rg.begin(), rg.end());// overload (5)
+#endif
+    std::cout << "5: " << words5;
 }
 
 TEST(MyVectorTest, general) {
@@ -49,12 +47,12 @@ TEST(MyVectorTest, back) {
     if (!letters.empty())
         std::cout << "The last character is '" << letters.back() << "'.\n";
 }
-*/
+
 
 TEST(MyVectorTest, iteratorCategory) {
-    //    vec<int> v;
-//    EXPECT_TRUE(std::__has_exactly_input_iterator_category<vec<int>::iterator>::value);
     EXPECT_TRUE(std::__has_forward_iterator_category<vec<int>::iterator>::value);
+    EXPECT_TRUE(std::__has_random_access_iterator_category<vec<int>::iterator>::value);
+    EXPECT_TRUE(has_input_iterator_category1<vec<int>::iterator>::value);
 }
 
 }// namespace XAcceleratorEngine
