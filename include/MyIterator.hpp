@@ -32,6 +32,7 @@ public:
     }
 
     pointer operator->() const noexcept {
+        static_assert(!std::is_function<value_type>::value, "value is a function type");
         return i;
     }
 
