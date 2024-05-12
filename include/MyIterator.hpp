@@ -174,10 +174,10 @@ MyIterator<Iter> operator+(MyIterator<Iter> x, typename MyIterator<Iter>::differ
     return x;
 }
 
-template<typename Iter>
+template<typename Iter1, typename Iter2>
 using has_input_iterator_category = typename std::enable_if<
-        std::is_convertible<typename std::iterator_traits<Iter>::iterator_category,
-                            std::input_iterator_tag>::value,
+        std::is_convertible<typename std::iterator_traits<Iter1>::iterator_category, std::input_iterator_tag>::value &&
+                std::is_constructible<typename std::iterator_traits<Iter2>::value_type, typename std::iterator_traits<Iter1>::reference>::value,
         int>;
 }// namespace XAcceleratorEngine
 

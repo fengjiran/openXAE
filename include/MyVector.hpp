@@ -62,7 +62,7 @@ public:
     vec(const_pointer first, const_pointer last);
 
     template<typename InputIterator,
-             typename has_input_iterator_category<InputIterator>::type = 0>
+             typename has_input_iterator_category<InputIterator, iterator>::type = 0>
     vec(InputIterator first, InputIterator last);
 
 
@@ -183,7 +183,7 @@ private:
     std::pair<pointer, pointer> Allocate(const_pointer b, const_pointer e);
 
     template<typename InputIterator,
-             typename has_input_iterator_category<InputIterator>::type = 0>
+             typename has_input_iterator_category<InputIterator, iterator>::type = 0>
     std::pair<pointer, pointer> Allocate(InputIterator first, InputIterator last);
 
     void free();
@@ -411,7 +411,7 @@ vec<T, Allocator>::vec(const_pointer first, const_pointer last) {
 
 template<typename T, typename Allocator>
 template<typename InputIterator,
-         typename has_input_iterator_category<InputIterator>::type>
+         typename has_input_iterator_category<InputIterator, typename vec<T, Allocator>::iterator>::type>
 vec<T, Allocator>::vec(InputIterator first, InputIterator last) {
     auto data = Allocate(first, last);
     start = data.first;
@@ -466,7 +466,7 @@ vec<T, Allocator>::Allocate(const_pointer b, const_pointer e) {
 
 template<typename T, typename Allocator>
 template<typename InputIterator,
-         typename has_input_iterator_category<InputIterator>::type>
+         typename has_input_iterator_category<InputIterator, typename vec<T, Allocator>::iterator>::type>
 std::pair<typename vec<T, Allocator>::pointer, typename vec<T, Allocator>::pointer>
 vec<T, Allocator>::Allocate(InputIterator first, InputIterator last) {
     auto dst = alloc_traits::allocate(alloc, last - first);
