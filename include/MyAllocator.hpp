@@ -39,6 +39,16 @@ public:
     }
 };
 
+template<typename T, typename U>
+inline bool operator==(const MyAllocator<T>&, const MyAllocator<U>&) noexcept {
+    return true;
+}
+
+template<typename T, typename U>
+inline bool operator!=(const MyAllocator<T>&, const MyAllocator<U>&) noexcept {
+    return false;
+}
+
 }// namespace XAcceleratorEngine
 
 #endif//OPENXAE_MYALLOCATOR_HPP

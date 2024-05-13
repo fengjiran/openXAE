@@ -11,6 +11,14 @@
 
 namespace XAcceleratorEngine {
 
+template<typename T>
+struct type_identity {
+    using type = T;
+};
+
+template<typename T>
+using type_identity_t = typename type_identity<T>::type;
+
 template<typename T, typename Allocator = MyAllocator<T> /* = std::allocator<T>*/>
 class vec {
 public:
@@ -36,7 +44,8 @@ public:
     /**
      * @brief Default constructor
      */
-    vec() noexcept(noexcept(allocator_type())) : start(nullptr), cap(nullptr), firstFree(nullptr) {}
+    vec() noexcept(noexcept(allocator_type()))
+        : start(nullptr), cap(nullptr), firstFree(nullptr), alloc(allocator_type()) {}
 
     explicit vec(const allocator_type& alloc_) noexcept
         : start(nullptr), cap(nullptr), firstFree(nullptr), alloc(alloc_) {}
@@ -74,7 +83,7 @@ public:
      *
      * @param il Initializer list
      */
-    vec(std::initializer_list<T> il);
+    vec(std::initializer_list<T> il, const allocator_type& alloc_ = allocator_type());
 
     vec& operator=(std::initializer_list<T> il);
 
@@ -85,7 +94,7 @@ public:
      */
     vec(const vec& rhs);
 
-    vec(const vec& rhs, const allocator_type& alloc_);
+    vec(const vec& rhs, const type_identity_t<allocator_type>& alloc_);
 
     /**
      * @brief Copy assignment operator
@@ -102,7 +111,7 @@ public:
      */
     vec(vec&& rhs) noexcept;
 
-    //    vec(vec&& rhs, const allocator_type& alloc_);
+    vec(vec&& rhs, const type_identity_t<allocator_type>& alloc_);
 
     /**
      * @brief Move assignment
@@ -377,14 +386,24 @@ vec<T, Allocator>& vec<T, Allocator>::operator=(vec&& rhs) noexcept {
 }
 
 template<typename T, typename Allocator>
-vec<T, Allocator>::vec(vec&& rhs) noexcept : start(rhs.start), firstFree(rhs.firstFree), cap(rhs.cap) {
+vec<T, Allocator>::vec(vec&& rhs) noexcept
+    : start(rhs.start), firstFree(rhs.firstFree), cap(rhs.cap), alloc(std::move(rhs.alloc)) {
     rhs.start = nullptr;
     rhs.firstFree = nullptr;
     rhs.cap = nullptr;
 }
 
 template<typename T, typename Allocator>
-vec<T, Allocator>::vec(size_type n, const allocator_type& alloc_) : alloc(alloc_) {
+vec<T, Allocator>::vec(vec&& rhs, const type_identity_t<allocator_type>& alloc_)
+    : start(rhs.start), firstFree(rhs.firstFree), cap(rhs.cap), alloc(alloc_) {
+    rhs.start = nullptr;
+    rhs.firstFree = nullptr;
+    rhs.cap = nullptr;
+}
+
+template<typename T, typename Allocator>
+vec<T, Allocator>::vec(size_type n, const allocator_type& alloc_)
+    : alloc(alloc_) {
     auto data = alloc_traits::allocate(alloc, n);
     start = data;
     firstFree = data;
@@ -395,7 +414,8 @@ vec<T, Allocator>::vec(size_type n, const allocator_type& alloc_) : alloc(alloc_
 }
 
 template<typename T, typename Allocator>
-vec<T, Allocator>::vec(size_type n, const_reference value, const allocator_type& alloc_) : alloc(alloc_) {
+vec<T, Allocator>::vec(size_type n, const_reference value, const allocator_type& alloc_)
+    : alloc(alloc_) {
     auto data = alloc_traits::allocate(alloc, n);
     start = data;
     firstFree = data;
@@ -416,7 +436,8 @@ vec<T, Allocator>::vec(const_pointer first, const_pointer last) {
 template<typename T, typename Allocator>
 template<typename InputIterator,
          typename has_input_iterator_category<InputIterator, typename vec<T, Allocator>::iterator>::type>
-vec<T, Allocator>::vec(InputIterator first, InputIterator last, const allocator_type& alloc_) : alloc(alloc_) {
+vec<T, Allocator>::vec(InputIterator first, InputIterator last, const allocator_type& alloc_)
+    : alloc(alloc_) {
     auto data = Allocate(first, last);
     start = data.first;
     firstFree = data.second;
@@ -424,7 +445,8 @@ vec<T, Allocator>::vec(InputIterator first, InputIterator last, const allocator_
 }
 
 template<typename T, typename Allocator>
-vec<T, Allocator>::vec(std::initializer_list<T> il) {
+vec<T, Allocator>::vec(std::initializer_list<T> il, const allocator_type& alloc_)
+    : alloc(alloc_) {
     auto data = Allocate(il.begin(), il.end());
     start = data.first;
     firstFree = data.second;
@@ -450,7 +472,8 @@ vec<T, Allocator>::vec(const vec<T, Allocator>& rhs) {
 }
 
 template<typename T, typename Allocator>
-vec<T, Allocator>::vec(const vec<T, Allocator>& rhs, const allocator_type& alloc_) : alloc(alloc_) {
+vec<T, Allocator>::vec(const vec<T, Allocator>& rhs, const type_identity_t<allocator_type>& alloc_)
+    : alloc(alloc_) {
     auto data = Allocate(rhs.begin(), rhs.end());
     start = data.first;
     firstFree = data.second;
