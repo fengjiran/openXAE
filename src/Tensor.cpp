@@ -6,112 +6,113 @@
 namespace XAcceleratorEngine {
 
 template<typename T>
-Tensor<T>::Tensor(uint32_t size) {
+Tensor<T>::Tensor(size_type size) {
     data_ = arma::Cube<T>(1, size, 1);
-    rawDims_ = std::vector<uint32_t>{size};
+    rawDims_ = std::vector<size_type>{size};
 }
 
 template<typename T>
-Tensor<T>::Tensor(uint32_t rows, uint32_t cols) {
+Tensor<T>::Tensor(size_type rows, size_type cols) {
     data_ = arma::Cube<T>(rows, cols, 1);
     if (rows == 1) {
-        rawDims_ = std::vector<uint32_t>{cols};
+        rawDims_ = std::vector<size_type>{cols};
     } else {
-        rawDims_ = std::vector<uint32_t>{rows, cols};
+        rawDims_ = std::vector<size_type>{rows, cols};
     }
 }
 
 template<typename T>
-Tensor<T>::Tensor(uint32_t channels, uint32_t rows, uint32_t cols) {
+Tensor<T>::Tensor(size_type channels, size_type rows, size_type cols) {
     data_ = arma::Cube<T>(rows, cols, channels);
     if (channels == 1 && rows == 1) {
-        rawDims_ = std::vector<uint32_t>{cols};
+        rawDims_ = std::vector<size_type>{cols};
     } else if (channels == 1) {
-        rawDims_ = std::vector<uint32_t>{rows, cols};
+        rawDims_ = std::vector<size_type>{rows, cols};
     } else {
-        rawDims_ = std::vector<uint32_t>{channels, rows, cols};
+        rawDims_ = std::vector<size_type>{channels, rows, cols};
     }
 }
 
 template<typename T>
-Tensor<T>::Tensor(const std::vector<uint32_t>& shape) {
+Tensor<T>::Tensor(const std::vector<size_type>& shape) {
     CHECK(!shape.empty() && shape.size() <= 3);
 
-    uint32_t remain = 3 - shape.size();
-    std::vector<uint32_t> shape_(3, 1);
+    size_type remain = 3 - shape.size();
+    std::vector<size_type> shape_(3, 1);
     std::copy(shape.begin(), shape.end(), shape_.begin() + remain);
 
-    uint32_t channels = shape_[0];
-    uint32_t rows = shape_[1];
-    uint32_t cols = shape_[2];
+    size_type channels = shape_[0];
+    size_type rows = shape_[1];
+    size_type cols = shape_[2];
 
     data_ = arma::Cube<T>(rows, cols, channels);
     if (channels == 1 && rows == 1) {
-        rawDims_ = std::vector<uint32_t>{cols};
+        rawDims_ = std::vector<size_type>{cols};
     } else if (channels == 1) {
-        rawDims_ = std::vector<uint32_t>{rows, cols};
+        rawDims_ = std::vector<size_type>{rows, cols};
     } else {
-        rawDims_ = std::vector<uint32_t>{channels, rows, cols};
+        rawDims_ = std::vector<size_type>{channels, rows, cols};
     }
 }
 
 template<typename T>
-Tensor<T>::Tensor(T* rawPtr, uint32_t size) {
+Tensor<T>::Tensor(T* rawPtr, size_type size) {
     CHECK_NE(rawPtr, nullptr);
-    rawDims_ = std::vector<uint32_t>{size};
+    rawDims_ = std::vector<size_type>{size};
     data_ = arma::Cube<T>(rawPtr, 1, size, 1, false, true);
 }
 
 template<typename T>
-Tensor<T>::Tensor(T* rawPtr, uint32_t rows, uint32_t cols) {
+Tensor<T>::Tensor(T* rawPtr, size_type rows, size_type cols) {
     CHECK_NE(rawPtr, nullptr);
     data_ = arma::Cube<T>(rawPtr, rows, cols, 1, false, true);
     if (rows == 1) {
-        rawDims_ = std::vector<uint32_t>{cols};
+        rawDims_ = std::vector<size_type>{cols};
     } else {
-        rawDims_ = std::vector<uint32_t>{rows, cols};
+        rawDims_ = std::vector<size_type>{rows, cols};
     }
 }
 
 template<typename T>
-Tensor<T>::Tensor(T* rawPtr, uint32_t channels, uint32_t rows, uint32_t cols) {
+Tensor<T>::Tensor(T* rawPtr, size_type channels, size_type rows, size_type cols) {
     CHECK_NE(rawPtr, nullptr);
     data_ = arma::Cube<T>(rawPtr, rows, cols, channels, false, true);
     if (channels == 1 && rows == 1) {
-        rawDims_ = std::vector<uint32_t>{cols};
+        rawDims_ = std::vector<size_type>{cols};
     } else if (channels == 1) {
-        rawDims_ = std::vector<uint32_t>{rows, cols};
+        rawDims_ = std::vector<size_type>{rows, cols};
     } else {
-        rawDims_ = std::vector<uint32_t>{channels, rows, cols};
+        rawDims_ = std::vector<size_type>{channels, rows, cols};
     }
 }
 
 template<typename T>
-Tensor<T>::Tensor(T* rawPtr, const std::vector<uint32_t>& shape) {
+Tensor<T>::Tensor(T* rawPtr, const std::vector<size_type>& shape) {
     CHECK_NE(rawPtr, nullptr);
     CHECK(!shape.empty() && shape.size() <= 3);
 
-    uint32_t remain = 3 - shape.size();
-    std::vector<uint32_t> shape_(3, 1);
+    size_type remain = 3 - shape.size();
+    std::vector<size_type> shape_(3, 1);
     std::copy(shape.begin(), shape.end(), shape_.begin() + remain);
 
-    uint32_t channels = shape_[0];
-    uint32_t rows = shape_[1];
-    uint32_t cols = shape_[2];
+    size_type channels = shape_[0];
+    size_type rows = shape_[1];
+    size_type cols = shape_[2];
 
     data_ = arma::Cube<T>(rawPtr, rows, cols, channels, false, true);
 
     if (channels == 1 && rows == 1) {
-        rawDims_ = std::vector<uint32_t>{cols};
+        rawDims_ = std::vector<size_type>{cols};
     } else if (channels == 1) {
-        rawDims_ = std::vector<uint32_t>{rows, cols};
+        rawDims_ = std::vector<size_type>{rows, cols};
     } else {
-        rawDims_ = std::vector<uint32_t>{channels, rows, cols};
+        rawDims_ = std::vector<size_type>{channels, rows, cols};
     }
 }
 
 template<typename T>
-Tensor<T>::Tensor(const Tensor<T>& rhs) : data_(rhs.data_), rawDims_(rhs.rawDims_) {}
+Tensor<T>::Tensor(const Tensor<T>& rhs)
+    : data_(rhs.data_), rawDims_(rhs.rawDims_) {}
 
 template<typename T>
 Tensor<T>& Tensor<T>::operator=(const Tensor<T>& rhs) {
@@ -123,7 +124,8 @@ Tensor<T>& Tensor<T>::operator=(const Tensor<T>& rhs) {
 }
 
 template<typename T>
-Tensor<T>::Tensor(Tensor<T>&& rhs) noexcept : rawDims_(std::move(rhs.rawDims_)), data_(std::move(rhs.data_)) {}
+Tensor<T>::Tensor(Tensor<T>&& rhs) noexcept
+    : rawDims_(std::move(rhs.rawDims_)), data_(std::move(rhs.data_)) {}
 
 template<typename T>
 Tensor<T>& Tensor<T>::operator=(Tensor<T>&& rhs) noexcept {

@@ -15,6 +15,14 @@ namespace XAcceleratorEngine {
 template<typename T>
 class Tensor {
 public:
+    using value_type = T;
+    using size_type = uint32_t;
+    using pointer = T*;
+    using const_pointer = const T*;
+    using reference = value_type&;
+    using const_reference = const value_type&;
+
+public:
     /**
      * @brief Construct a new empty Tensor.
      */
@@ -25,7 +33,7 @@ public:
      *
      * @param size vector size
      */
-    explicit Tensor(uint32_t size);
+    explicit Tensor(size_type size);
 
     /**
      * @brief Construct a 2D tensor
@@ -33,7 +41,7 @@ public:
      * @param rows number of rows
      * @param cols number of cols
      */
-    Tensor(uint32_t rows, uint32_t cols);
+    Tensor(size_type rows, size_type cols);
 
     /**
      * @brief Construct a 3D tensor
@@ -42,14 +50,14 @@ public:
      * @param rows number of rows
      * @param cols number of cols
      */
-    Tensor(uint32_t channels, uint32_t rows, uint32_t cols);
+    Tensor(size_type channels, size_type rows, size_type cols);
 
     /**
      * @brief Construct a tensor with shape
      *
      * @param shape tensor dimension
      */
-    explicit Tensor(const std::vector<uint32_t>& shape);
+    explicit Tensor(const std::vector<size_type>& shape);
 
     /**
      * @brief Construct a 1D tensor with raw ptr
@@ -57,7 +65,7 @@ public:
      * @param rawPtr raw pointer of data
      * @param size vector size
      */
-    Tensor(T* rawPtr, uint32_t size);
+    Tensor(T* rawPtr, size_type size);
 
     /**
      * @brief Construct a 2D tensor with raw ptr
@@ -66,7 +74,7 @@ public:
      * @param rows number of rows
      * @param cols number of cols
      */
-    Tensor(T* rawPtr, uint32_t rows, uint32_t cols);
+    Tensor(T* rawPtr, size_type rows, size_type cols);
 
     /**
      * @brief Construct a 3D tensor with raw ptr
@@ -76,7 +84,7 @@ public:
      * @param rows number of rows
      * @param cols number of cols
      */
-    Tensor(T* rawPtr, uint32_t channels, uint32_t rows, uint32_t cols);
+    Tensor(T* rawPtr, size_type channels, size_type rows, size_type cols);
 
     /**
      * @brief Construct a tensor with raw ptr and shape
@@ -84,7 +92,7 @@ public:
      * @param rawPtr raw pointer of data
      * @param shape tensor dimension
      */
-    Tensor(T* rawPtr, const std::vector<uint32_t>& shape);
+    Tensor(T* rawPtr, const std::vector<size_type>& shape);
 
     /**
      * @brief Copy constructor

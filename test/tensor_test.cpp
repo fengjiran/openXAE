@@ -361,4 +361,20 @@ TEST(TensorTest, mul6) {
     }
 }
 
+TEST(TensorTest, shapes) {
+    Tensor<float> f(2, 3, 4);
+    const auto& shapes = f.GetShape();
+    ASSERT_EQ(shapes.at(0), 2);
+    ASSERT_EQ(shapes.at(1), 3);
+    ASSERT_EQ(shapes.at(2), 4);
+}
+
+TEST(TensorTest, rawShape1) {
+    Tensor<float> f(2, 3, 4);
+    f.Reshape({24});
+    const auto& rawShape = f.GetRawShape();
+    ASSERT_EQ(rawShape.size(), 1);
+    ASSERT_EQ(rawShape[0], 24);
+}
+
 }// namespace XAcceleratorEngine
