@@ -5,6 +5,7 @@
 #ifndef OPENXAE_GRAPH_HPP
 #define OPENXAE_GRAPH_HPP
 
+#include "Datatype.hpp"
 #include "Operand.hpp"
 #include "Operator.hpp"
 
