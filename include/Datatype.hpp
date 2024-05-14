@@ -25,6 +25,33 @@ enum class DataType {
     kTypeUInt8 = 8
 };
 
+enum class ParameterType {
+    kParameterUnknown = 0,
+    kParameterBool = 1,
+    kParameterInt = 2,
+
+    kParameterFloat = 3,
+    kParameterString = 4,
+    kParameterIntArray = 5,
+    kParameterFloatArray = 6,
+    kParameterStringArray = 7
+};
+
+enum class StatusCode {
+    kUnknownCode = -1,
+    kSuccess = 0,
+
+    kInferInputsEmpty = 1,
+    kInferOutputsEmpty = 2,
+    kInferParameterError = 3,
+    kInferDimMismatch = 4,
+
+    kFunctionNotImplement = 5,
+    kParseWeightError = 6,
+    kParseParameterError = 7,
+    kParseNullOperator = 8
+};
+
 }
 
 #endif//OPENXAE_DATATYPE_HPP
