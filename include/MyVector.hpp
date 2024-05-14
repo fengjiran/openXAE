@@ -186,6 +186,10 @@ public:
      */
     const_reference back() const noexcept;
 
+    allocator_type get_allocator() const noexcept {
+        return _alloc();
+    }
+
     ~vec();
 
 private:
@@ -208,6 +212,14 @@ private:
 
     const_iterator MakeIter(const_pointer p) const noexcept {
         return const_iterator(p);
+    }
+
+    allocator_type& _alloc() noexcept {
+        return alloc;
+    }
+
+    const allocator_type& _alloc() const noexcept {
+        return alloc;
     }
 
 private:
@@ -449,7 +461,8 @@ vec<T, Allocator>& vec<T, Allocator>::operator=(std::initializer_list<T> il) {
 }
 
 template<typename T, typename Allocator>
-vec<T, Allocator>::vec(const vec<T, Allocator>& rhs) {
+vec<T, Allocator>::vec(const vec<T, Allocator>& rhs)
+    : alloc(alloc_traits::select_on_container_copy_construction(rhs._alloc())) {
     auto data = Allocate(rhs.begin(), rhs.end());
     start = data.first;
     firstFree = data.second;
