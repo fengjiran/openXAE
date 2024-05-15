@@ -123,14 +123,14 @@ public:
      *
      * @return The number of elements in the container.
      */
-    size_type size() const { return firstFree - start; }
+    size_type size() const { return static_cast<size_type>(firstFree - start); }
 
     /**
      * @brief Get the number of elements that the container has currently allocated space for
      *
      * @return Capacity of the currently allocated storage.
      */
-    size_type capacity() const { return cap - start; }
+    size_type capacity() const { return static_cast<size_type>(cap - start); }
 
     /**
      * @brief Get the first element iterator of the vector
@@ -155,7 +155,8 @@ public:
     void reserve(size_type n);
     void resize(size_type n);
     void resize(size_type n, const_reference t);
-    pointer data() { return start; }
+    pointer data() noexcept { return to_address(start); }
+    const_pointer data() const noexcept { return to_address(start); }
 
     void push_back(const_reference t);
     void push_back(value_type&& t);
@@ -188,6 +189,10 @@ public:
 
     allocator_type get_allocator() const noexcept {
         return _alloc();
+    }
+
+    void clear() noexcept {
+        _clear();
     }
 
     ~vec();
@@ -223,7 +228,11 @@ private:
     }
 
     void _clear() noexcept {
-        //
+        auto p = firstFree;
+        while (p != start) {
+            alloc_traits::destroy(_alloc(), to_address(--p));
+        }
+        firstFree = start;
     }
 
 private:
@@ -509,8 +518,7 @@ void vec<T, Allocator>::free() {
     if (start) {
         auto p = firstFree;
         while (p != start) {
-            alloc_traits::destroy(_alloc(), --p);
-//            alloc_traits::destroy(_alloc(), std::to_address(--p));
+            alloc_traits::destroy(_alloc(), to_address(--p));
         }
         alloc_traits::deallocate(_alloc(), start, cap - start);
     }
