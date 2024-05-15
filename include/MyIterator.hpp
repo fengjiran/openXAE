@@ -10,6 +10,12 @@
 
 namespace XAcceleratorEngine {
 
+template<typename T>
+T* to_address(T* p) noexcept {
+    static_assert(!std::is_function<T>::value, "value is a function type");
+    return p;
+}
+
 template<typename Iter>
 class MyIterator {
 public:
@@ -32,8 +38,9 @@ public:
     }
 
     pointer operator->() const noexcept {
-        static_assert(!std::is_function<value_type>::value, "value is a function type");
-        return i;
+        return to_address(i);
+        //        static_assert(!std::is_function<value_type>::value, "value is a function type");
+        //        return i;
     }
 
     MyIterator& operator++() noexcept {
@@ -179,6 +186,7 @@ using has_input_iterator_category = typename std::enable_if<
         std::is_convertible<typename std::iterator_traits<Iter>::iterator_category, std::input_iterator_tag>::value &&
                 std::is_constructible<value_type, typename std::iterator_traits<Iter>::reference>::value,
         int>;
+
 }// namespace XAcceleratorEngine
 
 #endif//OPENXAE_MYITERATOR_HPP

@@ -222,6 +222,10 @@ private:
         return alloc;
     }
 
+    void _clear() noexcept {
+        //
+    }
+
 private:
     allocator_type alloc;
     pointer start;
@@ -480,7 +484,7 @@ vec<T, Allocator>::vec(const vec<T, Allocator>& rhs, const type_identity_t<alloc
 
 template<typename T, typename Allocator>
 vec<T, Allocator>& vec<T, Allocator>::operator=(const vec<T, Allocator>& rhs) {
-    if (this != &rhs) {
+    if (this != std::addressof(rhs)) {
         auto data = Allocate(rhs.begin(), rhs.end());
         free();
         start = data.first;
@@ -505,9 +509,10 @@ void vec<T, Allocator>::free() {
     if (start) {
         auto p = firstFree;
         while (p != start) {
-            alloc_traits::destroy(alloc, --p);
+            alloc_traits::destroy(_alloc(), --p);
+//            alloc_traits::destroy(_alloc(), std::to_address(--p));
         }
-        alloc_traits::deallocate(alloc, start, cap - start);
+        alloc_traits::deallocate(_alloc(), start, cap - start);
     }
 }
 
