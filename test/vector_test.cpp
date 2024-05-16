@@ -9,7 +9,7 @@
 namespace XAcceleratorEngine {
 
 TEST(MyVectorTest, ctor) {
-    vec<std::string> words1{"the", "frogurt", "is", "also", "cursed"};
+    vec<std::string> words1{"the", "yogurt", "is", "also", "cursed"};
     std::cout << "1: " << words1;
 
     vec<std::string> words2(words1.begin(), words1.end());

@@ -8,16 +8,9 @@
 #include "MyIterator.hpp"
 #include "config.hpp"
 #include "glog/logging.h"
+#include "utils.hpp"
 
 namespace XAcceleratorEngine {
-
-template<typename T>
-struct type_identity {
-    using type = T;
-};
-
-template<typename T>
-using type_identity_t = typename type_identity<T>::type;
 
 template<typename T, typename Allocator = MyAllocator<T> /* = std::allocator<T>*/>
 class vec {
