@@ -9,5 +9,6 @@
 #include "Datatype.hpp"
 #include "Operand.hpp"
 #include "Operator.hpp"
+#include "Parameter.hpp"
 
 #endif//OPENXAE_GRAPH_HPP
