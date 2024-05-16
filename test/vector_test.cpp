@@ -72,12 +72,12 @@ TEST(MyVectorTest, integral_constant) {
     class A {
     public:
         A() = default;
-        static void select_on_container_copy_construction() {}
+        static A select_on_container_copy_construction() { return {}; }
     };
 
     static_assert(_has_select_on_container_copy_construction<A>::value);
     static_assert(!_has_select_on_container_copy_construction<std::allocator<int>>::value);
-    static_assert(!_has_select_on_container_copy_construction<MyAllocator<int>>::value);
+    static_assert(_has_select_on_container_copy_construction<MyAllocator<int>>::value);
 }
 
 }// namespace XAcceleratorEngine

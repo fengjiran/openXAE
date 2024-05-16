@@ -38,9 +38,9 @@ public:
         ::operator delete(p);
     }
 
-    //    static MyAllocator select_on_container_copy_construction() {
-    //        return MyAllocator();
-    //    }
+    static MyAllocator select_on_container_copy_construction() {
+        return {};
+    }
 };
 
 template<typename T, typename U>
