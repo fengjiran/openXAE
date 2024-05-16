@@ -65,4 +65,19 @@ TEST(MyVectorTest, back) {
         std::cout << "The last character is '" << letters.back() << "'.\n";
 }
 
+TEST(MyVectorTest, integral_constant) {
+    static_assert(true_type::value);
+    static_assert(!false_type::value);
+
+    class A {
+    public:
+        A() = default;
+        static void select_on_container_copy_construction() {}
+    };
+
+    static_assert(_has_select_on_container_copy_construction<A>::value);
+    static_assert(!_has_select_on_container_copy_construction<std::allocator<int>>::value);
+    static_assert(!_has_select_on_container_copy_construction<MyAllocator<int>>::value);
+}
+
 }// namespace XAcceleratorEngine

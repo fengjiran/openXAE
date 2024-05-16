@@ -37,6 +37,10 @@ public:
     void deallocate(pointer p, size_type n) noexcept {
         ::operator delete(p);
     }
+
+    //    static MyAllocator select_on_container_copy_construction() {
+    //        return MyAllocator();
+    //    }
 };
 
 template<typename T, typename U>
