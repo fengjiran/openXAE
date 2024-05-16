@@ -1,3 +1,5 @@
+#include <utility>
+
 //
 // Created by 赵丹 on 24-5-16.
 //
@@ -46,6 +48,57 @@ public:
 
     float value = 0.f;
 };
+
+class ParameterString : public Parameter {
+public:
+    ParameterString() : Parameter(ParameterType::kParameterString) {}
+
+    explicit ParameterString(std::string value_)
+        : Parameter(ParameterType::kParameterString), value(std::move(value_)) {}
+
+    std::string value;
+};
+
+class ParameterIntArray : public Parameter {
+public:
+    ParameterIntArray() : Parameter(ParameterType::kParameterIntArray) {}
+
+    explicit ParameterIntArray(std::vector<int32_t> value_)
+        : Parameter(ParameterType::kParameterIntArray), value(std::move(value_)) {}
+
+    std::vector<int32_t> value;
+};
+
+class ParameterFloatArray : public Parameter {
+public:
+    ParameterFloatArray() : Parameter(ParameterType::kParameterFloatArray) {}
+
+    explicit ParameterFloatArray(std::vector<float> value_)
+        : Parameter(ParameterType::kParameterFloatArray), value(std::move(value_)) {}
+
+    std::vector<float> value;
+};
+
+class ParameterStringArray : public Parameter {
+public:
+    ParameterStringArray() : Parameter(ParameterType::kParameterStringArray) {}
+
+    explicit ParameterStringArray(std::vector<std::string> value_)
+        : Parameter(ParameterType::kParameterStringArray), value(std::move(value_)) {}
+
+    std::vector<std::string> value;
+};
+
+class ParameterBool : public Parameter {
+public:
+    ParameterBool() : Parameter(ParameterType::kParameterBool) {}
+
+    explicit ParameterBool(bool value_)
+        : Parameter(ParameterType::kParameterBool), value(value_) {}
+
+    bool value = false;
+};
+
 
 }// namespace XAcceleratorEngine
 
