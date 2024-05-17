@@ -66,6 +66,7 @@ inline constexpr static alloc select_on_container_copy_construction(const alloc&
     return a;
 }
 
+// propagate on container copy assignment
 template<typename alloc, typename = void>
 struct _has_propagate_on_container_copy_assignment : false_type {};
 
@@ -81,6 +82,24 @@ struct propagate_on_container_copy_assignment : false_type {};
 template<typename alloc>
 struct propagate_on_container_copy_assignment<alloc, true> {
     using type = typename alloc::propagate_on_container_copy_assignment;
+};
+
+// propagate on container move assignment
+template<typename alloc, typename = void>
+struct _has_propagate_on_container_move_assignment : false_type {};
+
+template<typename alloc>
+struct _has_propagate_on_container_move_assignment<
+        alloc,
+        void_t<typename alloc::propagate_on_container_move_assignment>> : true_type {};
+
+template<typename alloc,
+         bool = _has_propagate_on_container_move_assignment<alloc>::value>
+struct propagate_on_container_move_assignment : false_type {};
+
+template<typename alloc>
+struct propagate_on_container_move_assignment<alloc, true> {
+    using type = typename alloc::propagate_on_container_move_assignment;
 };
 
 }// namespace XAcceleratorEngine

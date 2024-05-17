@@ -244,6 +244,16 @@ private:
 
     void _copy_assign_alloc(const vec&, false_type) {}
 
+    void _move_assign_alloc(vec& c, true_type) noexcept {
+        _alloc() = std::move(c._alloc());
+    }
+
+    void _move_assign_alloc(vec&, false_type) noexcept {}
+
+    void _move_assign(vec&, true_type);
+
+    void _move_assign(vec&, false_type);
+
 private:
     allocator_type alloc;
     pointer start;
@@ -509,11 +519,6 @@ vec<T, Allocator>& vec<T, Allocator>::operator=(const vec<T, Allocator>& rhs) {
                 integral_constant<bool,
                                   propagate_on_container_copy_assignment<Allocator>::type::value>());
         assign(rhs.begin(), rhs.end());
-        //        auto data = Allocate(rhs.begin(), rhs.end());
-        //        _free();
-        //        start = data.first;
-        //        firstFree = data.second;
-        //        cap = data.second;
     }
     return *this;
 }
