@@ -6,6 +6,7 @@
 #define OPENXAE_MYALLOCATOR_HPP
 
 #include "config.hpp"
+#include "utils.hpp"
 #include <cstddef>
 #include <memory>
 
@@ -20,6 +21,9 @@ public:
     using pointer = T*;
     using const_pointer = const T*;
     using void_pointer = void*;
+
+    using propagate_on_container_copy_assignment = true_type;
+    using propagate_on_container_move_assignment = true_type;
 
 public:
     MyAllocator() noexcept = default;

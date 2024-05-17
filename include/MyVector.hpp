@@ -130,18 +130,18 @@ public:
      *
      * @return The pointer of the first element
      */
-    iterator begin() noexcept { return MakeIter(start); }
+    iterator begin() noexcept { return _make_iter(start); }
 
-    const_iterator begin() const noexcept { return MakeIter(start); }
+    const_iterator begin() const noexcept { return _make_iter(start); }
 
     /**
      * @brief Get the ptr to the element following the last element of the vector
      *
      * @return The ptr to the element following the last element of the vector
      */
-    iterator end() noexcept { return MakeIter(firstFree); }
+    iterator end() noexcept { return _make_iter(firstFree); }
 
-    const_iterator end() const noexcept { return MakeIter(firstFree); }
+    const_iterator end() const noexcept { return _make_iter(firstFree); }
 
     CPP_NODISCARD bool empty() const { return firstFree == start; }
 
@@ -188,6 +188,10 @@ public:
         _clear();
     }
 
+    template<typename InputIterator,
+             typename has_input_iterator_category<InputIterator, value_type>::type = 0>
+    void assign(InputIterator first, InputIterator last);
+
     ~vec();
 
 private:
@@ -204,11 +208,11 @@ private:
         }
     }
 
-    iterator MakeIter(pointer p) noexcept {
+    iterator _make_iter(pointer p) noexcept {
         return iterator(p);
     }
 
-    const_iterator MakeIter(const_pointer p) const noexcept {
+    const_iterator _make_iter(const_pointer p) const noexcept {
         return const_iterator(p);
     }
 
@@ -504,6 +508,17 @@ vec<T, Allocator>::Allocate(InputIterator first, InputIterator last) {
     auto n = std::distance(first, last);
     auto dst = alloc_traits::allocate(alloc, n);
     return {dst, std::uninitialized_copy(first, last, dst)};
+}
+
+template<typename T, typename Allocator>
+template<typename InputIterator,
+         typename has_input_iterator_category<InputIterator, T>::type>
+void vec<T, Allocator>::assign(InputIterator first, InputIterator last) {
+    _clear();
+    while (first != last) {
+        emplace_back(*first);
+        ++first;
+    }
 }
 
 template<typename T, typename Allocator>

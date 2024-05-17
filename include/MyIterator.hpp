@@ -5,16 +5,9 @@
 #ifndef OPENXAE_MYITERATOR_HPP
 #define OPENXAE_MYITERATOR_HPP
 
-#include <iterator>
-#include <type_traits>
+#include "utils.hpp"
 
 namespace XAcceleratorEngine {
-
-template<typename T>
-T* to_address(T* p) noexcept {
-    static_assert(!std::is_function<T>::value, "value is a function type");
-    return p;
-}
 
 template<typename Iter>
 class MyIterator {
@@ -180,12 +173,6 @@ MyIterator<Iter> operator+(MyIterator<Iter> x, typename MyIterator<Iter>::differ
     x += n;
     return x;
 }
-
-template<typename Iter, typename value_type>
-using has_input_iterator_category = typename std::enable_if<
-        std::is_convertible<typename std::iterator_traits<Iter>::iterator_category, std::input_iterator_tag>::value &&
-                std::is_constructible<value_type, typename std::iterator_traits<Iter>::reference>::value,
-        int>;
 
 }// namespace XAcceleratorEngine
 
