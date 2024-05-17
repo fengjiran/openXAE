@@ -199,12 +199,12 @@ private:
              typename has_input_iterator_category<InputIterator, value_type>::type = 0>
     std::pair<pointer, pointer> Allocate(InputIterator first, InputIterator last);
 
-    void free();
-    void reallocate();
-    void reallocate(size_type newCap);
-    void CheckAndAlloc() {
+    void _free();
+    void _reallocate();
+    void _reallocate(size_type newCap);
+    void _check_and_alloc() {
         if (firstFree == cap) {
-            reallocate();
+            _reallocate();
         }
     }
 
@@ -234,7 +234,7 @@ private:
 
     void _copy_assign_alloc(const vec& c, true_type) {
         if (_alloc() != c._alloc()) {
-            free();
+            _free();
             start = nullptr;
             firstFree = nullptr;
             cap = nullptr;
@@ -314,19 +314,19 @@ vec<T, Allocator>::at(size_type pos) const {
 template<typename T, typename Allocator>
 template<typename... Args>
 void vec<T, Allocator>::emplace_back(Args&&... args) {
-    CheckAndAlloc();
+    _check_and_alloc();
     alloc_traits::construct(alloc, firstFree++, std::forward<Args>(args)...);
 }
 
 template<typename T, typename Allocator>
 void vec<T, Allocator>::push_back(value_type&& t) {
-    CheckAndAlloc();
+    _check_and_alloc();
     alloc_traits::construct(alloc, firstFree++, std::move(t));
 }
 
 template<typename T, typename Allocator>
 void vec<T, Allocator>::push_back(const_reference t) {
-    CheckAndAlloc();
+    _check_and_alloc();
     alloc_traits::construct(alloc, firstFree++, t);
 }
 
@@ -355,17 +355,17 @@ void vec<T, Allocator>::resize(size_type n, const_reference t) {
 template<typename T, typename Allocator>
 void vec<T, Allocator>::reserve(size_type n) {
     if (n > capacity()) {
-        reallocate(n);
+        _reallocate(n);
     }
 }
 
 template<typename T, typename Allocator>
 vec<T, Allocator>::~vec() {
-    free();
+    _free();
 }
 
 template<typename T, typename Allocator>
-void vec<T, Allocator>::reallocate(size_type newCap) {
+void vec<T, Allocator>::_reallocate(size_type newCap) {
     auto data = alloc_traits::allocate(alloc, newCap);
     auto src = start;
     auto dst = data;
@@ -374,14 +374,14 @@ void vec<T, Allocator>::reallocate(size_type newCap) {
         ++src;
         ++dst;
     }
-    free();
+    _free();
     start = data;
     firstFree = dst;
     cap = start + newCap;
 }
 
 template<typename T, typename Allocator>
-void vec<T, Allocator>::reallocate() {
+void vec<T, Allocator>::_reallocate() {
     size_type newCap = size() != 0 ? 2 * size() : 1;
     auto data = alloc_traits::allocate(alloc, newCap);
     auto src = start;
@@ -391,7 +391,7 @@ void vec<T, Allocator>::reallocate() {
         ++src;
         ++dst;
     }
-    free();
+    _free();
     start = data;
     firstFree = dst;
     cap = start + newCap;
@@ -400,7 +400,7 @@ void vec<T, Allocator>::reallocate() {
 template<typename T, typename Allocator>
 vec<T, Allocator>& vec<T, Allocator>::operator=(vec&& rhs) noexcept {
     if (this != &rhs) {
-        free();
+        _free();
         start = rhs.start;
         firstFree = rhs.firstFree;
         cap = rhs.cap;
@@ -475,7 +475,7 @@ vec<T, Allocator>::vec(std::initializer_list<T> il, const allocator_type& alloc_
 template<typename T, typename Allocator>
 vec<T, Allocator>& vec<T, Allocator>::operator=(std::initializer_list<T> il) {
     auto data = Allocate(il.begin(), il.end());
-    free();
+    _free();
     start = data.first;
     firstFree = data.second;
     cap = data.second;
@@ -510,7 +510,7 @@ vec<T, Allocator>& vec<T, Allocator>::operator=(const vec<T, Allocator>& rhs) {
                                   propagate_on_container_copy_assignment<Allocator>::type::value>());
         assign(rhs.begin(), rhs.end());
         //        auto data = Allocate(rhs.begin(), rhs.end());
-        //        free();
+        //        _free();
         //        start = data.first;
         //        firstFree = data.second;
         //        cap = data.second;
@@ -540,7 +540,7 @@ void vec<T, Allocator>::assign(InputIterator first, InputIterator last) {
 }
 
 template<typename T, typename Allocator>
-void vec<T, Allocator>::free() {
+void vec<T, Allocator>::_free() {
     if (start) {
         auto p = firstFree;
         while (p != start) {
