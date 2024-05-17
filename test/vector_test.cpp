@@ -33,6 +33,10 @@ TEST(MyVectorTest, ctor) {
     vec<int> words6(lst.begin(), lst.end());
     std::cout << "6: " << words6;
 
+    vec<std::string> words7;
+    words7 = words1;
+    std::cout << "7: " << words7;
+
     auto alloc1 = std::allocator<int>();
     auto alloc2 = MyAllocator<int>();
     std::vector<int> a(alloc1);

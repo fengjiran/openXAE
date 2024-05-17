@@ -232,6 +232,18 @@ private:
         firstFree = start;
     }
 
+    void _copy_assign_alloc(const vec& c, true_type) {
+        if (_alloc() != c._alloc()) {
+            free();
+            start = nullptr;
+            firstFree = nullptr;
+            cap = nullptr;
+        }
+        _alloc() = c._alloc();
+    }
+
+    void _copy_assign_alloc(const vec&, false_type) {}
+
 private:
     allocator_type alloc;
     pointer start;
@@ -490,12 +502,18 @@ vec<T, Allocator>::vec(const vec<T, Allocator>& rhs, const type_identity_t<alloc
 
 template<typename T, typename Allocator>
 vec<T, Allocator>& vec<T, Allocator>::operator=(const vec<T, Allocator>& rhs) {
+    LOG(INFO) << "copy assignment.";
     if (this != std::addressof(rhs)) {
-        auto data = Allocate(rhs.begin(), rhs.end());
-        free();
-        start = data.first;
-        firstFree = data.second;
-        cap = data.second;
+        _copy_assign_alloc(
+                rhs,
+                integral_constant<bool,
+                                  propagate_on_container_copy_assignment<Allocator>::type::value>());
+        assign(rhs.begin(), rhs.end());
+        //        auto data = Allocate(rhs.begin(), rhs.end());
+        //        free();
+        //        start = data.first;
+        //        firstFree = data.second;
+        //        cap = data.second;
     }
     return *this;
 }
