@@ -2,8 +2,8 @@
 // Created by richard on 4/28/24.
 //
 
-#include "Tensor.hpp"
 #include "glog/logging.h"
+#include "runtime/Tensor.hpp"
 #include "gtest/gtest.h"
 
 namespace XAcceleratorEngine {

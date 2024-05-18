@@ -1,7 +1,7 @@
 //
 // Created by richard on 4/28/24.
 //
-#include "Tensor.hpp"
+#include "runtime/Tensor.hpp"
 
 namespace XAcceleratorEngine {
 
