@@ -244,15 +244,32 @@ private:
 
     void _copy_assign_alloc(const vec&, false_type) {}
 
-    void _move_assign_alloc(vec& c, true_type) noexcept {
-        _alloc() = std::move(c._alloc());
+    void _move_assign(vec& rhs, true_type) {
+        _free();
+        _alloc() = std::move(rhs._alloc());
+
+        start = rhs.start;
+        firstFree = rhs.firstFree;
+        cap = rhs.cap;
+
+        rhs.start = nullptr;
+        rhs.firstFree = nullptr;
+        rhs.cap = nullptr;
     }
 
-    void _move_assign_alloc(vec&, false_type) noexcept {}
-
-    void _move_assign(vec&, true_type);
-
-    void _move_assign(vec&, false_type);
+    void _move_assign(vec& rhs, false_type) {
+        if (_alloc() != rhs._alloc()) {
+            _clear();
+            for (auto iter = rhs.begin(); iter != rhs.end(); ++iter) {
+                emplace_back(std::move(*iter));
+            }
+            rhs.start = nullptr;
+            rhs.firstFree = nullptr;
+            rhs.cap = nullptr;
+        } else {
+            _move_assign(rhs, true_type());
+        }
+    }
 
 private:
     allocator_type alloc;
@@ -409,16 +426,9 @@ void vec<T, Allocator>::_reallocate() {
 
 template<typename T, typename Allocator>
 vec<T, Allocator>& vec<T, Allocator>::operator=(vec&& rhs) noexcept {
-    if (this != &rhs) {
-        _free();
-        start = rhs.start;
-        firstFree = rhs.firstFree;
-        cap = rhs.cap;
-
-        rhs.start = nullptr;
-        rhs.firstFree = nullptr;
-        rhs.cap = nullptr;
-    }
+    _move_assign(rhs,
+                 integral_constant<bool,
+                                   propagate_on_container_move_assignment<Allocator>::type::value>());
     return *this;
 }
 
@@ -432,7 +442,17 @@ vec<T, Allocator>::vec(vec&& rhs) noexcept
 
 template<typename T, typename Allocator>
 vec<T, Allocator>::vec(vec&& rhs, const type_identity_t<allocator_type>& alloc_)
-    : start(rhs.start), firstFree(rhs.firstFree), cap(rhs.cap), alloc(alloc_) {
+    : alloc(alloc_) {
+    if (rhs._alloc() == alloc_) {
+        start = rhs.start;
+        firstFree = rhs.firstFree;
+        cap = rhs.cap;
+    } else {
+        for (auto iter = rhs.begin(); iter != rhs.end(); ++iter) {
+            emplace_back(std::move(*iter));
+        }
+    }
+
     rhs.start = nullptr;
     rhs.firstFree = nullptr;
     rhs.cap = nullptr;
@@ -512,7 +532,6 @@ vec<T, Allocator>::vec(const vec<T, Allocator>& rhs, const type_identity_t<alloc
 
 template<typename T, typename Allocator>
 vec<T, Allocator>& vec<T, Allocator>::operator=(const vec<T, Allocator>& rhs) {
-    LOG(INFO) << "copy assignment.";
     if (this != std::addressof(rhs)) {
         _copy_assign_alloc(
                 rhs,
