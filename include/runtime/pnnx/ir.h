@@ -73,6 +73,7 @@ public:
 
 bool operator==(const Parameter& lhs, const Parameter& rhs);
 
+
 }// namespace pnnx
 
 #endif//OPENXAE_IR_H
