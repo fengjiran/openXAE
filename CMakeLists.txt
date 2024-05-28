@@ -3,11 +3,10 @@ project(openXAE)
 
 set(CMAKE_CXX_STANDARD 17)
 
-#set(Torch_DIR /home/richard/anaconda3/envs/dl/lib/python3.9/site-packages/torch/share/cmake)
 find_package(glog REQUIRED)
 find_package(Armadillo REQUIRED)
-#find_package(Torch REQUIRED)
-#find_package(TorchVision QUIET)
+find_package(Torch REQUIRED)
+find_package(TorchVision REQUIRED)
 
 file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp
         ${PROJECT_SOURCE_DIR}/src/*.cc
