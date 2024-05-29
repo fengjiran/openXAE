@@ -1,11 +1,12 @@
-#include <utility>
-
 //
 // Created by 赵丹 on 24-5-16.
 //
 
 #ifndef OPENXAE_PARAMETER_HPP
 #define OPENXAE_PARAMETER_HPP
+
+#include "Datatype.hpp"
+
 
 namespace XAcceleratorEngine {
 
