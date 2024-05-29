@@ -3,6 +3,7 @@ project(openXAE)
 
 set(CMAKE_CXX_STANDARD 17)
 
+list(APPEND CMAKE_PREFIX_PATH /home/richard/anaconda3/envs/dl/lib/python3.9/site-packages/torch/share/cmake)
 find_package(glog REQUIRED)
 find_package(Armadillo REQUIRED)
 find_package(Torch REQUIRED)
