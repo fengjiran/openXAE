@@ -30,6 +30,7 @@ option(PNNX_COVERAGE "build for coverage" OFF)
 #PNNXProbeForPyTorchInstall()
 
 find_package(Torch REQUIRED)
+find_package(TorchVision QUIET)
 
 message(STATUS "Torch_DIR = ${Torch_DIR}")
 message(STATUS "TorchVision_DIR = ${TorchVision_DIR}")
@@ -78,8 +79,8 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 endif ()
 
 if ((PNNX_TORCH_USE_CXX11_ABI AND PNNX_COMPILER_USE_CXX11_ABI) OR (NOT PNNX_TORCH_USE_CXX11_ABI AND NOT PNNX_COMPILER_USE_CXX11_ABI))
-    find_package(Protobuf REQUIRED)
-    #    find_package(protobuf CONFIG)
+    #    find_package(Protobuf REQUIRED)
+    find_package(protobuf CONFIG)
 
     if (protobuf_FOUND)
         set(PROTOBUF_FOUND ${protobuf_FOUND})
