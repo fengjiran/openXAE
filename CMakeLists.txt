@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 find_package(glog REQUIRED)
 find_package(Armadillo REQUIRED)
+find_package(PythonInterp REQUIRED)
 
 file(GLOB_RECURSE SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp
         ${PROJECT_SOURCE_DIR}/src/*.cc
@@ -24,5 +25,5 @@ target_link_libraries(${PROJECT_NAME}
         ${ARMADILLO_LIBRARY}
 )
 
-add_subdirectory(test)
+add_subdirectory(tests)
 add_subdirectory(tools/pnnx)

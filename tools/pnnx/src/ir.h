@@ -73,8 +73,8 @@ public:
     explicit Parameter(double d_) : type(3), f((float) d_) {}
     explicit Parameter(const char* s_) : type(4), s(s_) {}
     explicit Parameter(std::string s_) : type(4), s(std::move(s_)) {}
-    explicit Parameter(const std::initializer_list<int>& ai_) : type(5), ai(ai_) {}
-    explicit Parameter(const std::initializer_list<int64_t>& ai_) : type(5) {
+    Parameter(const std::initializer_list<int>& ai_) : type(5), ai(ai_) {}
+    Parameter(const std::initializer_list<int64_t>& ai_) : type(5) {
         for (const auto& x: ai_) {
             int64_t l_ = x;
             if (l_ == std::numeric_limits<long>::min()) {
@@ -102,8 +102,8 @@ public:
             ai.push_back(static_cast<int>(l_));
         }
     }
-    explicit Parameter(const std::initializer_list<float>& af_) : type(6), af(af_) {}
-    explicit Parameter(const std::initializer_list<double>& af_) : type(6) {
+    Parameter(const std::initializer_list<float>& af_) : type(6), af(af_) {}
+    Parameter(const std::initializer_list<double>& af_) : type(6) {
         for (const auto& x: af_) {
             af.push_back((float) x);
         }
@@ -114,17 +114,17 @@ public:
             af.push_back((float) x);
         }
     }
-    explicit Parameter(const std::initializer_list<const char*>& as_) : type(7) {
+    Parameter(const std::initializer_list<const char*>& as_) : type(7) {
         for (const auto& x: as_) {
             as.emplace_back(x);
         }
     }
-    explicit Parameter(const std::initializer_list<std::string>& as_) : type(7), as(as_) {}
+    Parameter(const std::initializer_list<std::string>& as_) : type(7), as(as_) {}
     explicit Parameter(const std::vector<std::string>& as_) : type(7), as(as_) {}
     explicit Parameter(const std::complex<float>& c_) : type(10), c(c_) {}
     explicit Parameter(const std::complex<double>& c_) : type(10), c(c_) {}
-    explicit Parameter(const std::initializer_list<std::complex<float>>& ac_) : type(11), ac(ac_) {}
-    explicit Parameter(const std::initializer_list<std::complex<double>>& ac_) : type(11) {
+    Parameter(const std::initializer_list<std::complex<float>>& ac_) : type(11), ac(ac_) {}
+    Parameter(const std::initializer_list<std::complex<double>>& ac_) : type(11) {
         for (const auto& x: ac_) {
             ac.emplace_back(x);
         }
