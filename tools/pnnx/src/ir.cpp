@@ -254,6 +254,91 @@ static AttributeType string_to_type(const char* s) {
     return AttributeType::kAttributeUnknown;
 }
 
+Parameter Parameter::parse_from_string(const std::string& value) {
+    //
+}
+
+std::string Parameter::encode_to_string(const pnnx::Parameter& param) {
+    if (param.type == ParameterType::kParameterUnknown) {
+        return "None";
+    }
+
+    if (param.type == ParameterType::kParameterBool) {
+        if (param.b) {
+            return "True";
+        } else {
+            return "False";
+        }
+    }
+
+    if (param.type == ParameterType::kParameterInt) {
+        return std::to_string(param.i);
+    }
+
+    if (param.type == ParameterType::kParameterFloat) {
+        char buf[64];
+        sprintf(buf, "%e", param.f);
+        return buf;
+    }
+
+    if (param.type == ParameterType::kParameterString) {
+        return param.s;
+    }
+
+    if (param.type == ParameterType::kParameterArrayInt) {
+        std::string s("(");
+        size_t size = param.ai.size();
+        for (const auto& ele: param.ai) {
+            s += (std::to_string(ele) + (--size ? "," : ""));
+        }
+        s += ")";
+        return s;
+    }
+
+    if (param.type == ParameterType::kParameterArrayFloat) {
+        std::string s("(");
+        size_t size = param.af.size();
+        for (const auto& ele: param.af) {
+            char buf[64];
+            sprintf(buf, "%e", ele);
+            s += (std::string(buf) + (--size ? "," : ""));
+        }
+        s += ")";
+        return s;
+    }
+
+    if (param.type == ParameterType::kParameterArrayString) {
+        std::string s("(");
+        size_t size = param.as.size();
+        for (const auto& ele: param.as) {
+            s += (ele + (--size ? "," : ""));
+        }
+        s += ")";
+        return s;
+    }
+
+    if (param.type == ParameterType::kParameterComplex) {
+        char buf[128];
+        sprintf(buf, "%e+%ej", param.c.real(), param.c.imag());
+        return buf;
+    }
+
+    if (param.type == ParameterType::kParameterArrayComplex) {
+        std::string s("(");
+        size_t size = param.ac.size();
+        for (const auto& ele: param.ac) {
+            char buf[128];
+            sprintf(buf, "%e+%ej", ele.real(), ele.imag());
+            s += (std::string(buf) + (--size ? "," : ""));
+        }
+        s += ")";
+        return s;
+    }
+
+    fprintf(stderr, "unknown parameter type %d\n", static_cast<int>(param.type));
+    return {};
+}
+
 bool operator==(const Parameter& lhs, const Parameter& rhs) {
     if (lhs.type != rhs.type) {
         return false;
