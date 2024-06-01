@@ -192,4 +192,49 @@ static const char* type_to_dtype_string(AttributeType type) {
     return str;
 }
 
+static size_t type_to_elemsize(AttributeType type) {
+    size_t elemsize;
+    switch (type) {
+        case AttributeType::kAttributeFloat32:
+            elemsize = 4;
+            break;
+        case AttributeType::kAttributeFloat64:
+            elemsize = 8;
+            break;
+        case AttributeType::kAttributeFloat16:
+            elemsize = 2;
+            break;
+        case AttributeType::kAttributeInt32:
+            elemsize = 4;
+            break;
+        case AttributeType::kAttributeInt64:
+            elemsize = 8;
+            break;
+        case AttributeType::kAttributeInt16:
+            elemsize = 2;
+            break;
+        case AttributeType::kAttributeInt8:
+        case AttributeType::kAttributeUInt8:
+        case AttributeType::kAttributeBool:
+            elemsize = 1;
+            break;
+        case AttributeType::kAttributeComplex64:
+            elemsize = 8;
+            break;
+        case AttributeType::kAttributeComplex128:
+            elemsize = 16;
+            break;
+        case AttributeType::kAttributeComplex32:
+            elemsize = 4;
+            break;
+        case AttributeType::kAttributeBFloat16:
+            elemsize = 2;
+            break;
+        case AttributeType::kAttributeUnknown:
+            elemsize = 0;
+            break;
+    }
+    return elemsize;
+}
+
 }// namespace pnnx
