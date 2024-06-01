@@ -60,6 +60,26 @@ enum class ParameterType {
     kParameterArrayComplex = 11
 };
 
+/**
+ * @brief Runtime attribute type.
+ */
+enum class AttributeType {
+    kAttributeUnknown = 0,
+    kAttributeFloat32 = 1,
+    kAttributeFloat64 = 2,
+    kAttributeFloat16 = 3,
+    kAttributeInt32 = 4,
+    kAttributeInt64 = 5,
+    kAttributeInt16 = 6,
+    kAttributeInt8 = 7,
+    kAttributeUInt8 = 8,
+    kAttributeBool = 9,
+    kAttributeComplex64 = 10,
+    kAttributeComplex128 = 11,
+    kAttributeComplex32 = 12,
+    kAttributeBFloat16 = 13
+};
+
 class Parameter {
 public:
     /**
