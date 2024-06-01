@@ -143,4 +143,53 @@ static const char* type_to_numpy_string(AttributeType type) {
     return str;
 }
 
+static const char* type_to_dtype_string(AttributeType type) {
+    const char* str;
+    switch (type) {
+        case AttributeType::kAttributeFloat32:
+            str = "torch.float";
+            break;
+        case AttributeType::kAttributeFloat64:
+            str = "torch.double";
+            break;
+        case AttributeType::kAttributeFloat16:
+            str = "torch.half";
+            break;
+        case AttributeType::kAttributeInt32:
+            str = "torch.int";
+            break;
+        case AttributeType::kAttributeInt64:
+            str = "torch.long";
+            break;
+        case AttributeType::kAttributeInt16:
+            str = "torch.short";
+            break;
+        case AttributeType::kAttributeInt8:
+            str = "torch.int8";
+            break;
+        case AttributeType::kAttributeUInt8:
+            str = "torch.uint8";
+            break;
+        case AttributeType::kAttributeBool:
+            str = "torch.bool";
+            break;
+        case AttributeType::kAttributeComplex64:
+            str = "torch.complex64";
+            break;
+        case AttributeType::kAttributeComplex128:
+            str = "torch.complex128";
+            break;
+        case AttributeType::kAttributeComplex32:
+            str = "torch.complex32";
+            break;
+        case AttributeType::kAttributeBFloat16:
+            str = "torch.bfloat16";
+            break;
+        case AttributeType::kAttributeUnknown:
+            str = "unknown";
+            break;
+    }
+    return str;
+}
+
 }// namespace pnnx
