@@ -237,4 +237,23 @@ static size_t type_to_elemsize(AttributeType type) {
     return elemsize;
 }
 
+static AttributeType string_to_type(const char* s) {
+    if (strcmp(s, "f32") == 0) return AttributeType::kAttributeFloat32;
+    if (strcmp(s, "f64") == 0) return AttributeType::kAttributeFloat64;
+    if (strcmp(s, "f16") == 0) return AttributeType::kAttributeFloat16;
+    if (strcmp(s, "i32") == 0) return AttributeType::kAttributeInt32;
+    if (strcmp(s, "i64") == 0) return AttributeType::kAttributeInt64;
+    if (strcmp(s, "i16") == 0) return AttributeType::kAttributeInt16;
+    if (strcmp(s, "i8") == 0) return AttributeType::kAttributeInt8;
+    if (strcmp(s, "u8") == 0) return AttributeType::kAttributeUInt8;
+    if (strcmp(s, "bool") == 0) return AttributeType::kAttributeBool;
+    if (strcmp(s, "c64") == 0) return AttributeType::kAttributeComplex64;
+    if (strcmp(s, "c128") == 0) return AttributeType::kAttributeComplex128;
+    if (strcmp(s, "c32") == 0) return AttributeType::kAttributeComplex32;
+    if (strcmp(s, "bf16") == 0) return AttributeType::kAttributeBFloat16;
+    return AttributeType::kAttributeUnknown;
+}
+
+
+
 }// namespace pnnx
