@@ -1,10 +1,20 @@
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-set(pnnx_SRCS
+set(pnnx_exe_src
         ir.cpp
         storezip.cpp
-        main.cpp
+        main.cc
         utils.cpp
 )
 
-add_executable(pnnx ${pnnx_SRCS})
+set(pnnx_lib_src
+        ir.cpp
+        storezip.cpp
+        utils.cpp
+)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+add_executable(pnnx ${pnnx_exe_src})
+
+add_library(pnnx_lib SHARED ${pnnx_lib_src})
+
+#set_target_properties()

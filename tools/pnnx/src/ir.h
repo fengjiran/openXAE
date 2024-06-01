@@ -151,7 +151,7 @@ public:
      * @brief Constructor for string type parameter.
      * @param s_val string type value.
      */
-    explicit Parameter(std::string s_) : type(ParameterType::kParameterString), s(std::move(s_)) {}
+    explicit Parameter(std::string s_val) : type(ParameterType::kParameterString), s(std::move(s_val)) {}
 
     /**
      * @brief Constructor for array int type parameter.
