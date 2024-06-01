@@ -94,4 +94,53 @@ static const char* type_to_string(AttributeType type) {
     return str;
 }
 
+static const char* type_to_numpy_string(AttributeType type) {
+    const char* str;
+    switch (type) {
+        case AttributeType::kAttributeFloat32:
+            str = "float32";
+            break;
+        case AttributeType::kAttributeFloat64:
+            str = "float64";
+            break;
+        case AttributeType::kAttributeFloat16:
+            str = "float16";
+            break;
+        case AttributeType::kAttributeInt32:
+            str = "int32";
+            break;
+        case AttributeType::kAttributeInt64:
+            str = "int64";
+            break;
+        case AttributeType::kAttributeInt16:
+            str = "int16";
+            break;
+        case AttributeType::kAttributeInt8:
+            str = "int8";
+            break;
+        case AttributeType::kAttributeUInt8:
+            str = "uint8";
+            break;
+        case AttributeType::kAttributeBool:
+            str = "bool8";
+            break;
+        case AttributeType::kAttributeComplex64:
+            str = "csingle";
+            break;
+        case AttributeType::kAttributeComplex128:
+            str = "cdouble";
+            break;
+        case AttributeType::kAttributeComplex32:
+            str = "chalf";
+            break;
+        case AttributeType::kAttributeBFloat16:
+            str = "bfloat16";
+            break;
+        case AttributeType::kAttributeUnknown:
+            str = "unknown";
+            break;
+    }
+    return str;
+}
+
 }// namespace pnnx
