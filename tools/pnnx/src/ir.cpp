@@ -254,6 +254,52 @@ static AttributeType string_to_type(const char* s) {
     return AttributeType::kAttributeUnknown;
 }
 
+bool operator==(const Parameter& lhs, const Parameter& rhs) {
+    if (lhs.type != rhs.type) {
+        return false;
+    }
 
+    if (lhs.type == ParameterType::kParameterUnknown) {
+        return true;
+    }
+
+    if (lhs.type == ParameterType::kParameterBool && lhs.b == rhs.b) {
+        return true;
+    }
+
+    if (lhs.type == ParameterType::kParameterInt && lhs.i == rhs.i) {
+        return true;
+    }
+
+    if (lhs.type == ParameterType::kParameterFloat && lhs.f == rhs.f) {
+        return true;
+    }
+
+    if (lhs.type == ParameterType::kParameterString && lhs.s == rhs.s) {
+        return true;
+    }
+
+    if (lhs.type == ParameterType::kParameterArrayInt && lhs.ai == rhs.ai) {
+        return true;
+    }
+
+    if (lhs.type == ParameterType::kParameterArrayFloat && lhs.af == rhs.af) {
+        return true;
+    }
+
+    if (lhs.type == ParameterType::kParameterArrayString && lhs.as == rhs.as) {
+        return true;
+    }
+
+    if (lhs.type == ParameterType::kParameterComplex && lhs.c == rhs.c) {
+        return true;
+    }
+
+    if (lhs.type == ParameterType::kParameterArrayComplex && lhs.ac == rhs.ac) {
+        return true;
+    }
+
+    return false;
+}
 
 }// namespace pnnx
