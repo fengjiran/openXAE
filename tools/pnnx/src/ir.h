@@ -308,8 +308,8 @@ public:
     Parameter(const onnx2pnnx::OnnxAttributeProxy& attr);
 #endif// BUILD_ONNX2PNNX
 
-    static Parameter parse_from_string(const std::string& value);
     static std::string encode_to_string(const Parameter& param);
+    static Parameter parse_from_string(const std::string& value);
 
     /**
      * @brief Parameter type

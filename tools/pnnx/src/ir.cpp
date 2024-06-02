@@ -254,63 +254,6 @@ static AttributeType string_to_type(const char* s) {
     return AttributeType::kAttributeUnknown;
 }
 
-Parameter Parameter::parse_from_string(const std::string& value) {
-    // string type
-    if (value.find('%') != std::string::npos) {
-        Parameter p(value);
-        return p;
-    }
-
-    // null type
-    if (value == "None" || value == "()" || value == "[]") {
-        return {};
-    }
-
-    // bool type
-    if (value == "True" || value == "False") {
-        return Parameter(value == "True");
-    }
-
-    // array
-    if (value[0] == '(' || value[0] == '[') {
-        Parameter p;
-        std::string lc = value.substr(1, value.size() - 2);
-        std::istringstream lcss(lc);
-        while (!lcss.eof()) {
-            std::string elem;
-            std::getline(lcss, elem, ',');
-            if ((elem[0] != '-' && (elem[0] < '0' || elem[0] > '9')) || (elem[0] == '-' && (elem[1] < '0' || elem[1] > '9'))) {
-                // array string
-                p.type = ParameterType::kParameterArrayString;
-                p.as.push_back(elem);
-            } else if (elem.find('.') != std::string::npos || elem.find('e') != std::string::npos) {
-                // array float
-                p.type = ParameterType::kParameterArrayFloat;
-                p.af.push_back(std::stof(elem));
-            } else {
-                // array integer
-                p.type = ParameterType::kParameterArrayInt;
-                p.ai.push_back(std::stoi(elem));
-            }
-        }
-        return p;
-    }
-
-    // string
-    if ((value[0] != '-' && (value[0] < '0' || value[0] > '9')) || (value[0] == '-' && (value[1] < '0' || value[1] > '9'))) {
-        Parameter p(value);
-        return p;
-    }
-
-    // float
-    if (value.find('.') != std::string::npos || value.find('e') != std::string::npos) {
-        return Parameter(std::stof(value));
-    }
-
-    // integer
-    return Parameter(std::stoi(value));
-}
-
 std::string Parameter::encode_to_string(const Parameter& param) {
     if (param.type == ParameterType::kParameterUnknown) {
         return "None";
@@ -390,6 +333,63 @@ std::string Parameter::encode_to_string(const Parameter& param) {
 
     fprintf(stderr, "unknown parameter type %d\n", static_cast<int>(param.type));
     return {};
+}
+
+Parameter Parameter::parse_from_string(const std::string& value) {
+    // string type
+    if (value.find('%') != std::string::npos) {
+        Parameter p(value);
+        return p;
+    }
+
+    // null type
+    if (value == "None" || value == "()" || value == "[]") {
+        return {};
+    }
+
+    // bool type
+    if (value == "True" || value == "False") {
+        return Parameter(value == "True");
+    }
+
+    // array
+    if (value[0] == '(' || value[0] == '[') {
+        Parameter p;
+        std::string lc = value.substr(1, value.size() - 2);
+        std::istringstream lcss(lc);
+        while (!lcss.eof()) {
+            std::string elem;
+            std::getline(lcss, elem, ',');
+            if ((elem[0] != '-' && (elem[0] < '0' || elem[0] > '9')) || (elem[0] == '-' && (elem[1] < '0' || elem[1] > '9'))) {
+                // array string
+                p.type = ParameterType::kParameterArrayString;
+                p.as.push_back(elem);
+            } else if (elem.find('.') != std::string::npos || elem.find('e') != std::string::npos) {
+                // array float
+                p.type = ParameterType::kParameterArrayFloat;
+                p.af.push_back(std::stof(elem));
+            } else {
+                // array integer
+                p.type = ParameterType::kParameterArrayInt;
+                p.ai.push_back(std::stoi(elem));
+            }
+        }
+        return p;
+    }
+
+    // string
+    if ((value[0] != '-' && (value[0] < '0' || value[0] > '9')) || (value[0] == '-' && (value[1] < '0' || value[1] > '9'))) {
+        Parameter p(value);
+        return p;
+    }
+
+    // float
+    if (value.find('.') != std::string::npos || value.find('e') != std::string::npos) {
+        return Parameter(std::stof(value));
+    }
+
+    // integer
+    return Parameter(std::stoi(value));
 }
 
 bool operator==(const Parameter& lhs, const Parameter& rhs) {
