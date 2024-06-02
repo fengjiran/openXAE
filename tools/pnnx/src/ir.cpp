@@ -12,6 +12,7 @@
 #include <sstream>
 #include <stack>
 #include <string>
+#include <cfloat>
 
 namespace pnnx {
 
@@ -409,7 +410,7 @@ bool operator==(const Parameter& lhs, const Parameter& rhs) {
         return true;
     }
 
-    if (lhs.type == ParameterType::kParameterFloat && lhs.f == rhs.f) {
+    if (lhs.type == ParameterType::kParameterFloat && std::abs(lhs.f - rhs.f) < FLT_EPSILON) {
         return true;
     }
 
