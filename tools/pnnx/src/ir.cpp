@@ -5,14 +5,15 @@
 #include "storezip.h"
 #include "utils.h"
 #include <algorithm>
+#include <cfloat>
 #include <climits>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
+#include <numeric>
 #include <sstream>
 #include <stack>
 #include <string>
-#include <cfloat>
 
 namespace pnnx {
 
@@ -439,6 +440,36 @@ bool operator==(const Parameter& lhs, const Parameter& rhs) {
     }
 
     return false;
+}
+
+Attribute::Attribute(const std::initializer_list<int>& shape, const std::vector<float>& t)
+    : type(AttributeType::kAttributeFloat32) {
+    this->shape = shape;
+    if (!this->shape.empty()) {
+        data.resize(elemcount() * elemsize());
+        memcpy((void*) data.data(), (const void*) t.data(), data.size());
+    }
+}
+
+size_t Attribute::elemsize() const {
+    return type_to_elemsize(type);
+}
+
+int Attribute::elemcount() const {
+    if (shape.empty()) {
+        return 0;
+    }
+
+    return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<>());
+}
+
+std::vector<float> Attribute::get_float32_data() const {
+    std::vector<float> v(elemcount());
+    if (type == AttributeType::kAttributeFloat32) {
+        memcpy((void *)v.data(), (const void *)data.data(), data.size());
+    } else if (type == AttributeType::kAttributeFloat64) {
+        //
+    }
 }
 
 }// namespace pnnx

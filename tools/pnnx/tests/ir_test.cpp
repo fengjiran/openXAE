@@ -67,4 +67,8 @@ TEST(IRTEST, Parameter) {
     ASSERT_EQ(Parameter::encode_to_string(p_c), "2.000000e+00+3.000000e+00i");
 }
 
+TEST(IRTEST, Attribute) {
+    //
+}
+
 }// namespace pnnx
