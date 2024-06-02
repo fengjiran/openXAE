@@ -340,7 +340,57 @@ public:
     std::string s;
     std::vector<std::string> as;
 };
+
 bool operator==(const Parameter& lhs, const Parameter& rhs);
+
+class Attribute {
+public:
+    /**
+     * @brief Default constructor.
+     */
+    Attribute() : type(AttributeType::kAttributeUnknown) {}
+
+    Attribute(const std::initializer_list<int>& shape, const std::vector<float>& t);
+
+#if BUILD_TORCH2PNNX
+    Attribute(const at::Tensor& t);
+#endif
+#if BUILD_ONNX2PNNX
+    Attribute(const onnx::TensorProto& t);
+#endif
+
+    size_t elemsize() const;
+
+    int elemcount() const;
+
+    // convenient routines for manipulate fp16/fp32 weight
+    std::vector<float> get_float32_data() const;
+    void set_float32_data(std::vector<float>& data);
+    /**
+     * @brief Runtime attribute type.
+     *
+     * 0 = null \n
+     * 1 = float32 \n
+     * 2 = float64 \n
+     * 3 = float16 \n
+     * 4 = int32 \n
+     * 5 = int64 \n
+     * 6 = int16 \n
+     * 7 = int8 \n
+     * 8 = uint8 \n
+     * 9 = bool \n
+     * 10 = complex64 \n
+     * 11 = complex128 \n
+     * 12 = complex32 \n
+     * 13 = bf16
+     */
+    AttributeType type;
+    std::vector<int> shape;
+    std::vector<char> data;
+    std::map<std::string, Parameter> params;
+};
+
+bool operator==(const Attribute& lhs, const Attribute& rhs);
 
 }// namespace pnnx
 
