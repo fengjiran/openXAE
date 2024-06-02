@@ -372,7 +372,7 @@ std::string Parameter::encode_to_string(const Parameter& param) {
 
     if (param.type == ParameterType::kParameterComplex) {
         char buf[128];
-        sprintf(buf, "%e+%ej", param.c.real(), param.c.imag());
+        sprintf(buf, "%e+%ei", param.c.real(), param.c.imag());
         return buf;
     }
 
@@ -381,7 +381,7 @@ std::string Parameter::encode_to_string(const Parameter& param) {
         size_t size = param.ac.size();
         for (const auto& ele: param.ac) {
             char buf[128];
-            sprintf(buf, "%e+%ej", ele.real(), ele.imag());
+            sprintf(buf, "%e+%ei", ele.real(), ele.imag());
             s += (std::string(buf) + (--size ? "," : ""));
         }
         s += ")";
