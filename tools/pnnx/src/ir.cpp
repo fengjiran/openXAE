@@ -512,4 +512,45 @@ void Attribute::set_float32_data(const std::vector<float>& data_) {
     }
 }
 
+bool operator==(const Attribute& lhs, const Attribute& rhs) {
+    if (lhs.type != rhs.type) {
+        return false;
+    }
+
+    if (lhs.type == AttributeType::kAttributeUnknown) {
+        return true;
+    }
+
+    if (lhs.shape != rhs.shape) {
+        return false;
+    }
+
+    if (lhs.data != rhs.data) {
+        return false;
+    }
+    return true;
+}
+
+Attribute operator+(const Attribute& a, const Attribute& b) {
+    Attribute c;
+    if (a.type != b.type) {
+        fprintf(stderr, "concat attribute type mismatch\n");
+        return c;
+    }
+
+    if (a.shape != b.shape) {
+        fprintf(stderr, "concat attribute shape mismatch\n");
+        return c;
+    }
+
+    c.type = a.type;
+    c.shape = a.shape;
+    c.shape[0] += b.shape[0];// concat the first dim
+
+    c.data.resize(a.data.size() + b.data.size());
+    memcpy(c.data.data(), a.data.data(), a.data.size());
+    memcpy(c.data.data() + a.data.size(), b.data.data(), b.data.size());
+    return c;
+}
+
 }// namespace pnnx

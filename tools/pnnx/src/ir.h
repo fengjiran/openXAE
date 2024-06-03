@@ -392,6 +392,14 @@ public:
 
 bool operator==(const Attribute& lhs, const Attribute& rhs);
 
+/**
+ * @brief Concat two attributes along the first axis.
+ * @param a left attribute
+ * @param b right attribute
+ * @return new attribute object.
+ */
+Attribute operator+(const Attribute& a, const Attribute& b);
+
 }// namespace pnnx
 
 
