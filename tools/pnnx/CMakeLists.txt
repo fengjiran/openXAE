@@ -70,6 +70,8 @@ endif ()
 
 include_directories(${TORCH_INCLUDE_DIRS})
 
+add_definitions(-D _GLIBCXX_USE_CXX11_ABI=0)
+
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # test if libtorch and protobuf has the same cxxabi version
     include(CheckCXXSourceCompiles)
@@ -80,8 +82,8 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 endif ()
 
 if ((PNNX_TORCH_USE_CXX11_ABI AND PNNX_COMPILER_USE_CXX11_ABI) OR (NOT PNNX_TORCH_USE_CXX11_ABI AND NOT PNNX_COMPILER_USE_CXX11_ABI))
-#        find_package(Protobuf REQUIRED)
-    find_package(protobuf CONFIG)
+        find_package(Protobuf REQUIRED)
+#    find_package(protobuf CONFIG)
 
     if (protobuf_FOUND)
         set(PROTOBUF_FOUND ${protobuf_FOUND})

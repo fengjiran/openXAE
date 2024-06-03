@@ -4,7 +4,7 @@
 //#include "glog/logging.h"
 #include "pnnx/src/ir.h"
 #include "gtest/gtest.h"
-//#include <torch/torch.h>
+#include "torch/torch.h"
 
 namespace pnnx {
 
@@ -68,9 +68,11 @@ TEST(IRTEST, Parameter) {
     ASSERT_EQ(Parameter::encode_to_string(p_c), "2.000000e+00+3.000000e+00i");
 }
 
-//TEST(IRTEST, Attribute) {
-//    auto a = torch::rand({2, 3});
-//    std::cout << a.sizes() << std::endl;
-//}
+TEST(IRTEST, Attribute) {
+    auto a = torch::rand({2, 3});
+    std::cout << a.sizes() << std::endl;
+    std::cout << a.dtype() << std::endl;
+    ASSERT_EQ(a.dtype().name(), "float");
+}
 
 }// namespace pnnx
