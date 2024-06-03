@@ -442,10 +442,9 @@ bool operator==(const Parameter& lhs, const Parameter& rhs) {
     return false;
 }
 
-Attribute::Attribute(const std::initializer_list<int>& shape, const std::vector<float>& t)
-    : type(AttributeType::kAttributeFloat32) {
-    this->shape = shape;
-    if (!this->shape.empty()) {
+Attribute::Attribute(const std::initializer_list<int>& shape_, const std::vector<float>& t)
+    : type(AttributeType::kAttributeFloat32), shape(shape_) {
+    if (!shape.empty()) {
         data.resize(elemcount() * elemsize());
         memcpy((void*) data.data(), (const void*) t.data(), data.size());
     }
@@ -466,9 +465,50 @@ int Attribute::elemcount() const {
 std::vector<float> Attribute::get_float32_data() const {
     std::vector<float> v(elemcount());
     if (type == AttributeType::kAttributeFloat32) {
-        memcpy((void *)v.data(), (const void *)data.data(), data.size());
+        memcpy((void*) v.data(), (const void*) data.data(), data.size());
     } else if (type == AttributeType::kAttributeFloat64) {
-        //
+        const auto* p = (const double*) data.data();
+        for (auto& item: v) {
+            item = static_cast<float>(*p++);
+        }
+    } else if (type == AttributeType::kAttributeFloat16) {
+        const auto* p = (const unsigned short*) data.data();
+        for (auto& item: v) {
+            item = float16_to_float32(*p++);
+        }
+    } else {
+        fprintf(stderr, "cannot convert type %d to float32 data\n", static_cast<int>(type));
+    }
+    return v;
+}
+
+void Attribute::set_float32_data(const std::vector<float>& data_) {
+    data.resize(data_.size() * elemsize());
+    switch (type) {
+        case AttributeType::kAttributeFloat32: {
+            memcpy((void*) data.data(), (const void*) data_.data(), data.size());
+            break;
+        }
+
+        case AttributeType::kAttributeFloat64: {
+            auto* p = (double*) data.data();
+            for (const auto& item: data_) {
+                *p = item;
+                ++p;
+            }
+            break;
+        }
+
+        case AttributeType::kAttributeFloat16: {
+            auto* p = (unsigned short*) data.data();
+            for (const auto& item: data_) {
+                *p = float32_to_float16(item);
+                ++p;
+            }
+        }
+
+        default:
+            fprintf(stderr, "cannot convert float32 data to type %d\n", static_cast<int>(type));
     }
 }
 

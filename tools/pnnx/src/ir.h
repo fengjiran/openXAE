@@ -350,7 +350,7 @@ public:
      */
     Attribute() : type(AttributeType::kAttributeUnknown) {}
 
-    Attribute(const std::initializer_list<int>& shape, const std::vector<float>& t);
+    Attribute(const std::initializer_list<int>& shape_, const std::vector<float>& t);
 
 #if BUILD_TORCH2PNNX
     Attribute(const at::Tensor& t);
@@ -365,7 +365,7 @@ public:
 
     // convenient routines for manipulate fp16/fp32 weight
     std::vector<float> get_float32_data() const;
-    void set_float32_data(std::vector<float>& data);
+    void set_float32_data(const std::vector<float>& data_);
     /**
      * @brief Runtime attribute type.
      *
