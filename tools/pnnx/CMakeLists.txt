@@ -33,6 +33,7 @@ find_package(Torch REQUIRED)
 find_package(TorchVision QUIET)
 
 message(STATUS "Torch_DIR = ${Torch_DIR}")
+message(STATUS "Torch_LIB_DIR = ${TORCH_LIBRARY}")
 message(STATUS "TorchVision_DIR = ${TorchVision_DIR}")
 message(STATUS "Torch_VERSION = ${Torch_VERSION}")
 message(STATUS "Torch_VERSION_MAJOR = ${Torch_VERSION_MAJOR}")

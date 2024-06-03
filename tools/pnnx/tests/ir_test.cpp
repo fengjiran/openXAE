@@ -1,9 +1,10 @@
 //
 // Created by fengj on 2024/6/1.
 //
-#include "glog/logging.h"
+//#include "glog/logging.h"
 #include "pnnx/src/ir.h"
 #include "gtest/gtest.h"
+//#include <torch/torch.h>
 
 namespace pnnx {
 
@@ -67,8 +68,9 @@ TEST(IRTEST, Parameter) {
     ASSERT_EQ(Parameter::encode_to_string(p_c), "2.000000e+00+3.000000e+00i");
 }
 
-TEST(IRTEST, Attribute) {
-    //
-}
+//TEST(IRTEST, Attribute) {
+//    auto a = torch::rand({2, 3});
+//    std::cout << a.sizes() << std::endl;
+//}
 
 }// namespace pnnx
