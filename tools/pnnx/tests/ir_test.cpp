@@ -4,8 +4,8 @@
 
 //#include "glog/logging.h"
 #include "pnnx/src/ir.h"
-#include "gtest/gtest.h"
 #include "torch/torch.h"
+#include "gtest/gtest.h"
 
 namespace pnnx {
 
@@ -69,11 +69,41 @@ TEST(IRTEST, Parameter) {
     ASSERT_EQ(Parameter::encode_to_string(p_c), "2.000000e+00+3.000000e+00i");
 }
 
-TEST(IRTEST, Attribute) {
-    auto a = torch::rand({2, 3});
+TEST(IRTEST, libtorch) {
+    auto options = torch::TensorOptions()
+                           .dtype(torch::kFloat32)
+                           .layout(torch::kStrided)
+                           .device(torch::kCPU)
+                           .requires_grad(false);
+    auto a = torch::rand({2, 3}, options);
     std::cout << a.sizes() << std::endl;
     std::cout << a.dtype() << std::endl;
+    std::cout << a.device() << std::endl;
+    std::cout << a.layout() << std::endl;
+    std::cout << a.requires_grad() << std::endl;
     ASSERT_EQ(a.dtype().name(), "float");
+}
+
+TEST(IRTEST, Attribute) {
+    at::IntArrayRef shape = {2, 3};
+    //    at::IntArrayRef shape = std::vector<int64_t>({2, 3});
+
+    auto t = torch::rand(shape);
+    t.contiguous();
+
+    std::cout << "stride0: " << t.stride(0) << std::endl;
+    std::cout << "stride1: " << t.stride(1) << std::endl;
+
+    for (int64_t i = 0; i < shape[0]; ++i) {
+        for (int64_t j = 0; j < shape[1]; ++j) {
+            int64_t idx = i * t.stride(0) + j;
+            ASSERT_FLOAT_EQ(t[i][j].item().toFloat(), *(t.data_ptr<float>() + idx));
+        }
+    }
+
+    Attribute weight({2, 3}, std::vector<float>(t.data_ptr<float>(), t.data_ptr<float>() + t.numel()));
+    std::cout << "elem size: " << weight.elemsize() << std::endl;
+    std::cout << "elem count: " << weight.elemcount() << std::endl;
 }
 
 }// namespace pnnx
