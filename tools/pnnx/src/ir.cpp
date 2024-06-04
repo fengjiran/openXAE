@@ -4,7 +4,6 @@
 #include "ir.h"
 #include "storezip.h"
 #include "utils.h"
-#include <algorithm>
 #include <cfloat>
 #include <climits>
 #include <cstdint>
@@ -13,7 +12,6 @@
 #include <numeric>
 #include <sstream>
 #include <stack>
-#include <string>
 
 namespace pnnx {
 
@@ -551,6 +549,31 @@ Attribute operator+(const Attribute& a, const Attribute& b) {
     memcpy(c.data.data(), a.data.data(), a.data.size());
     memcpy(c.data.data() + a.data.size(), b.data.data(), b.data.size());
     return c;
+}
+
+void Operand::remove_consumer(const Operator* op) {
+    auto it = std::find(consumers.begin(), consumers.end(), op);
+    if (it != consumers.end()) {
+        consumers.erase(it);
+    }
+}
+
+Operand* Operator::named_input(const std::string& key) {
+    for (size_t i = 0; i < input_names.size(); ++i) {
+        if (key == input_names[i]) {
+            return inputs[i];
+        }
+    }
+    return nullptr;
+}
+
+const Operand* Operator::named_input(const std::string& key) const {
+    for (size_t i = 0; i < input_names.size(); ++i) {
+        if (key == input_names[i]) {
+            return inputs[i];
+        }
+    }
+    return nullptr;
 }
 
 }// namespace pnnx

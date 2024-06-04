@@ -5,6 +5,7 @@
 #ifndef OPENXAE_IR_H
 #define OPENXAE_IR_H
 
+#include <algorithm>
 #include <climits>
 #include <complex>
 #include <initializer_list>
@@ -12,7 +13,6 @@
 #include <map>
 #include <set>
 #include <string>
-#include <utility>
 #include <vector>
 
 #if BUILD_TORCH2PNNX
@@ -79,7 +79,6 @@ enum class DataType {
     kDataTypeComplex32 = 12,
     kDataTypeBFloat16 = 13
 };
-
 
 
 class Parameter {
@@ -369,7 +368,7 @@ public:
     std::vector<float> get_float32_data() const;
     void set_float32_data(const std::vector<float>& data_);
     /**
-     * @brief Runtime attribute type.
+     * @brief Runtime data type.
      *
      * 0 = null \n
      * 1 = float32 \n
@@ -404,7 +403,74 @@ Attribute operator+(const Attribute& a, const Attribute& b);
 
 class Operator;
 class Operand {
+public:
+    void remove_consumer(const Operator*);
+    Operator* producer{};
+    std::vector<Operator*> consumers;
+    /**
+     * @brief Runtime data type.
+     *
+     * 0 = null \n
+     * 1 = float32 \n
+     * 2 = float64 \n
+     * 3 = float16 \n
+     * 4 = int32 \n
+     * 5 = int64 \n
+     * 6 = int16 \n
+     * 7 = int8 \n
+     * 8 = uint8 \n
+     * 9 = bool \n
+     * 10 = complex64 \n
+     * 11 = complex128 \n
+     * 12 = complex32 \n
+     * 13 = bf16
+     */
+    DataType type;
+    std::vector<int> shape;
 
+    // keep std::string typed member the last for cross cxxabi compatibility
+    std::string name;
+    std::map<std::string, Parameter> params;
+
+private:
+    Operand() : type(DataType::kDataTypeUnknown) {}
+    friend class Graph;
+};
+
+class Operator {
+public:
+    bool has_param(const std::string& key) const {
+        return params.find(key) != params.end();
+    }
+
+    bool has_attr(const std::string& key) const {
+        return attrs.find(key) != attrs.end();
+    }
+
+    bool has_input(const std::string& key) const {
+        return std::find(input_names.begin(), input_names.end(), key) != input_names.end();
+    }
+
+    Operand* named_input(const std::string& key);
+    const Operand* named_input(const std::string& key) const;
+
+    std::vector<Operand*> inputs;
+    std::vector<Operand*> outputs;
+
+    // keep std::string typed member the last for cross cxxabi compatibility
+    std::string type;
+    std::string name;
+    std::vector<std::string> input_names;
+    std::map<std::string, Parameter> params;
+    std::map<std::string, Attribute> attrs;
+
+private:
+    friend class Graph;
+    Operator() = default;
+};
+
+class Graph {
+    //
 };
 
 }// namespace pnnx
