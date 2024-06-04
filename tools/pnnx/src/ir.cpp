@@ -576,4 +576,12 @@ const Operand* Operator::named_input(const std::string& key) const {
     return nullptr;
 }
 
+Operator* Graph::new_operator(const std::string& type, const std::string& name) {
+    auto* op = new Operator;
+    op->type = type;
+    op->name = name;
+    ops.push_back(op);
+    return op;
+}
+
 }// namespace pnnx

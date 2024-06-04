@@ -470,7 +470,21 @@ private:
 };
 
 class Graph {
-    //
+public:
+    Graph() = default;
+    ~Graph();
+
+    int load(const std::string& parampath, const std::string& binpath);
+    int save(const std::string& parampath, const std::string& binpath);
+
+    Operator* new_operator(const std::string& type, const std::string& name);
+
+    std::vector<Operator*> ops;
+    std::vector<Operand*> operands;
+
+private:
+    Graph(const Graph& rhs) {}
+    Graph& operator=(const Graph& rhs) { return *this; }
 };
 
 }// namespace pnnx
