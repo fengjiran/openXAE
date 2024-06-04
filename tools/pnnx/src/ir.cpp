@@ -17,26 +17,26 @@
 
 namespace pnnx {
 
-static bool type_is_integer(AttributeType type) {
+static bool type_is_integer(DataType type) {
     bool flag;
     switch (type) {
-        case AttributeType::kAttributeInt32:
-        case AttributeType::kAttributeInt64:
-        case AttributeType::kAttributeInt16:
-        case AttributeType::kAttributeInt8:
-        case AttributeType::kAttributeUInt8:
-        case AttributeType::kAttributeBool:
+        case DataType::kDataTypeInt32:
+        case DataType::kDataTypeInt64:
+        case DataType::kDataTypeInt16:
+        case DataType::kDataTypeInt8:
+        case DataType::kDataTypeUInt8:
+        case DataType::kDataTypeBool:
             flag = true;
             break;
 
-        case AttributeType::kAttributeUnknown:
-        case AttributeType::kAttributeFloat32:
-        case AttributeType::kAttributeFloat64:
-        case AttributeType::kAttributeFloat16:
-        case AttributeType::kAttributeComplex64:
-        case AttributeType::kAttributeComplex128:
-        case AttributeType::kAttributeComplex32:
-        case AttributeType::kAttributeBFloat16:
+        case DataType::kDataTypeUnknown:
+        case DataType::kDataTypeFloat32:
+        case DataType::kDataTypeFloat64:
+        case DataType::kDataTypeFloat16:
+        case DataType::kDataTypeComplex64:
+        case DataType::kDataTypeComplex128:
+        case DataType::kDataTypeComplex32:
+        case DataType::kDataTypeBFloat16:
             flag = false;
             break;
 
@@ -47,213 +47,213 @@ static bool type_is_integer(AttributeType type) {
     return flag;
 }
 
-static const char* type_to_string(AttributeType type) {
+static const char* type_to_string(DataType type) {
     const char* str;
     switch (type) {
-        case AttributeType::kAttributeFloat32:
+        case DataType::kDataTypeFloat32:
             str = "f32";
             break;
-        case AttributeType::kAttributeFloat64:
+        case DataType::kDataTypeFloat64:
             str = "f64";
             break;
-        case AttributeType::kAttributeFloat16:
+        case DataType::kDataTypeFloat16:
             str = "f16";
             break;
-        case AttributeType::kAttributeInt32:
+        case DataType::kDataTypeInt32:
             str = "i32";
             break;
-        case AttributeType::kAttributeInt64:
+        case DataType::kDataTypeInt64:
             str = "i64";
             break;
-        case AttributeType::kAttributeInt16:
+        case DataType::kDataTypeInt16:
             str = "i16";
             break;
-        case AttributeType::kAttributeInt8:
+        case DataType::kDataTypeInt8:
             str = "i8";
             break;
-        case AttributeType::kAttributeUInt8:
+        case DataType::kDataTypeUInt8:
             str = "u8";
             break;
-        case AttributeType::kAttributeBool:
+        case DataType::kDataTypeBool:
             str = "bool";
             break;
-        case AttributeType::kAttributeComplex64:
+        case DataType::kDataTypeComplex64:
             str = "c64";
             break;
-        case AttributeType::kAttributeComplex128:
+        case DataType::kDataTypeComplex128:
             str = "c128";
             break;
-        case AttributeType::kAttributeComplex32:
+        case DataType::kDataTypeComplex32:
             str = "c32";
             break;
-        case AttributeType::kAttributeBFloat16:
+        case DataType::kDataTypeBFloat16:
             str = "bf16";
             break;
-        case AttributeType::kAttributeUnknown:
+        case DataType::kDataTypeUnknown:
             str = "unknown";
             break;
     }
     return str;
 }
 
-static const char* type_to_numpy_string(AttributeType type) {
+static const char* type_to_numpy_string(DataType type) {
     const char* str;
     switch (type) {
-        case AttributeType::kAttributeFloat32:
+        case DataType::kDataTypeFloat32:
             str = "float32";
             break;
-        case AttributeType::kAttributeFloat64:
+        case DataType::kDataTypeFloat64:
             str = "float64";
             break;
-        case AttributeType::kAttributeFloat16:
+        case DataType::kDataTypeFloat16:
             str = "float16";
             break;
-        case AttributeType::kAttributeInt32:
+        case DataType::kDataTypeInt32:
             str = "int32";
             break;
-        case AttributeType::kAttributeInt64:
+        case DataType::kDataTypeInt64:
             str = "int64";
             break;
-        case AttributeType::kAttributeInt16:
+        case DataType::kDataTypeInt16:
             str = "int16";
             break;
-        case AttributeType::kAttributeInt8:
+        case DataType::kDataTypeInt8:
             str = "int8";
             break;
-        case AttributeType::kAttributeUInt8:
+        case DataType::kDataTypeUInt8:
             str = "uint8";
             break;
-        case AttributeType::kAttributeBool:
+        case DataType::kDataTypeBool:
             str = "bool8";
             break;
-        case AttributeType::kAttributeComplex64:
+        case DataType::kDataTypeComplex64:
             str = "csingle";
             break;
-        case AttributeType::kAttributeComplex128:
+        case DataType::kDataTypeComplex128:
             str = "cdouble";
             break;
-        case AttributeType::kAttributeComplex32:
+        case DataType::kDataTypeComplex32:
             str = "chalf";
             break;
-        case AttributeType::kAttributeBFloat16:
+        case DataType::kDataTypeBFloat16:
             str = "bfloat16";
             break;
-        case AttributeType::kAttributeUnknown:
+        case DataType::kDataTypeUnknown:
             str = "unknown";
             break;
     }
     return str;
 }
 
-static const char* type_to_dtype_string(AttributeType type) {
+static const char* type_to_dtype_string(DataType type) {
     const char* str;
     switch (type) {
-        case AttributeType::kAttributeFloat32:
+        case DataType::kDataTypeFloat32:
             str = "torch.float";
             break;
-        case AttributeType::kAttributeFloat64:
+        case DataType::kDataTypeFloat64:
             str = "torch.double";
             break;
-        case AttributeType::kAttributeFloat16:
+        case DataType::kDataTypeFloat16:
             str = "torch.half";
             break;
-        case AttributeType::kAttributeInt32:
+        case DataType::kDataTypeInt32:
             str = "torch.int";
             break;
-        case AttributeType::kAttributeInt64:
+        case DataType::kDataTypeInt64:
             str = "torch.long";
             break;
-        case AttributeType::kAttributeInt16:
+        case DataType::kDataTypeInt16:
             str = "torch.short";
             break;
-        case AttributeType::kAttributeInt8:
+        case DataType::kDataTypeInt8:
             str = "torch.int8";
             break;
-        case AttributeType::kAttributeUInt8:
+        case DataType::kDataTypeUInt8:
             str = "torch.uint8";
             break;
-        case AttributeType::kAttributeBool:
+        case DataType::kDataTypeBool:
             str = "torch.bool";
             break;
-        case AttributeType::kAttributeComplex64:
+        case DataType::kDataTypeComplex64:
             str = "torch.complex64";
             break;
-        case AttributeType::kAttributeComplex128:
+        case DataType::kDataTypeComplex128:
             str = "torch.complex128";
             break;
-        case AttributeType::kAttributeComplex32:
+        case DataType::kDataTypeComplex32:
             str = "torch.complex32";
             break;
-        case AttributeType::kAttributeBFloat16:
+        case DataType::kDataTypeBFloat16:
             str = "torch.bfloat16";
             break;
-        case AttributeType::kAttributeUnknown:
+        case DataType::kDataTypeUnknown:
             str = "unknown";
             break;
     }
     return str;
 }
 
-static size_t type_to_elemsize(AttributeType type) {
+static size_t type_to_elemsize(DataType type) {
     size_t elemsize;
     switch (type) {
-        case AttributeType::kAttributeFloat32:
+        case DataType::kDataTypeFloat32:
             elemsize = 4;
             break;
-        case AttributeType::kAttributeFloat64:
+        case DataType::kDataTypeFloat64:
             elemsize = 8;
             break;
-        case AttributeType::kAttributeFloat16:
+        case DataType::kDataTypeFloat16:
             elemsize = 2;
             break;
-        case AttributeType::kAttributeInt32:
+        case DataType::kDataTypeInt32:
             elemsize = 4;
             break;
-        case AttributeType::kAttributeInt64:
+        case DataType::kDataTypeInt64:
             elemsize = 8;
             break;
-        case AttributeType::kAttributeInt16:
+        case DataType::kDataTypeInt16:
             elemsize = 2;
             break;
-        case AttributeType::kAttributeInt8:
-        case AttributeType::kAttributeUInt8:
-        case AttributeType::kAttributeBool:
+        case DataType::kDataTypeInt8:
+        case DataType::kDataTypeUInt8:
+        case DataType::kDataTypeBool:
             elemsize = 1;
             break;
-        case AttributeType::kAttributeComplex64:
+        case DataType::kDataTypeComplex64:
             elemsize = 8;
             break;
-        case AttributeType::kAttributeComplex128:
+        case DataType::kDataTypeComplex128:
             elemsize = 16;
             break;
-        case AttributeType::kAttributeComplex32:
+        case DataType::kDataTypeComplex32:
             elemsize = 4;
             break;
-        case AttributeType::kAttributeBFloat16:
+        case DataType::kDataTypeBFloat16:
             elemsize = 2;
             break;
-        case AttributeType::kAttributeUnknown:
+        case DataType::kDataTypeUnknown:
             elemsize = 0;
             break;
     }
     return elemsize;
 }
 
-static AttributeType string_to_type(const char* s) {
-    if (std::strcmp(s, "f32") == 0) return AttributeType::kAttributeFloat32;
-    if (std::strcmp(s, "f64") == 0) return AttributeType::kAttributeFloat64;
-    if (std::strcmp(s, "f16") == 0) return AttributeType::kAttributeFloat16;
-    if (std::strcmp(s, "i32") == 0) return AttributeType::kAttributeInt32;
-    if (std::strcmp(s, "i64") == 0) return AttributeType::kAttributeInt64;
-    if (std::strcmp(s, "i16") == 0) return AttributeType::kAttributeInt16;
-    if (std::strcmp(s, "i8") == 0) return AttributeType::kAttributeInt8;
-    if (std::strcmp(s, "u8") == 0) return AttributeType::kAttributeUInt8;
-    if (std::strcmp(s, "bool") == 0) return AttributeType::kAttributeBool;
-    if (std::strcmp(s, "c64") == 0) return AttributeType::kAttributeComplex64;
-    if (std::strcmp(s, "c128") == 0) return AttributeType::kAttributeComplex128;
-    if (std::strcmp(s, "c32") == 0) return AttributeType::kAttributeComplex32;
-    if (std::strcmp(s, "bf16") == 0) return AttributeType::kAttributeBFloat16;
-    return AttributeType::kAttributeUnknown;
+static DataType string_to_type(const char* s) {
+    if (std::strcmp(s, "f32") == 0) return DataType::kDataTypeFloat32;
+    if (std::strcmp(s, "f64") == 0) return DataType::kDataTypeFloat64;
+    if (std::strcmp(s, "f16") == 0) return DataType::kDataTypeFloat16;
+    if (std::strcmp(s, "i32") == 0) return DataType::kDataTypeInt32;
+    if (std::strcmp(s, "i64") == 0) return DataType::kDataTypeInt64;
+    if (std::strcmp(s, "i16") == 0) return DataType::kDataTypeInt16;
+    if (std::strcmp(s, "i8") == 0) return DataType::kDataTypeInt8;
+    if (std::strcmp(s, "u8") == 0) return DataType::kDataTypeUInt8;
+    if (std::strcmp(s, "bool") == 0) return DataType::kDataTypeBool;
+    if (std::strcmp(s, "c64") == 0) return DataType::kDataTypeComplex64;
+    if (std::strcmp(s, "c128") == 0) return DataType::kDataTypeComplex128;
+    if (std::strcmp(s, "c32") == 0) return DataType::kDataTypeComplex32;
+    if (std::strcmp(s, "bf16") == 0) return DataType::kDataTypeBFloat16;
+    return DataType::kDataTypeUnknown;
 }
 
 std::string Parameter::encode_to_string(const Parameter& param) {
@@ -443,7 +443,7 @@ bool operator==(const Parameter& lhs, const Parameter& rhs) {
 }
 
 Attribute::Attribute(const std::initializer_list<int>& shape_, const std::vector<float>& t)
-    : type(AttributeType::kAttributeFloat32), shape(shape_) {
+    : type(DataType::kDataTypeFloat32), shape(shape_) {
     if (!shape.empty()) {
         data.resize(elemcount() * elemsize());
         memcpy((void*) data.data(), (const void*) t.data(), data.size());
@@ -464,14 +464,14 @@ int Attribute::elemcount() const {
 
 std::vector<float> Attribute::get_float32_data() const {
     std::vector<float> v(elemcount());
-    if (type == AttributeType::kAttributeFloat32) {
+    if (type == DataType::kDataTypeFloat32) {
         memcpy((void*) v.data(), (const void*) data.data(), data.size());
-    } else if (type == AttributeType::kAttributeFloat64) {
+    } else if (type == DataType::kDataTypeFloat64) {
         const auto* p = (const double*) data.data();
         for (auto& item: v) {
             item = static_cast<float>(*p++);
         }
-    } else if (type == AttributeType::kAttributeFloat16) {
+    } else if (type == DataType::kDataTypeFloat16) {
         const auto* p = (const unsigned short*) data.data();
         for (auto& item: v) {
             item = float16_to_float32(*p++);
@@ -485,12 +485,12 @@ std::vector<float> Attribute::get_float32_data() const {
 void Attribute::set_float32_data(const std::vector<float>& data_) {
     data.resize(data_.size() * elemsize());
     switch (type) {
-        case AttributeType::kAttributeFloat32: {
+        case DataType::kDataTypeFloat32: {
             memcpy((void*) data.data(), (const void*) data_.data(), data.size());
             break;
         }
 
-        case AttributeType::kAttributeFloat64: {
+        case DataType::kDataTypeFloat64: {
             auto* p = (double*) data.data();
             for (const auto& item: data_) {
                 *p = item;
@@ -499,7 +499,7 @@ void Attribute::set_float32_data(const std::vector<float>& data_) {
             break;
         }
 
-        case AttributeType::kAttributeFloat16: {
+        case DataType::kDataTypeFloat16: {
             auto* p = (unsigned short*) data.data();
             for (const auto& item: data_) {
                 *p = float32_to_float16(item);
@@ -517,7 +517,7 @@ bool operator==(const Attribute& lhs, const Attribute& rhs) {
         return false;
     }
 
-    if (lhs.type == AttributeType::kAttributeUnknown) {
+    if (lhs.type == DataType::kDataTypeUnknown) {
         return true;
     }
 

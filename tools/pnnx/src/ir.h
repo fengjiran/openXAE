@@ -61,24 +61,26 @@ enum class ParameterType {
 };
 
 /**
- * @brief Runtime attribute type.
+ * @brief Runtime data type.
  */
-enum class AttributeType {
-    kAttributeUnknown = 0,
-    kAttributeFloat32 = 1,
-    kAttributeFloat64 = 2,
-    kAttributeFloat16 = 3,
-    kAttributeInt32 = 4,
-    kAttributeInt64 = 5,
-    kAttributeInt16 = 6,
-    kAttributeInt8 = 7,
-    kAttributeUInt8 = 8,
-    kAttributeBool = 9,
-    kAttributeComplex64 = 10,
-    kAttributeComplex128 = 11,
-    kAttributeComplex32 = 12,
-    kAttributeBFloat16 = 13
+enum class DataType {
+    kDataTypeUnknown = 0,
+    kDataTypeFloat32 = 1,
+    kDataTypeFloat64 = 2,
+    kDataTypeFloat16 = 3,
+    kDataTypeInt32 = 4,
+    kDataTypeInt64 = 5,
+    kDataTypeInt16 = 6,
+    kDataTypeInt8 = 7,
+    kDataTypeUInt8 = 8,
+    kDataTypeBool = 9,
+    kDataTypeComplex64 = 10,
+    kDataTypeComplex128 = 11,
+    kDataTypeComplex32 = 12,
+    kDataTypeBFloat16 = 13
 };
+
+
 
 class Parameter {
 public:
@@ -348,7 +350,7 @@ public:
     /**
      * @brief Default constructor.
      */
-    Attribute() : type(AttributeType::kAttributeUnknown) {}
+    Attribute() : type(DataType::kDataTypeUnknown) {}
 
     Attribute(const std::initializer_list<int>& shape_, const std::vector<float>& t);
 
@@ -384,7 +386,7 @@ public:
      * 12 = complex32 \n
      * 13 = bf16
      */
-    AttributeType type;
+    DataType type;
     std::vector<int> shape;
     std::vector<char> data;
     std::map<std::string, Parameter> params;
@@ -399,6 +401,11 @@ bool operator==(const Attribute& lhs, const Attribute& rhs);
  * @return new attribute object.
  */
 Attribute operator+(const Attribute& a, const Attribute& b);
+
+class Operator;
+class Operand {
+
+};
 
 }// namespace pnnx
 
