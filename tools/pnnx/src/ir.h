@@ -479,6 +479,16 @@ public:
 
     Operator* new_operator(const std::string& type, const std::string& name);
 
+    Operator* new_operator_before(const std::string& type, const std::string& name, const Operator* cur);
+
+    Operator* new_operator_after(const std::string& type, const std::string& name, const Operator* cur);
+
+    Operand* new_operand(const std::string& name);
+
+    Operand* get_operand(const std::string& name);
+
+    const Operand* get_operand(const std::string& name) const;
+
     std::vector<Operator*> ops;
     std::vector<Operand*> operands;
 

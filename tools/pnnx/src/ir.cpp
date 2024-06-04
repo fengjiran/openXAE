@@ -584,4 +584,45 @@ Operator* Graph::new_operator(const std::string& type, const std::string& name) 
     return op;
 }
 
+Operator* Graph::new_operator_before(const std::string& type, const std::string& name, const Operator* cur) {
+    auto* op = new Operator;
+    op->type = type;
+    op->name = name;
+    ops.insert(std::find(ops.begin(), ops.end(), cur), op);
+    return op;
+}
+
+Operator* Graph::new_operator_after(const std::string& type, const std::string& name, const Operator* cur) {
+    auto* op = new Operator;
+    op->type = type;
+    op->name = name;
+    ops.insert(std::find(ops.begin(), ops.end(), cur) + 1, op);
+    return op;
+}
+
+Operand* Graph::new_operand(const std::string& name) {
+    auto* r = new Operand;
+    r->name = name;
+    operands.push_back(r);
+    return r;
+}
+
+Operand* Graph::get_operand(const std::string& name) {
+    for (auto* r: operands) {
+        if (r->name == name) {
+            return r;
+        }
+    }
+    return nullptr;
+}
+
+const Operand* Graph::get_operand(const std::string& name) const {
+    for (const auto* r: operands) {
+        if (r->name == name) {
+            return r;
+        }
+    }
+    return nullptr;
+}
+
 }// namespace pnnx
