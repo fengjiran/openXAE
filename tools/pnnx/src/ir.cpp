@@ -8,6 +8,7 @@
 #include <climits>
 #include <cstdint>
 #include <cstring>
+#include <format>
 #include <fstream>
 #include <numeric>
 #include <sstream>
@@ -273,7 +274,8 @@ std::string Parameter::encode_to_string(const Parameter& param) {
 
     if (param.type == ParameterType::kParameterFloat) {
         char buf[64];
-        sprintf(buf, "%e", param.f);
+        //        sprintf(buf, "%e", param.f);
+        snprintf(buf, sizeof(buf), "%e", param.f);
         return buf;
     }
 
@@ -296,7 +298,8 @@ std::string Parameter::encode_to_string(const Parameter& param) {
         size_t size = param.af.size();
         for (const auto& ele: param.af) {
             char buf[64];
-            sprintf(buf, "%e", ele);
+            //            sprintf(buf, "%e", ele);
+            snprintf(buf, sizeof(buf), "%e", ele);
             s += (std::string(buf) + (--size ? "," : ""));
         }
         s += ")";
@@ -315,7 +318,8 @@ std::string Parameter::encode_to_string(const Parameter& param) {
 
     if (param.type == ParameterType::kParameterComplex) {
         char buf[128];
-        sprintf(buf, "%e+%ei", param.c.real(), param.c.imag());
+        //        sprintf(buf, "%e+%ei", param.c.real(), param.c.imag());
+        snprintf(buf, sizeof(buf), "%e+%ei", param.c.real(), param.c.imag());
         return buf;
     }
 
@@ -324,7 +328,8 @@ std::string Parameter::encode_to_string(const Parameter& param) {
         size_t size = param.ac.size();
         for (const auto& ele: param.ac) {
             char buf[128];
-            sprintf(buf, "%e+%ei", ele.real(), ele.imag());
+            //            sprintf(buf, "%e+%ei", ele.real(), ele.imag());
+            snprintf(buf, sizeof(buf), "%e+%ei", ele.real(), ele.imag());
             s += (std::string(buf) + (--size ? "," : ""));
         }
         s += ")";
@@ -590,6 +595,7 @@ int Graph::save(const std::string& parampath, const std::string& binpath) {
     }
 
     // magic number
+    return 0;
 }
 
 int Graph::load(const std::string& parampath, const std::string& binpath) {
@@ -598,6 +604,7 @@ int Graph::load(const std::string& parampath, const std::string& binpath) {
         fprintf(stderr, "file open failed.\n");
         return -1;
     }
+    return 0;
 }
 
 Operator* Graph::new_operator(const std::string& type, const std::string& name) {
