@@ -576,6 +576,30 @@ const Operand* Operator::named_input(const std::string& key) const {
     return nullptr;
 }
 
+int Graph::save(const std::string& parampath, const std::string& binpath) {
+    FILE* paramfp = fopen(parampath.c_str(), "wb");
+    if (!paramfp) {
+        fprintf(stderr, "fopen %s failed!\n", parampath.c_str());
+        return -1;
+    }
+
+    StoreZipWriter szw;
+    if (szw.open(binpath) != 0) {
+        fprintf(stderr, "open %s failed!\n", binpath.c_str());
+        return -1;
+    }
+
+    // magic number
+}
+
+int Graph::load(const std::string& parampath, const std::string& binpath) {
+    std::ifstream is(parampath, std::ios::in | std::ios::binary);
+    if (!is.is_open()) {
+        fprintf(stderr, "file open failed.\n");
+        return -1;
+    }
+}
+
 Operator* Graph::new_operator(const std::string& type, const std::string& name) {
     auto* op = new Operator;
     op->type = type;

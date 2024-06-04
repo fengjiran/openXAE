@@ -477,6 +477,10 @@ public:
     int load(const std::string& parampath, const std::string& binpath);
     int save(const std::string& parampath, const std::string& binpath);
 
+    int python(const std::string& pypath, const std::string& binpath);
+
+    int parse(const std::string& param);
+
     Operator* new_operator(const std::string& type, const std::string& name);
 
     Operator* new_operator_before(const std::string& type, const std::string& name, const Operator* cur);
@@ -488,6 +492,14 @@ public:
     Operand* get_operand(const std::string& name);
 
     const Operand* get_operand(const std::string& name) const;
+
+#if BUILD_TORCH2PNNX
+    Operand* new_operand(const torch::jit::Value* v);
+#endif
+#if BUILD_ONNX2PNNX
+    Operand* new_operand(const onnx::ValueInfoProto& value);
+    Operand* new_operand(const onnx::TensorProto& t);
+#endif
 
     std::vector<Operator*> ops;
     std::vector<Operand*> operands;
