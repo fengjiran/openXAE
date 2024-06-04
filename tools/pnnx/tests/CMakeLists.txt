@@ -7,7 +7,7 @@ add_executable(${PROJECT_NAME}_test ${TEST_SRC_FILES})
 
 target_link_libraries(${PROJECT_NAME}_test
         ${PROJECT_NAME}_lib
-        ${TORCH_LIBRARIES}
         GTest::gtest_main
         glog::glog
+        ${TORCH_LIBRARIES}
 )
