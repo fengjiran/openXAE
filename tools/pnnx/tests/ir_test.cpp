@@ -104,6 +104,10 @@ TEST(IRTEST, Attribute) {
     Attribute weight({2, 3}, std::vector<float>(t.data_ptr<float>(), t.data_ptr<float>() + t.numel()));
     std::cout << "elem size: " << weight.elemsize() << std::endl;
     std::cout << "elem count: " << weight.elemcount() << std::endl;
+
+    std::string x = "#input=(1,3,10,10)f32";
+    std::cout << x.substr(x.find_last_of(')') + 1) << std::endl;
+    std::cout << x.substr(1, x.find_last_of(')') - 1) << std::endl;
 }
 
 }// namespace pnnx

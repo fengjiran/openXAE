@@ -576,6 +576,69 @@ const Operand* Operator::named_input(const std::string& key) const {
     return nullptr;
 }
 
+static void load_parameter(Operator* op, const std::string& key, const std::string& value) {
+    op->params[key] = Parameter::parse_from_string(value);
+}
+
+static void load_input_key(Operator* op, const std::string& key, const std::string& value) {
+    op->input_names.resize(op->inputs.size());
+    for (size_t i = 0; i < op->inputs.size(); ++i) {
+        const auto* operand = op->inputs[i];
+        if (operand->name == value) {
+            op->input_names[i] = key;
+            break;
+        }
+    }
+}
+
+static void load_shape(Operator* op, const std::string& key, const std::string& value) {
+    Operand* operand = nullptr;
+    for (const auto r: op->inputs) {
+        if (r->name == key) {
+            operand = r;
+            break;
+        }
+    }
+
+    if (!operand) {
+        for (const auto r: op->outputs) {
+            if (r->name == key) {
+                operand = r;
+                break;
+            }
+        }
+    }
+
+    if (!operand) {
+        fprintf(stderr, "no such operand %s for operator %s\n", key.c_str(), op->name.c_str());
+        return;
+    }
+
+    // parse type, e.g. #input=(1,3,10,10)f32
+    std::string typestr = value.substr(value.find_last_of(')') + 1);
+    operand->type = string_to_type(typestr.c_str());
+
+    // parse shape
+    std::string lc = value.substr(1, value.find_last_of(')') - 1);
+    std::istringstream lcss(lc);
+    operand->shape.clear();
+    while (!lcss.eof()) {
+        std::string elem;
+        std::getline(lcss, elem, ',');
+        if (elem == "?") {
+            operand->shape.push_back(-1);
+        } else if (elem[0] == '%') {
+            // encode %abc as symbolic tag
+            operand->shape.push_back(-233);
+            size_t index = operand->shape.size() - 1;
+            std::string s = elem.substr(1);
+            operand->params[std::string("__shape__") + std::to_string(index)] = Parameter(s);
+        } else {
+            operand->shape.push_back(std::stoi(elem));
+        }
+    }
+}
+
 int Graph::save(const std::string& parampath, const std::string& binpath) {
     FILE* paramfp = fopen(parampath.c_str(), "wb");
     if (!paramfp) {
@@ -748,6 +811,19 @@ const Operand* Graph::get_operand(const std::string& name) const {
         }
     }
     return nullptr;
+}
+
+Graph::~Graph() {
+    for (auto x: ops) {
+        delete x;
+    }
+
+    for (auto x: operands) {
+        delete x;
+    }
+
+    ops.clear();
+    operands.clear();
 }
 
 }// namespace pnnx

@@ -496,6 +496,7 @@ public:
 #if BUILD_TORCH2PNNX
     Operand* new_operand(const torch::jit::Value* v);
 #endif
+
 #if BUILD_ONNX2PNNX
     Operand* new_operand(const onnx::ValueInfoProto& value);
     Operand* new_operand(const onnx::TensorProto& t);
