@@ -639,6 +639,50 @@ static void load_shape(Operator* op, const std::string& key, const std::string& 
     }
 }
 
+static void load_attribute(Operator* op, const std::string& key, const std::string& value, StoreZipReader& szr) {
+    Attribute& a = op->attrs[key];
+
+    // parse type
+    std::string typestr = value.substr(value.find_last_of(')') + 1);
+    a.type = string_to_type(typestr.c_str());
+
+    if (a.type == DataType::kDataTypeUnknown) {
+        return;
+    }
+
+    // parse shape
+    std::string lc = value.substr(1, value.find_last_of(')') - 1);
+    std::istringstream lcss(lc);
+    a.shape.clear();
+    while (!lcss.eof()) {
+        std::string elem;
+        std::getline(lcss, elem, ',');
+        a.shape.push_back(std::stoi(elem));
+    }
+
+    if (a.shape.empty()) {
+        return;
+    }
+
+    // parse data
+    size_t size = std::accumulate(a.shape.begin(), a.shape.end(), 1, std::multiplies<>());
+    size_t bytesize = size * type_to_elemsize(a.type);
+
+    std::string filename = op->name + "." + key;
+    size_t filesize = szr.get_file_size(filename);
+    if (filesize == 0) {
+        // no such file
+        return;
+    }
+
+    if (filesize != bytesize) {
+        fprintf(stderr, "file size not match expect %lu but got %lu\n", bytesize, filesize);
+    }
+
+    a.data.resize(bytesize);
+    szr.read_file(filename, (char*)a.data.data());
+}
+
 int Graph::save(const std::string& parampath, const std::string& binpath) {
     FILE* paramfp = fopen(parampath.c_str(), "wb");
     if (!paramfp) {
@@ -761,6 +805,9 @@ int Graph::load(const std::string& parampath, const std::string& binpath) {
         fprintf(stderr, "file open failed.\n");
         return -1;
     }
+
+
+
     return 0;
 }
 
