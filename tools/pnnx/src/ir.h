@@ -471,27 +471,44 @@ private:
 
 class Graph {
 public:
+    /**
+     * @brief Default constructor.
+     */
     Graph() = default;
+
+    Graph(const Graph&) = delete;
+
+    Graph(Graph&&) = delete;
+
+    Graph& operator=(const Graph&) = delete;
+
+    Graph& operator=(Graph&&) = delete;
+
+    /**
+     * @brief Destructor.
+     */
     ~Graph();
 
     int load(const std::string& paramPath, const std::string& binPath);
-    int save(const std::string& parampath, const std::string& binpath);
 
-    int python(const std::string& pypath, const std::string& binpath);
+    int save(const std::string& paramPath, const std::string& binPath);
+
+    int python(const std::string& pyPath, const std::string& binPath);
 
     int parse(const std::string& param);
 
-    Operator* new_operator(const std::string& type, const std::string& name);
+private:
+    Operator* CreateOperator(const std::string& type, const std::string& name);
 
-    Operator* new_operator_before(const std::string& type, const std::string& name, const Operator* cur);
+    Operator* CreateOperatorBefore(const std::string& type, const std::string& name, const Operator* cur);
 
-    Operator* new_operator_after(const std::string& type, const std::string& name, const Operator* cur);
+    Operator* CreateOperatorAfter(const std::string& type, const std::string& name, const Operator* cur);
 
-    Operand* new_operand(const std::string& name);
+    Operand* CreateOperand(const std::string& name);
 
-    Operand* get_operand(const std::string& name);
+    Operand* GetOperand(const std::string& name);
 
-    const Operand* get_operand(const std::string& name) const;
+    const Operand* GetOperand(const std::string& name) const;
 
 #if BUILD_TORCH2PNNX
     Operand* new_operand(const torch::jit::Value* v);
@@ -504,10 +521,6 @@ public:
 
     std::vector<Operator*> ops;
     std::vector<Operand*> operands;
-
-private:
-    Graph(const Graph& rhs) {}
-    Graph& operator=(const Graph& rhs) { return *this; }
 };
 
 }// namespace pnnx

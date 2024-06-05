@@ -683,16 +683,16 @@ static void load_attribute(Operator* op, const std::string& key, const std::stri
     szr.read_file(filename, (char*) a.data.data());
 }
 
-int Graph::save(const std::string& parampath, const std::string& binpath) {
-    FILE* paramfp = fopen(parampath.c_str(), "wb");
+int Graph::save(const std::string& paramPath, const std::string& binPath) {
+    FILE* paramfp = fopen(paramPath.c_str(), "wb");
     if (!paramfp) {
-        fprintf(stderr, "fopen %s failed!\n", parampath.c_str());
+        fprintf(stderr, "fopen %s failed!\n", paramPath.c_str());
         return -1;
     }
 
     StoreZipWriter szw;
-    if (szw.open(binpath) != 0) {
-        fprintf(stderr, "open %s failed!\n", binpath.c_str());
+    if (szw.open(binPath) != 0) {
+        fprintf(stderr, "open %s failed!\n", binPath.c_str());
         return -1;
     }
 
@@ -844,11 +844,11 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
 
         iss >> type >> name >> inputNum >> outputNum;
 
-        Operator* op = new_operator(type, name);
+        Operator* op = CreateOperator(type, name);
         for (int j = 0; j < inputNum; ++j) {
             std::string operand_name;
             iss >> operand_name;
-            Operand* r = get_operand(operand_name);
+            Operand* r = GetOperand(operand_name);
             r->consumers.push_back(op);
             op->inputs.push_back(r);
         }
@@ -856,7 +856,7 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
         for (int j = 0; j < outputNum; ++j) {
             std::string operand_name;
             iss >> operand_name;
-            Operand* r = new_operand(operand_name);
+            Operand* r = CreateOperand(operand_name);
             r->producer = op;
             op->outputs.push_back(r);
         }
@@ -889,7 +889,7 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
     return 0;
 }
 
-Operator* Graph::new_operator(const std::string& type, const std::string& name) {
+Operator* Graph::CreateOperator(const std::string& type, const std::string& name) {
     auto* op = new Operator;
     op->type = type;
     op->name = name;
@@ -897,7 +897,7 @@ Operator* Graph::new_operator(const std::string& type, const std::string& name) 
     return op;
 }
 
-Operator* Graph::new_operator_before(const std::string& type, const std::string& name, const Operator* cur) {
+Operator* Graph::CreateOperatorBefore(const std::string& type, const std::string& name, const Operator* cur) {
     auto* op = new Operator;
     op->type = type;
     op->name = name;
@@ -905,7 +905,7 @@ Operator* Graph::new_operator_before(const std::string& type, const std::string&
     return op;
 }
 
-Operator* Graph::new_operator_after(const std::string& type, const std::string& name, const Operator* cur) {
+Operator* Graph::CreateOperatorAfter(const std::string& type, const std::string& name, const Operator* cur) {
     auto* op = new Operator;
     op->type = type;
     op->name = name;
@@ -913,14 +913,14 @@ Operator* Graph::new_operator_after(const std::string& type, const std::string& 
     return op;
 }
 
-Operand* Graph::new_operand(const std::string& name) {
+Operand* Graph::CreateOperand(const std::string& name) {
     auto* r = new Operand;
     r->name = name;
     operands.push_back(r);
     return r;
 }
 
-Operand* Graph::get_operand(const std::string& name) {
+Operand* Graph::GetOperand(const std::string& name) {
     for (auto* r: operands) {
         if (r->name == name) {
             return r;
@@ -929,7 +929,7 @@ Operand* Graph::get_operand(const std::string& name) {
     return nullptr;
 }
 
-const Operand* Graph::get_operand(const std::string& name) const {
+const Operand* Graph::GetOperand(const std::string& name) const {
     for (const auto* r: operands) {
         if (r->name == name) {
             return r;
