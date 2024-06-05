@@ -110,4 +110,15 @@ TEST(IRTEST, Attribute) {
     std::cout << x.substr(1, x.find_last_of(')') - 1) << std::endl;
 }
 
+TEST(IRTEST, pnnx_graph_load) {
+    std::string param_path = "test_linear.pnnx.param";
+    std::string bin_path = "test_linear.pnnx.bin";
+    Graph graph;
+    int status_load = graph.load(param_path, bin_path);
+    ASSERT_EQ(status_load, 0);
+
+    int status_save = graph.save("test_linear1.pnnx.param", "test_linear1.pnnx.bin");
+    ASSERT_EQ(status_save, 0);
+}
+
 }// namespace pnnx

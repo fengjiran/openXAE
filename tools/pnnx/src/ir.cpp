@@ -747,7 +747,7 @@ int Graph::save(const std::string& parampath, const std::string& binpath) {
                     continue;
                 }
                 const auto* operand = op->inputs[i];
-                fprintf(paramfp, "$%s=%s", op->input_names[i].c_str(), operand->name.c_str());
+                fprintf(paramfp, " $%s=%s", op->input_names[i].c_str(), operand->name.c_str());
             }
         }
 
@@ -802,13 +802,13 @@ int Graph::save(const std::string& parampath, const std::string& binpath) {
 int Graph::load(const std::string& parampath, const std::string& binpath) {
     std::ifstream is(parampath, std::ios::in | std::ios::binary);
     if (!is.is_open()) {
-        fprintf(stderr, "file open failed.\n");
+        fprintf(stderr, "param file open failed.\n");
         return -1;
     }
 
     StoreZipReader szr;
     if (szr.open(binpath) != 0) {
-        fprintf(stderr, "open failed\n");
+        fprintf(stderr, "bin file open failed.\n");
         return -1;
     }
 
