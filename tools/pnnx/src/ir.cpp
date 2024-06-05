@@ -799,50 +799,53 @@ int Graph::save(const std::string& parampath, const std::string& binpath) {
     return 0;
 }
 
-int Graph::load(const std::string& parampath, const std::string& binpath) {
-    std::ifstream is(parampath, std::ios::in | std::ios::binary);
-    if (!is.is_open()) {
-        fprintf(stderr, "param file open failed.\n");
+int Graph::load(const std::string& paramPath, const std::string& binPath) {
+    std::ifstream inFile(paramPath, std::ios::in | std::ios::binary);
+    if (!inFile.is_open()) {
+        std::fprintf(stderr, "param file open failed.\n");
         return -1;
     }
 
     StoreZipReader szr;
-    if (szr.open(binpath) != 0) {
-        fprintf(stderr, "bin file open failed.\n");
+    if (szr.open(binPath) != 0) {
+        std::fprintf(stderr, "bin file open failed.\n");
         return -1;
     }
 
-    int magic = 0;
+    // parse the first line, magic number
+    int magicNum = 0;
     {
         std::string line;
-        std::getline(is, line);
+        std::getline(inFile, line);
         std::istringstream iss(line);
-        iss >> magic;
+        iss >> magicNum;
     }
 
-    int operator_count = 0;
-    int operand_count = 0;
+    // parse the second line, operator number and operand number
+    int operatorNum = 0;
+    int operandNum = 0;
     {
         std::string line;
-        std::getline(is, line);
+        std::getline(inFile, line);
         std::istringstream iss(line);
-        iss >> operator_count >> operand_count;
+        iss >> operatorNum >> operandNum;
     }
 
-    for (int i = 0; i < operator_count; ++i) {
+    for (int i = 0; i < operatorNum; ++i) {
         std::string line;
-        std::getline(is, line);
+        std::getline(inFile, line);
         std::istringstream iss(line);
 
         std::string type;
         std::string name;
-        int input_count = 0;
-        int output_count = 0;
 
-        iss >> type >> name >> input_count >> output_count;
+        int inputNum = 0;
+        int outputNum = 0;
+
+        iss >> type >> name >> inputNum >> outputNum;
 
         Operator* op = new_operator(type, name);
-        for (int j = 0; j < input_count; ++j) {
+        for (int j = 0; j < inputNum; ++j) {
             std::string operand_name;
             iss >> operand_name;
             Operand* r = get_operand(operand_name);
@@ -850,7 +853,7 @@ int Graph::load(const std::string& parampath, const std::string& binpath) {
             op->inputs.push_back(r);
         }
 
-        for (int j = 0; j < output_count; ++j) {
+        for (int j = 0; j < outputNum; ++j) {
             std::string operand_name;
             iss >> operand_name;
             Operand* r = new_operand(operand_name);

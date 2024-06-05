@@ -474,7 +474,7 @@ public:
     Graph() = default;
     ~Graph();
 
-    int load(const std::string& parampath, const std::string& binpath);
+    int load(const std::string& paramPath, const std::string& binPath);
     int save(const std::string& parampath, const std::string& binpath);
 
     int python(const std::string& pypath, const std::string& binpath);
