@@ -92,13 +92,15 @@ public:
      * @brief Constructor for bool type parameter.
      * @param b_val bool type value.
      */
-    explicit Parameter(bool b_val) : type(ParameterType::kParameterBool), b(b_val) {}
+    explicit Parameter(bool b_val)
+        : type(ParameterType::kParameterBool), b(b_val) {}
 
     /**
      * @brief Constructor for int type parameter.
      * @param i_val int type value.
      */
-    explicit Parameter(int i_val) : type(ParameterType::kParameterInt), i(i_val) {}
+    explicit Parameter(int i_val)
+        : type(ParameterType::kParameterInt), i(i_val) {}
 
     /**
      * @brief Constructor for long type parameter.
@@ -134,31 +136,36 @@ public:
      * @brief Constructor for float type parameter.
      * @param f_val float type value.
      */
-    explicit Parameter(float f_val) : type(ParameterType::kParameterFloat), f(f_val) {}
+    explicit Parameter(float f_val)
+        : type(ParameterType::kParameterFloat), f(f_val) {}
 
     /**
      * @brief Constructor for double type parameter.
      * @param d_val double type value.
      */
-    explicit Parameter(double d_val) : type(ParameterType::kParameterFloat), f(static_cast<float>(d_val)) {}
+    explicit Parameter(double d_val)
+        : type(ParameterType::kParameterFloat), f(static_cast<float>(d_val)) {}
 
     /**
      * @brief Constructor for string type parameter.
      * @param s_val string type value.
      */
-    explicit Parameter(const char* s_val) : type(ParameterType::kParameterString), s(s_val) {}
+    explicit Parameter(const char* s_val)
+        : type(ParameterType::kParameterString), s(s_val) {}
 
     /**
      * @brief Constructor for string type parameter.
      * @param s_val string type value.
      */
-    explicit Parameter(std::string s_val) : type(ParameterType::kParameterString), s(std::move(s_val)) {}
+    explicit Parameter(std::string s_val)
+        : type(ParameterType::kParameterString), s(std::move(s_val)) {}
 
     /**
      * @brief Constructor for array int type parameter.
      * @param ai_val init list of int type value.
      */
-    Parameter(const std::initializer_list<int>& ai_val) : type(ParameterType::kParameterArrayInt), ai(ai_val) {}
+    Parameter(const std::initializer_list<int>& ai_val)
+        : type(ParameterType::kParameterArrayInt), ai(ai_val) {}
 
     /**
      * @brief Constructor for array int type parameter.
@@ -182,7 +189,8 @@ public:
      * @brief Constructor for array int type parameter.
      * @param ai_val vector of int type value.
      */
-    explicit Parameter(const std::vector<int>& ai_val) : type(ParameterType::kParameterArrayInt), ai(ai_val) {}
+    explicit Parameter(const std::vector<int>& ai_val)
+        : type(ParameterType::kParameterArrayInt), ai(ai_val) {}
 
     /**
      * @brief Constructor for array int64 type parameter.
@@ -206,13 +214,15 @@ public:
      * @brief Constructor for array float type parameter.
      * @param af_val init list of float type value.
      */
-    Parameter(const std::initializer_list<float>& af_val) : type(ParameterType::kParameterArrayFloat), af(af_val) {}
+    Parameter(const std::initializer_list<float>& af_val)
+        : type(ParameterType::kParameterArrayFloat), af(af_val) {}
 
     /**
      * @brief Constructor for array double type parameter.
      * @param af_val init list of double type value.
      */
-    Parameter(const std::initializer_list<double>& af_val) : type(ParameterType::kParameterArrayFloat) {
+    Parameter(const std::initializer_list<double>& af_val)
+        : type(ParameterType::kParameterArrayFloat) {
         for (const auto& x: af_val) {
             af.push_back(static_cast<float>(x));
         }
@@ -222,13 +232,15 @@ public:
      * @brief Constructor for array float type parameter.
      * @param af_val vector of float type value.
      */
-    explicit Parameter(const std::vector<float>& af_val) : type(ParameterType::kParameterArrayFloat), af(af_val) {}
+    explicit Parameter(const std::vector<float>& af_val)
+        : type(ParameterType::kParameterArrayFloat), af(af_val) {}
 
     /**
      * @brief Constructor for array float type parameter.
      * @param af_val vector of double type value.
      */
-    explicit Parameter(const std::vector<double>& af_val) : type(ParameterType::kParameterArrayFloat) {
+    explicit Parameter(const std::vector<double>& af_val)
+        : type(ParameterType::kParameterArrayFloat) {
         for (const auto& x: af_val) {
             af.push_back(static_cast<float>(x));
         }
@@ -238,7 +250,8 @@ public:
      * @brief Constructor for array string type parameter.
      * @param as_val init list of string type value.
      */
-    Parameter(const std::initializer_list<const char*>& as_val) : type(ParameterType::kParameterArrayString) {
+    Parameter(const std::initializer_list<const char*>& as_val)
+        : type(ParameterType::kParameterArrayString) {
         for (const auto& x: as_val) {
             as.emplace_back(x);
         }
@@ -248,37 +261,43 @@ public:
      * @brief Constructor for array string type parameter.
      * @param as_val init list of string type value.
      */
-    Parameter(const std::initializer_list<std::string>& as_val) : type(ParameterType::kParameterArrayString), as(as_val) {}
+    Parameter(const std::initializer_list<std::string>& as_val)
+        : type(ParameterType::kParameterArrayString), as(as_val) {}
 
     /**
      * @brief Constructor for array string type parameter.
      * @param as_val vector of string type value.
      */
-    explicit Parameter(const std::vector<std::string>& as_val) : type(ParameterType::kParameterArrayString), as(as_val) {}
+    explicit Parameter(const std::vector<std::string>& as_val)
+        : type(ParameterType::kParameterArrayString), as(as_val) {}
 
     /**
      * @brief Constructor for complex type parameter.
      * @param c_val complex type value.
      */
-    explicit Parameter(const std::complex<float>& c_val) : type(ParameterType::kParameterComplex), c(c_val) {}
+    explicit Parameter(const std::complex<float>& c_val)
+        : type(ParameterType::kParameterComplex), c(c_val) {}
 
     /**
      * @brief Constructor for complex type parameter.
      * @param c_val complex type value.
      */
-    explicit Parameter(const std::complex<double>& c_val) : type(ParameterType::kParameterComplex), c(c_val) {}
+    explicit Parameter(const std::complex<double>& c_val)
+        : type(ParameterType::kParameterComplex), c(c_val) {}
 
     /**
      * @brief Constructor for array complex type parameter.
      * @param ac_val init list of complex type value.
      */
-    Parameter(const std::initializer_list<std::complex<float>>& ac_val) : type(ParameterType::kParameterArrayComplex), ac(ac_val) {}
+    Parameter(const std::initializer_list<std::complex<float>>& ac_val)
+        : type(ParameterType::kParameterArrayComplex), ac(ac_val) {}
 
     /**
      * @brief Constructor for array complex type parameter.
      * @param ac_val init list of complex type value.
      */
-    Parameter(const std::initializer_list<std::complex<double>>& ac_val) : type(ParameterType::kParameterArrayComplex) {
+    Parameter(const std::initializer_list<std::complex<double>>& ac_val)
+        : type(ParameterType::kParameterArrayComplex) {
         for (const auto& x: ac_val) {
             ac.emplace_back(x);
         }
@@ -288,13 +307,15 @@ public:
      * @brief Constructor for array complex type parameter.
      * @param ac_val vector of complex type value.
      */
-    explicit Parameter(const std::vector<std::complex<float>>& ac_val) : type(ParameterType::kParameterArrayComplex), ac(ac_val) {}
+    explicit Parameter(const std::vector<std::complex<float>>& ac_val)
+        : type(ParameterType::kParameterArrayComplex), ac(ac_val) {}
 
     /**
      * @brief Constructor for array complex type parameter.
      * @param ac_val vector of complex type value.
      */
-    explicit Parameter(const std::vector<std::complex<double>>& ac_val) : type(ParameterType::kParameterArrayComplex) {
+    explicit Parameter(const std::vector<std::complex<double>>& ac_val)
+        : type(ParameterType::kParameterArrayComplex) {
         for (const auto& x: ac_val) {
             ac.emplace_back(x);
         }
@@ -454,6 +475,14 @@ public:
     Operand* named_input(const std::string& key);
     const Operand* named_input(const std::string& key) const;
 
+    std::string GetOpType() const {
+        return type;
+    }
+
+    std::string GetOpName() const {
+        return name;
+    }
+
     std::vector<Operand*> inputs;
     std::vector<Operand*> outputs;
 
@@ -521,6 +550,8 @@ private:
 
     std::vector<Operator*> ops;
     std::vector<Operand*> operands;
+
+    std::vector<std::shared_ptr<Operator>> ops_;
 };
 
 }// namespace pnnx
