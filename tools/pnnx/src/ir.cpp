@@ -8,7 +8,6 @@
 #include <climits>
 #include <cstdint>
 #include <cstring>
-#include <format>
 #include <fstream>
 #include <numeric>
 #include <sstream>
@@ -274,7 +273,6 @@ std::string Parameter::encode_to_string(const Parameter& param) {
 
     if (param.type == ParameterType::kParameterFloat) {
         char buf[64];
-        //        sprintf(buf, "%e", param.f);
         snprintf(buf, sizeof(buf), "%e", param.f);
         return buf;
     }
@@ -298,7 +296,6 @@ std::string Parameter::encode_to_string(const Parameter& param) {
         size_t size = param.af.size();
         for (const auto& ele: param.af) {
             char buf[64];
-            //            sprintf(buf, "%e", ele);
             snprintf(buf, sizeof(buf), "%e", ele);
             s += (std::string(buf) + (--size ? "," : ""));
         }
@@ -318,7 +315,6 @@ std::string Parameter::encode_to_string(const Parameter& param) {
 
     if (param.type == ParameterType::kParameterComplex) {
         char buf[128];
-        //        sprintf(buf, "%e+%ei", param.c.real(), param.c.imag());
         snprintf(buf, sizeof(buf), "%e+%ei", param.c.real(), param.c.imag());
         return buf;
     }
@@ -328,7 +324,6 @@ std::string Parameter::encode_to_string(const Parameter& param) {
         size_t size = param.ac.size();
         for (const auto& ele: param.ac) {
             char buf[128];
-            //            sprintf(buf, "%e+%ei", ele.real(), ele.imag());
             snprintf(buf, sizeof(buf), "%e+%ei", ele.real(), ele.imag());
             s += (std::string(buf) + (--size ? "," : ""));
         }
@@ -595,6 +590,105 @@ int Graph::save(const std::string& parampath, const std::string& binpath) {
     }
 
     // magic number
+    fprintf(paramfp, "7767517\n");
+
+    // op number and operand number
+    fprintf(paramfp, "%d %d\n", (int) ops.size(), (int) operands.size());
+
+    // dump op info of graph
+    for (const auto* op: ops) {
+        // dump basic info of op
+        fprintf(paramfp, "%-24s %-24s %d %d", op->type.c_str(), op->name.c_str(), (int) op->inputs.size(), (int) op->outputs.size());
+
+        // dump op input operand info
+        for (const auto* operand: op->inputs) {
+            fprintf(paramfp, " %s", operand->name.c_str());
+        }
+
+        // dump op output operand info
+        for (const auto* operand: op->outputs) {
+            fprintf(paramfp, " %s", operand->name.c_str());
+        }
+
+        // dump op param info
+        for (const auto& it: op->params) {
+            fprintf(paramfp, " %s=", it.first.c_str());
+            std::string s = Parameter::encode_to_string(it.second);
+            fprintf(paramfp, "%s", s.c_str());
+        }
+
+        // dump op attrs info
+        for (const auto& it: op->attrs) {
+            fprintf(paramfp, " @%s=", it.first.c_str());
+            fprintf(paramfp, "(");
+            const Attribute& attr = it.second;
+
+            size_t size = attr.shape.size();
+            for (const auto& x: attr.shape) {
+                fprintf(paramfp, "%d%s", x, (--size ? "," : ""));
+            }
+            fprintf(paramfp, ")");
+            fprintf(paramfp, "%s", type_to_string(attr.type));
+
+            std::string filename = op->name + "." + it.first;
+            szw.write_file(filename, attr.data.data(), attr.data.size());
+        }
+
+        if (op->input_names.size() == op->inputs.size()) {
+            for (size_t i = 0; i < op->inputs.size(); ++i) {
+                if (op->input_names[i].empty()) {
+                    continue;
+                }
+                const auto* operand = op->inputs[i];
+                fprintf(paramfp, "$%s=%s", op->input_names[i].c_str(), operand->name.c_str());
+            }
+        }
+
+        for (const auto* operand: op->inputs) {
+            if (operand->shape.empty()) {
+                continue;
+            }
+
+            fprintf(paramfp, " #%s=", operand->name.c_str());
+            fprintf(paramfp, "(");
+
+            size_t size = operand->shape.size();
+            for (const auto& x: operand->shape) {
+                if (x == -1) {
+                    fprintf(paramfp, "%s", (--size ? "?," : "?"));
+                } else {
+                    fprintf(paramfp, "%d%s", x, (--size ? "," : ""));
+                }
+            }
+
+            fprintf(paramfp, ")");
+            fprintf(paramfp, "%s", type_to_string(operand->type));
+        }
+
+        for (const auto* operand: op->outputs) {
+            if (operand->shape.empty()) {
+                continue;
+            }
+
+            fprintf(paramfp, " #%s=", operand->name.c_str());
+            fprintf(paramfp, "(");
+
+            size_t size = operand->shape.size();
+            for (const auto& x: operand->shape) {
+                if (x == -1) {
+                    fprintf(paramfp, "%s", (--size ? "?," : "?"));
+                } else {
+                    fprintf(paramfp, "%d%s", x, (--size ? "," : ""));
+                }
+            }
+
+            fprintf(paramfp, ")");
+            fprintf(paramfp, "%s", type_to_string(operand->type));
+        }
+        fprintf(paramfp, "\n");
+    }
+    fclose(paramfp);
+
     return 0;
 }
 
