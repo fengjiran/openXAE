@@ -680,7 +680,7 @@ static void load_attribute(Operator* op, const std::string& key, const std::stri
     }
 
     a.data.resize(bytesize);
-    szr.read_file(filename, (char*)a.data.data());
+    szr.read_file(filename, (char*) a.data.data());
 }
 
 int Graph::save(const std::string& parampath, const std::string& binpath) {
@@ -806,7 +806,82 @@ int Graph::load(const std::string& parampath, const std::string& binpath) {
         return -1;
     }
 
+    StoreZipReader szr;
+    if (szr.open(binpath) != 0) {
+        fprintf(stderr, "open failed\n");
+        return -1;
+    }
 
+    int magic = 0;
+    {
+        std::string line;
+        std::getline(is, line);
+        std::istringstream iss(line);
+        iss >> magic;
+    }
+
+    int operator_count = 0;
+    int operand_count = 0;
+    {
+        std::string line;
+        std::getline(is, line);
+        std::istringstream iss(line);
+        iss >> operator_count >> operand_count;
+    }
+
+    for (int i = 0; i < operator_count; ++i) {
+        std::string line;
+        std::getline(is, line);
+        std::istringstream iss(line);
+
+        std::string type;
+        std::string name;
+        int input_count = 0;
+        int output_count = 0;
+
+        iss >> type >> name >> input_count >> output_count;
+
+        Operator* op = new_operator(type, name);
+        for (int j = 0; j < input_count; ++j) {
+            std::string operand_name;
+            iss >> operand_name;
+            Operand* r = get_operand(operand_name);
+            r->consumers.push_back(op);
+            op->inputs.push_back(r);
+        }
+
+        for (int j = 0; j < output_count; ++j) {
+            std::string operand_name;
+            iss >> operand_name;
+            Operand* r = new_operand(operand_name);
+            r->producer = op;
+            op->outputs.push_back(r);
+        }
+
+        while (!iss.eof()) {
+            std::string param;
+            iss >> param;
+
+            std::string key;
+            std::string value;
+            std::istringstream pss(param);
+            std::getline(pss, key, '=');
+            std::getline(pss, value);
+            if (key[0] == '@') {
+                // attribute
+                load_attribute(op, key.substr(1), value, szr);
+            } else if (key[0] == '$') {
+                // operand input key
+                load_input_key(op, key.substr(1), value);
+            } else if (key[0] == '#') {
+                // operand shape
+                load_shape(op, key.substr(1), value);
+            } else {
+                // parameter
+                load_parameter(op, key, value);
+            }
+        }
+    }
 
     return 0;
 }
