@@ -5,14 +5,17 @@
 #ifndef OPENXAE_IR_H
 #define OPENXAE_IR_H
 
+#include "utils.h"
 #include <algorithm>
 #include <climits>
 #include <complex>
 #include <initializer_list>
 #include <limits>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #if BUILD_TORCH2PNNX
@@ -43,9 +46,9 @@ class OnnxAttributeProxy;
 namespace pnnx {
 
 /**
- * @brief Runtime parameter type.
+ * @brief Runtime parameter type_.
  *
- * Enumerates the parameter type supported for workload.
+ * Enumerates the parameter type_ supported for workload.
  */
 enum class ParameterType {
     kParameterUnknown = 0,
@@ -61,7 +64,9 @@ enum class ParameterType {
 };
 
 /**
- * @brief Runtime data type.
+ * @brief Runtime data type_.
+ *
+ * Enumerates the data type_ supported for workload.
  */
 enum class DataType {
     kDataTypeUnknown = 0,
@@ -86,93 +91,93 @@ public:
     /**
      * @brief Default constructor.
      */
-    Parameter() : type(ParameterType::kParameterUnknown) {}
+    Parameter() : type_(ParameterType::kParameterUnknown) {}
 
     /**
-     * @brief Constructor for bool type parameter.
-     * @param b_val bool type value.
+     * @brief Constructor for bool type_ parameter.
+     * @param val bool type_ value.
      */
-    explicit Parameter(bool b_val)
-        : type(ParameterType::kParameterBool), b(b_val) {}
+    explicit Parameter(bool val)
+        : type_(ParameterType::kParameterBool), boolVal_(val) {}
 
     /**
-     * @brief Constructor for int type parameter.
-     * @param i_val int type value.
+     * @brief Constructor for int type_ parameter.
+     * @param val int type_ value.
      */
-    explicit Parameter(int i_val)
-        : type(ParameterType::kParameterInt), i(i_val) {}
+    explicit Parameter(int val)
+        : type_(ParameterType::kParameterInt), intVal_(val) {}
 
     /**
-     * @brief Constructor for long type parameter.
-     * @param l_val long type value.
+     * @brief Constructor for long type_ parameter.
+     * @param val long type_ value.
      */
-    explicit Parameter(long l_val) : type(ParameterType::kParameterInt) {
-        if (l_val == std::numeric_limits<long>::min()) {
-            l_val = std::numeric_limits<int>::min();
+    explicit Parameter(long val) : type_(ParameterType::kParameterInt) {
+        if (val == std::numeric_limits<long>::min()) {
+            val = std::numeric_limits<int>::min();
         }
 
-        if (l_val == std::numeric_limits<long>::max()) {
-            l_val = std::numeric_limits<int>::max();
+        if (val == std::numeric_limits<long>::max()) {
+            val = std::numeric_limits<int>::max();
         }
-        i = static_cast<int>(l_val);
+        intVal_ = static_cast<int>(val);
     }
 
     /**
-     * @brief Constructor for long long type parameter.
-     * @param ll_val long long type value.
+     * @brief Constructor for long long type_ parameter.
+     * @param val long long type_ value.
      */
-    explicit Parameter(long long ll_val) : type(ParameterType::kParameterInt) {
-        if (ll_val == std::numeric_limits<long long>::min()) {
-            ll_val = std::numeric_limits<int>::min();
+    explicit Parameter(long long val) : type_(ParameterType::kParameterInt) {
+        if (val == std::numeric_limits<long long>::min()) {
+            val = std::numeric_limits<int>::min();
         }
 
-        if (ll_val == std::numeric_limits<long long>::max()) {
-            ll_val = std::numeric_limits<int>::max();
+        if (val == std::numeric_limits<long long>::max()) {
+            val = std::numeric_limits<int>::max();
         }
-        i = static_cast<int>(ll_val);
+        intVal_ = static_cast<int>(val);
     }
 
     /**
-     * @brief Constructor for float type parameter.
-     * @param f_val float type value.
+     * @brief Constructor for float type_ parameter.
+     * @param val float type_ value.
      */
-    explicit Parameter(float f_val)
-        : type(ParameterType::kParameterFloat), f(f_val) {}
+    explicit Parameter(float val)
+        : type_(ParameterType::kParameterFloat), floatVal_(val) {}
 
     /**
-     * @brief Constructor for double type parameter.
-     * @param d_val double type value.
+     * @brief Constructor for double type_ parameter.
+     * @param val double type_ value.
      */
-    explicit Parameter(double d_val)
-        : type(ParameterType::kParameterFloat), f(static_cast<float>(d_val)) {}
+    explicit Parameter(double val)
+        : type_(ParameterType::kParameterFloat), floatVal_(static_cast<float>(val)) {}
 
     /**
-     * @brief Constructor for string type parameter.
-     * @param s_val string type value.
+     * @brief Constructor for string type_ parameter.
+     * @param val string type_ value.
      */
-    explicit Parameter(const char* s_val)
-        : type(ParameterType::kParameterString), s(s_val) {}
+    explicit Parameter(const char* val)
+        : type_(ParameterType::kParameterString), strVal_(val) {}
 
     /**
-     * @brief Constructor for string type parameter.
-     * @param s_val string type value.
+     * @brief Constructor for string type_ parameter.
+     * @param val string type_ value.
      */
-    explicit Parameter(std::string s_val)
-        : type(ParameterType::kParameterString), s(std::move(s_val)) {}
+    explicit Parameter(std::string val)
+        : type_(ParameterType::kParameterString), strVal_(std::move(val)) {}
 
     /**
-     * @brief Constructor for array int type parameter.
-     * @param ai_val init list of int type value.
+     * @brief Constructor for array int type_ parameter.
+     * @param val init list of int type_ value.
      */
-    Parameter(const std::initializer_list<int>& ai_val)
-        : type(ParameterType::kParameterArrayInt), ai(ai_val) {}
+    Parameter(const std::initializer_list<int>& val)
+        : type_(ParameterType::kParameterArrayInt), arrayIntVal_(val) {}
 
     /**
-     * @brief Constructor for array int type parameter.
-     * @param ai_val init list of int64 type value.
+     * @brief Constructor for array int type_ parameter.
+     * @param val init list of int64 type_ value.
      */
-    Parameter(const std::initializer_list<int64_t>& ai_val) : type(ParameterType::kParameterArrayInt) {
-        for (const auto& x: ai_val) {
+    Parameter(const std::initializer_list<int64_t>& val) : type_(ParameterType::kParameterArrayInt) {
+        for (const auto& x: val) {
             int64_t l = x;
             if (l == std::numeric_limits<long>::min()) {
                 l = std::numeric_limits<int>::min();
@@ -181,23 +186,23 @@ public:
             if (l == std::numeric_limits<long>::max()) {
                 l = std::numeric_limits<int>::max();
             }
-            ai.push_back(static_cast<int>(l));
+            arrayIntVal_.push_back(static_cast<int>(l));
         }
     }
 
     /**
-     * @brief Constructor for array int type parameter.
-     * @param ai_val vector of int type value.
+     * @brief Constructor for array int type_ parameter.
+     * @param val vector of int type_ value.
      */
-    explicit Parameter(const std::vector<int>& ai_val)
-        : type(ParameterType::kParameterArrayInt), ai(ai_val) {}
+    explicit Parameter(const std::vector<int>& val)
+        : type_(ParameterType::kParameterArrayInt), arrayIntVal_(val) {}
 
     /**
-     * @brief Constructor for array int64 type parameter.
-     * @param ai_val vector of int64 type value.
+     * @brief Constructor for array int64 type_ parameter.
+     * @param val vector of int64 type_ value.
      */
-    explicit Parameter(const std::vector<int64_t>& ai_val) : type(ParameterType::kParameterArrayInt) {
-        for (const auto& x: ai_val) {
+    explicit Parameter(const std::vector<int64_t>& val) : type_(ParameterType::kParameterArrayInt) {
+        for (const auto& x: val) {
             int64_t l = x;
             if (l == std::numeric_limits<long>::min()) {
                 l = std::numeric_limits<int>::min();
@@ -206,118 +211,118 @@ public:
             if (l == std::numeric_limits<long>::max()) {
                 l = std::numeric_limits<int>::max();
             }
-            ai.push_back(static_cast<int>(l));
+            arrayIntVal_.push_back(static_cast<int>(l));
         }
     }
 
     /**
-     * @brief Constructor for array float type parameter.
-     * @param af_val init list of float type value.
+     * @brief Constructor for array float type_ parameter.
+     * @param val init list of float type_ value.
      */
-    Parameter(const std::initializer_list<float>& af_val)
-        : type(ParameterType::kParameterArrayFloat), af(af_val) {}
+    Parameter(const std::initializer_list<float>& val)
+        : type_(ParameterType::kParameterArrayFloat), arrayFloatVal_(val) {}
 
     /**
-     * @brief Constructor for array double type parameter.
-     * @param af_val init list of double type value.
+     * @brief Constructor for array double type_ parameter.
+     * @param val init list of double type_ value.
      */
-    Parameter(const std::initializer_list<double>& af_val)
-        : type(ParameterType::kParameterArrayFloat) {
-        for (const auto& x: af_val) {
-            af.push_back(static_cast<float>(x));
+    Parameter(const std::initializer_list<double>& val)
+        : type_(ParameterType::kParameterArrayFloat) {
+        for (const auto& x: val) {
+            arrayFloatVal_.push_back(static_cast<float>(x));
         }
     }
 
     /**
-     * @brief Constructor for array float type parameter.
-     * @param af_val vector of float type value.
+     * @brief Constructor for array float type_ parameter.
+     * @param val vector of float type_ value.
      */
-    explicit Parameter(const std::vector<float>& af_val)
-        : type(ParameterType::kParameterArrayFloat), af(af_val) {}
+    explicit Parameter(const std::vector<float>& val)
+        : type_(ParameterType::kParameterArrayFloat), arrayFloatVal_(val) {}
 
     /**
-     * @brief Constructor for array float type parameter.
-     * @param af_val vector of double type value.
+     * @brief Constructor for array float type_ parameter.
+     * @param val vector of double type_ value.
      */
-    explicit Parameter(const std::vector<double>& af_val)
-        : type(ParameterType::kParameterArrayFloat) {
-        for (const auto& x: af_val) {
-            af.push_back(static_cast<float>(x));
+    explicit Parameter(const std::vector<double>& val)
+        : type_(ParameterType::kParameterArrayFloat) {
+        for (const auto& x: val) {
+            arrayFloatVal_.push_back(static_cast<float>(x));
         }
     }
 
     /**
-     * @brief Constructor for array string type parameter.
-     * @param as_val init list of string type value.
+     * @brief Constructor for array string type_ parameter.
+     * @param val init list of string type_ value.
      */
-    Parameter(const std::initializer_list<const char*>& as_val)
-        : type(ParameterType::kParameterArrayString) {
-        for (const auto& x: as_val) {
-            as.emplace_back(x);
+    Parameter(const std::initializer_list<const char*>& val)
+        : type_(ParameterType::kParameterArrayString) {
+        for (const auto& x: val) {
+            arrayStringVal_.emplace_back(x);
         }
     }
 
     /**
-     * @brief Constructor for array string type parameter.
-     * @param as_val init list of string type value.
+     * @brief Constructor for array string type_ parameter.
+     * @param val init list of string type_ value.
      */
-    Parameter(const std::initializer_list<std::string>& as_val)
-        : type(ParameterType::kParameterArrayString), as(as_val) {}
+    Parameter(const std::initializer_list<std::string>& val)
+        : type_(ParameterType::kParameterArrayString), arrayStringVal_(val) {}
 
     /**
-     * @brief Constructor for array string type parameter.
-     * @param as_val vector of string type value.
+     * @brief Constructor for array string type_ parameter.
+     * @param val vector of string type_ value.
      */
-    explicit Parameter(const std::vector<std::string>& as_val)
-        : type(ParameterType::kParameterArrayString), as(as_val) {}
+    explicit Parameter(const std::vector<std::string>& val)
+        : type_(ParameterType::kParameterArrayString), arrayStringVal_(val) {}
 
     /**
-     * @brief Constructor for complex type parameter.
-     * @param c_val complex type value.
+     * @brief Constructor for complex type_ parameter.
+     * @param val complex type_ value.
      */
-    explicit Parameter(const std::complex<float>& c_val)
-        : type(ParameterType::kParameterComplex), c(c_val) {}
+    explicit Parameter(const std::complex<float>& val)
+        : type_(ParameterType::kParameterComplex), complexVal_(val) {}
 
     /**
-     * @brief Constructor for complex type parameter.
-     * @param c_val complex type value.
+     * @brief Constructor for complex type_ parameter.
+     * @param val complex type_ value.
      */
-    explicit Parameter(const std::complex<double>& c_val)
-        : type(ParameterType::kParameterComplex), c(c_val) {}
+    explicit Parameter(const std::complex<double>& val)
+        : type_(ParameterType::kParameterComplex), complexVal_(val) {}
 
     /**
-     * @brief Constructor for array complex type parameter.
-     * @param ac_val init list of complex type value.
+     * @brief Constructor for array complex type_ parameter.
+     * @param val init list of complex type_ value.
      */
-    Parameter(const std::initializer_list<std::complex<float>>& ac_val)
-        : type(ParameterType::kParameterArrayComplex), ac(ac_val) {}
+    Parameter(const std::initializer_list<std::complex<float>>& val)
+        : type_(ParameterType::kParameterArrayComplex), arrayComplexVal_(val) {}
 
     /**
-     * @brief Constructor for array complex type parameter.
-     * @param ac_val init list of complex type value.
+     * @brief Constructor for array complex type_ parameter.
+     * @param val init list of complex type_ value.
      */
-    Parameter(const std::initializer_list<std::complex<double>>& ac_val)
-        : type(ParameterType::kParameterArrayComplex) {
-        for (const auto& x: ac_val) {
-            ac.emplace_back(x);
+    Parameter(const std::initializer_list<std::complex<double>>& val)
+        : type_(ParameterType::kParameterArrayComplex) {
+        for (const auto& x: val) {
+            arrayComplexVal_.emplace_back(x);
         }
     }
 
     /**
-     * @brief Constructor for array complex type parameter.
-     * @param ac_val vector of complex type value.
+     * @brief Constructor for array complex type_ parameter.
+     * @param val vector of complex type_ value.
      */
-    explicit Parameter(const std::vector<std::complex<float>>& ac_val)
-        : type(ParameterType::kParameterArrayComplex), ac(ac_val) {}
+    explicit Parameter(const std::vector<std::complex<float>>& val)
+        : type_(ParameterType::kParameterArrayComplex), arrayComplexVal_(val) {}
 
     /**
-     * @brief Constructor for array complex type parameter.
-     * @param ac_val vector of complex type value.
+     * @brief Constructor for array complex type_ parameter.
+     * @param val vector of complex type_ value.
      */
-    explicit Parameter(const std::vector<std::complex<double>>& ac_val)
-        : type(ParameterType::kParameterArrayComplex) {
-        for (const auto& x: ac_val) {
-            ac.emplace_back(x);
+    explicit Parameter(const std::vector<std::complex<double>>& val)
+        : type_(ParameterType::kParameterArrayComplex) {
+        for (const auto& x: val) {
+            arrayComplexVal_.emplace_back(x);
         }
     }
 
@@ -330,11 +335,140 @@ public:
     Parameter(const onnx2pnnx::OnnxAttributeProxy& attr);
 #endif// BUILD_ONNX2PNNX
 
-    static std::string encode_to_string(const Parameter& param);
-    static Parameter parse_from_string(const std::string& value);
+    Parameter(const Parameter&) = default;
+    Parameter(Parameter&&) = default;
+    Parameter& operator=(const Parameter&) = default;
+    Parameter& operator=(Parameter&&) = default;
 
+    NODISCARD const ParameterType& type() const {
+        return type_;
+    }
+
+    void SetType(ParameterType type) {
+        type_ = type;
+    }
+
+    NODISCARD bool toBool() const {
+        return boolVal_;
+    }
+
+    NODISCARD int toInt() const {
+        return intVal_;
+    }
+
+    NODISCARD float toFloat() const {
+        return floatVal_;
+    }
+
+    NODISCARD std::complex<float> toComplex() const {
+        return complexVal_;
+    }
+
+    NODISCARD const std::string& toString() const {
+        return strVal_;
+    }
+
+    NODISCARD const std::vector<int>& toArrayInt() const {
+        return arrayIntVal_;
+    }
+
+    NODISCARD const std::vector<float>& toArrayFloat() const {
+        return arrayFloatVal_;
+    }
+
+    NODISCARD const std::vector<std::complex<float>>& toArrayComplex() const {
+        return arrayComplexVal_;
+    }
+
+    NODISCARD const std::vector<std::string>& toArrayString() const {
+        return arrayStringVal_;
+    }
+
+    void SetBoolValue(bool val) {
+        boolVal_ = val;
+    }
+
+    void SetIntValue(int val) {
+        intVal_ = val;
+    }
+
+    void SetLongValue(long val) {
+        if (val == std::numeric_limits<long>::min()) {
+            val = std::numeric_limits<int>::min();
+        }
+
+        if (val == std::numeric_limits<long>::max()) {
+            val = std::numeric_limits<int>::max();
+        }
+        intVal_ = static_cast<int>(val);
+    }
+
+    void SetLongLongValue(long long val) {
+        if (val == std::numeric_limits<long long>::min()) {
+            val = std::numeric_limits<int>::min();
+        }
+
+        if (val == std::numeric_limits<long long>::max()) {
+            val = std::numeric_limits<int>::max();
+        }
+        intVal_ = static_cast<int>(val);
+    }
+
+    void SetFloatValue(float val) {
+        floatVal_ = val;
+    }
+
+    void SetFloatValue(double val) {
+        floatVal_ = static_cast<float>(val);
+    }
+
+    void SetComplexValue(std::complex<float> val) {
+        complexVal_ = val;
+    }
+
+    void SetStringValue(std::string val) {
+        strVal_ = std::move(val);
+    }
+
+    void SetArrayInt(std::vector<int> val) {
+        arrayIntVal_ = std::move(val);
+    }
+
+    void SetArrayFloat(std::vector<float> val) {
+        arrayFloatVal_ = std::move(val);
+    }
+
+    void SetArrayString(std::vector<std::string> val) {
+        arrayStringVal_ = std::move(val);
+    }
+
+    void SetArrayComplex(std::vector<std::complex<float>> val) {
+        arrayComplexVal_ = std::move(val);
+    }
+
+    void AddElemToArrayInt(int val) {
+        arrayIntVal_.push_back(val);
+    }
+
+    void AddElemToArrayFloat(float val) {
+        arrayFloatVal_.push_back(val);
+    }
+
+    void AddElemToArrayComplex(std::complex<float> val) {
+        arrayComplexVal_.push_back(val);
+    }
+
+    void AddElemToArrayString(std::string val) {
+        arrayStringVal_.push_back(std::move(val));
+    }
+
+    static std::string Encode2String(const Parameter& param);
+
+    static Parameter ParseFromString(const std::string& value);
+
+private:
     /**
-     * @brief Parameter type
+     * @brief Parameter type_
      *
      * 0 = null \n
      * 1 = bool \n
@@ -348,19 +482,19 @@ public:
      * 10 = complex \n
      * 11 = array complex
      */
-    ParameterType type;
+    ParameterType type_;
 
-    bool b{};
-    int i{};
-    float f{};
-    std::complex<float> c;
-    std::vector<int> ai;
-    std::vector<float> af;
-    std::vector<std::complex<float>> ac;
+    bool boolVal_{};
+    int intVal_{};
+    float floatVal_{};
+    std::complex<float> complexVal_;
+    std::vector<int> arrayIntVal_;
+    std::vector<float> arrayFloatVal_;
+    std::vector<std::complex<float>> arrayComplexVal_;
 
     // keep std::string typed member the last for cross cxxabi compatibility
-    std::string s;
-    std::vector<std::string> as;
+    std::string strVal_;
+    std::vector<std::string> arrayStringVal_;
 };
 
 bool operator==(const Parameter& lhs, const Parameter& rhs);
@@ -381,15 +515,15 @@ public:
     Attribute(const onnx::TensorProto& t);
 #endif
 
-    size_t elemsize() const;
+    NODISCARD size_t elemsize() const;
 
-    int elemcount() const;
+    NODISCARD int elemcount() const;
 
     // convenient routines for manipulate fp16/fp32 weight
-    std::vector<float> get_float32_data() const;
+    NODISCARD std::vector<float> get_float32_data() const;
     void set_float32_data(const std::vector<float>& data_);
     /**
-     * @brief Runtime data type.
+     * @brief Runtime data type_.
      *
      * 0 = null \n
      * 1 = float32 \n
@@ -429,7 +563,7 @@ public:
     Operator* producer{};
     std::vector<Operator*> consumers;
     /**
-     * @brief Runtime data type.
+     * @brief Runtime data type_.
      *
      * 0 = null \n
      * 1 = float32 \n

@@ -3,7 +3,6 @@
 //
 #include "ir.h"
 #include "storezip.h"
-#include "utils.h"
 #include <cfloat>
 #include <climits>
 #include <cstdint>
@@ -254,47 +253,47 @@ static DataType string_to_type(const char* s) {
     return DataType::kDataTypeUnknown;
 }
 
-std::string Parameter::encode_to_string(const Parameter& param) {
-    if (param.type == ParameterType::kParameterUnknown) {
+std::string Parameter::Encode2String(const Parameter& param) {
+    if (param.type() == ParameterType::kParameterUnknown) {
         return "None";
     }
 
-    if (param.type == ParameterType::kParameterBool) {
-        if (param.b) {
+    if (param.type() == ParameterType::kParameterBool) {
+        if (param.toBool()) {
             return "True";
         } else {
             return "False";
         }
     }
 
-    if (param.type == ParameterType::kParameterInt) {
-        return std::to_string(param.i);
+    if (param.type() == ParameterType::kParameterInt) {
+        return std::to_string(param.toInt());
     }
 
-    if (param.type == ParameterType::kParameterFloat) {
+    if (param.type() == ParameterType::kParameterFloat) {
         char buf[64];
-        snprintf(buf, sizeof(buf), "%e", param.f);
+        snprintf(buf, sizeof(buf), "%e", param.toFloat());
         return buf;
     }
 
-    if (param.type == ParameterType::kParameterString) {
-        return param.s;
+    if (param.type() == ParameterType::kParameterString) {
+        return param.toString();
     }
 
-    if (param.type == ParameterType::kParameterArrayInt) {
+    if (param.type() == ParameterType::kParameterArrayInt) {
         std::string s("(");
-        size_t size = param.ai.size();
-        for (const auto& ele: param.ai) {
+        size_t size = param.toArrayInt().size();
+        for (const auto& ele: param.toArrayInt()) {
             s += (std::to_string(ele) + (--size ? "," : ""));
         }
         s += ")";
         return s;
     }
 
-    if (param.type == ParameterType::kParameterArrayFloat) {
+    if (param.type() == ParameterType::kParameterArrayFloat) {
         std::string s("(");
-        size_t size = param.af.size();
-        for (const auto& ele: param.af) {
+        size_t size = param.toArrayFloat().size();
+        for (const auto& ele: param.toArrayFloat()) {
             char buf[64];
             snprintf(buf, sizeof(buf), "%e", ele);
             s += (std::string(buf) + (--size ? "," : ""));
@@ -303,26 +302,26 @@ std::string Parameter::encode_to_string(const Parameter& param) {
         return s;
     }
 
-    if (param.type == ParameterType::kParameterArrayString) {
+    if (param.type() == ParameterType::kParameterArrayString) {
         std::string s("(");
-        size_t size = param.as.size();
-        for (const auto& ele: param.as) {
+        size_t size = param.toArrayString().size();
+        for (const auto& ele: param.toArrayString()) {
             s += (ele + (--size ? "," : ""));
         }
         s += ")";
         return s;
     }
 
-    if (param.type == ParameterType::kParameterComplex) {
+    if (param.type() == ParameterType::kParameterComplex) {
         char buf[128];
-        snprintf(buf, sizeof(buf), "%e+%ei", param.c.real(), param.c.imag());
+        snprintf(buf, sizeof(buf), "%e+%ei", param.toComplex().real(), param.toComplex().imag());
         return buf;
     }
 
-    if (param.type == ParameterType::kParameterArrayComplex) {
+    if (param.type() == ParameterType::kParameterArrayComplex) {
         std::string s("(");
-        size_t size = param.ac.size();
-        for (const auto& ele: param.ac) {
+        size_t size = param.toArrayComplex().size();
+        for (const auto& ele: param.toArrayComplex()) {
             char buf[128];
             snprintf(buf, sizeof(buf), "%e+%ei", ele.real(), ele.imag());
             s += (std::string(buf) + (--size ? "," : ""));
@@ -331,11 +330,11 @@ std::string Parameter::encode_to_string(const Parameter& param) {
         return s;
     }
 
-    fprintf(stderr, "unknown parameter type %d\n", static_cast<int>(param.type));
+    fprintf(stderr, "unknown parameter type_ %d\n", static_cast<int>(param.type_));
     return {};
 }
 
-Parameter Parameter::parse_from_string(const std::string& value) {
+Parameter Parameter::ParseFromString(const std::string& value) {
     // string type
     if (value.find('%') != std::string::npos) {
         Parameter p(value);
@@ -362,16 +361,16 @@ Parameter Parameter::parse_from_string(const std::string& value) {
             std::getline(lcss, elem, ',');
             if ((elem[0] != '-' && (elem[0] < '0' || elem[0] > '9')) || (elem[0] == '-' && (elem[1] < '0' || elem[1] > '9'))) {
                 // array string
-                p.type = ParameterType::kParameterArrayString;
-                p.as.push_back(elem);
+                p.SetType(ParameterType::kParameterArrayString);
+                p.AddElemToArrayString(elem);
             } else if (elem.find('.') != std::string::npos || elem.find('e') != std::string::npos) {
                 // array float
-                p.type = ParameterType::kParameterArrayFloat;
-                p.af.push_back(std::stof(elem));
+                p.SetType(ParameterType::kParameterArrayFloat);
+                p.AddElemToArrayFloat(std::stof(elem));
             } else {
                 // array integer
-                p.type = ParameterType::kParameterArrayInt;
-                p.ai.push_back(std::stoi(elem));
+                p.SetType(ParameterType::kParameterArrayInt);
+                p.arrayIntVal_.push_back(std::stoi(elem));
             }
         }
         return p;
@@ -393,47 +392,47 @@ Parameter Parameter::parse_from_string(const std::string& value) {
 }
 
 bool operator==(const Parameter& lhs, const Parameter& rhs) {
-    if (lhs.type != rhs.type) {
+    if (lhs.type() != rhs.type()) {
         return false;
     }
 
-    if (lhs.type == ParameterType::kParameterUnknown) {
+    if (lhs.type() == ParameterType::kParameterUnknown) {
         return true;
     }
 
-    if (lhs.type == ParameterType::kParameterBool && lhs.b == rhs.b) {
+    if (lhs.type() == ParameterType::kParameterBool && lhs.toBool() == rhs.toBool()) {
         return true;
     }
 
-    if (lhs.type == ParameterType::kParameterInt && lhs.i == rhs.i) {
+    if (lhs.type() == ParameterType::kParameterInt && lhs.toInt() == rhs.toInt()) {
         return true;
     }
 
-    if (lhs.type == ParameterType::kParameterFloat && std::abs(lhs.f - rhs.f) < FLT_EPSILON) {
+    if (lhs.type() == ParameterType::kParameterFloat && std::abs(lhs.toFloat() - rhs.toFloat()) < FLT_EPSILON) {
         return true;
     }
 
-    if (lhs.type == ParameterType::kParameterString && lhs.s == rhs.s) {
+    if (lhs.type() == ParameterType::kParameterString && lhs.toString() == rhs.toString()) {
         return true;
     }
 
-    if (lhs.type == ParameterType::kParameterArrayInt && lhs.ai == rhs.ai) {
+    if (lhs.type() == ParameterType::kParameterArrayInt && lhs.toArrayInt() == rhs.toArrayInt()) {
         return true;
     }
 
-    if (lhs.type == ParameterType::kParameterArrayFloat && lhs.af == rhs.af) {
+    if (lhs.type() == ParameterType::kParameterArrayFloat && lhs.toArrayFloat() == rhs.toArrayFloat()) {
         return true;
     }
 
-    if (lhs.type == ParameterType::kParameterArrayString && lhs.as == rhs.as) {
+    if (lhs.type() == ParameterType::kParameterArrayString && lhs.toArrayString() == rhs.toArrayString()) {
         return true;
     }
 
-    if (lhs.type == ParameterType::kParameterComplex && lhs.c == rhs.c) {
+    if (lhs.type() == ParameterType::kParameterComplex && lhs.toComplex() == rhs.toComplex()) {
         return true;
     }
 
-    if (lhs.type == ParameterType::kParameterArrayComplex && lhs.ac == rhs.ac) {
+    if (lhs.type() == ParameterType::kParameterArrayComplex && lhs.toArrayComplex() == rhs.toArrayComplex()) {
         return true;
     }
 
@@ -475,7 +474,7 @@ std::vector<float> Attribute::get_float32_data() const {
             item = float16_to_float32(*p++);
         }
     } else {
-        fprintf(stderr, "cannot convert type %d to float32 data\n", static_cast<int>(type));
+        fprintf(stderr, "cannot convert type_ %d to float32 data\n", static_cast<int>(type));
     }
     return v;
 }
@@ -506,7 +505,7 @@ void Attribute::set_float32_data(const std::vector<float>& data_) {
         }
 
         default:
-            fprintf(stderr, "cannot convert float32 data to type %d\n", static_cast<int>(type));
+            fprintf(stderr, "cannot convert float32 data to type_ %d\n", static_cast<int>(type));
     }
 }
 
@@ -532,7 +531,7 @@ bool operator==(const Attribute& lhs, const Attribute& rhs) {
 Attribute operator+(const Attribute& a, const Attribute& b) {
     Attribute c;
     if (a.type != b.type) {
-        fprintf(stderr, "concat attribute type mismatch\n");
+        fprintf(stderr, "concat attribute type_ mismatch\n");
         return c;
     }
 
@@ -577,7 +576,7 @@ const Operand* Operator::named_input(const std::string& key) const {
 }
 
 static void load_parameter(Operator* op, const std::string& key, const std::string& value) {
-    op->params[key] = Parameter::parse_from_string(value);
+    op->params[key] = Parameter::ParseFromString(value);
 }
 
 static void load_input_key(Operator* op, const std::string& key, const std::string& value) {
@@ -614,7 +613,7 @@ static void load_shape(Operator* op, const std::string& key, const std::string& 
         return;
     }
 
-    // parse type, e.g. #input=(1,3,10,10)f32
+    // parse type_, e.g. #input=(1,3,10,10)f32
     std::string typestr = value.substr(value.find_last_of(')') + 1);
     operand->type = string_to_type(typestr.c_str());
 
@@ -642,7 +641,7 @@ static void load_shape(Operator* op, const std::string& key, const std::string& 
 static void load_attribute(Operator* op, const std::string& key, const std::string& value, StoreZipReader& szr) {
     Attribute& a = op->attrs[key];
 
-    // parse type
+    // parse type_
     std::string typestr = value.substr(value.find_last_of(')') + 1);
     a.type = string_to_type(typestr.c_str());
 
@@ -720,7 +719,7 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
         // dump op param info
         for (const auto& it: op->params) {
             fprintf(paramfp, " %s=", it.first.c_str());
-            std::string s = Parameter::encode_to_string(it.second);
+            std::string s = Parameter::Encode2String(it.second);
             fprintf(paramfp, "%s", s.c_str());
         }
 

@@ -5,6 +5,16 @@
 #ifndef OPENXAE_UTILS_H
 #define OPENXAE_UTILS_H
 
+//#ifdef __has_cpp_attribute
+//#if __has_cpp_attribute(nodiscard) > 201907L
+//#define NODISCARD [[nodiscard]]
+//#else
+//#define NODISCARD
+//#endif
+//#endif
+
+#define NODISCARD [[nodiscard]]
+
 #if BUILD_TORCH2PNNX
 #include <memory>
 namespace torch {
