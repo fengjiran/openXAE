@@ -532,11 +532,28 @@ public:
 
     NODISCARD size_t size() const;
 
+    NODISCARD const std::vector<int>& GetShape() const {
+        return shape_;
+    }
+
+    std::vector<int>& GetShape() {
+        return shape_;
+    }
+
+    NODISCARD const std::vector<char>& GetRawData() const {
+        return data_;
+    }
+
+    std::vector<char>& GetRawData() {
+        return data_;
+    }
+
     // convenient routines for manipulate fp16/fp32 weight
-    NODISCARD std::vector<float> get_float32_data() const;
+    NODISCARD std::vector<float> CastToFloat32() const;
 
-    void set_float32_data(const std::vector<float>& data_);
+    void SetFloat32Data(const std::vector<float>& newData);
 
+private:
     /**
      * @brief Runtime data type.
      *
@@ -555,13 +572,10 @@ public:
      * 12 = complex32 \n
      * 13 = bf16
      */
-
+    DataType type_;
     std::vector<int> shape_;
     std::vector<char> data_;
     std::map<std::string, Parameter> params;
-
-private:
-    DataType type_;
 };
 
 bool operator==(const Attribute& lhs, const Attribute& rhs);
