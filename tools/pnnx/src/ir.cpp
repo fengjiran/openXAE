@@ -14,7 +14,7 @@
 
 namespace pnnx {
 
-static bool type_is_integer(DataType type) {
+static bool IsInteger(DataType type) {
     bool flag;
     switch (type) {
         case DataType::kDataTypeInt32:
@@ -44,8 +44,8 @@ static bool type_is_integer(DataType type) {
     return flag;
 }
 
-static const char* type_to_string(DataType type) {
-    const char* str;
+static std::string DataTypeToString(DataType type) {
+    std::string str;
     switch (type) {
         case DataType::kDataTypeFloat32:
             str = "f32";
@@ -191,49 +191,42 @@ static const char* type_to_dtype_string(DataType type) {
     return str;
 }
 
-static size_t type_to_elemsize(DataType type) {
-    size_t elemsize;
+static size_t SizeOf(DataType type) {
+    size_t size;
     switch (type) {
-        case DataType::kDataTypeFloat32:
-            elemsize = 4;
+        case DataType::kDataTypeUnknown:
+            size = 0;
             break;
-        case DataType::kDataTypeFloat64:
-            elemsize = 8;
-            break;
-        case DataType::kDataTypeFloat16:
-            elemsize = 2;
-            break;
-        case DataType::kDataTypeInt32:
-            elemsize = 4;
-            break;
-        case DataType::kDataTypeInt64:
-            elemsize = 8;
-            break;
-        case DataType::kDataTypeInt16:
-            elemsize = 2;
-            break;
+
         case DataType::kDataTypeInt8:
         case DataType::kDataTypeUInt8:
         case DataType::kDataTypeBool:
-            elemsize = 1;
+            size = 1;
             break;
-        case DataType::kDataTypeComplex64:
-            elemsize = 8;
-            break;
-        case DataType::kDataTypeComplex128:
-            elemsize = 16;
-            break;
-        case DataType::kDataTypeComplex32:
-            elemsize = 4;
-            break;
+
+        case DataType::kDataTypeInt16:
+        case DataType::kDataTypeFloat16:
         case DataType::kDataTypeBFloat16:
-            elemsize = 2;
+            size = 2;
             break;
-        case DataType::kDataTypeUnknown:
-            elemsize = 0;
+
+        case DataType::kDataTypeInt32:
+        case DataType::kDataTypeFloat32:
+        case DataType::kDataTypeComplex32:
+            size = 4;
+            break;
+
+        case DataType::kDataTypeInt64:
+        case DataType::kDataTypeFloat64:
+        case DataType::kDataTypeComplex64:
+            size = 8;
+            break;
+
+        case DataType::kDataTypeComplex128:
+            size = 16;
             break;
     }
-    return elemsize;
+    return size;
 }
 
 static DataType string_to_type(const char* s) {
@@ -439,57 +432,57 @@ bool operator==(const Parameter& lhs, const Parameter& rhs) {
     return false;
 }
 
-Attribute::Attribute(const std::initializer_list<int>& shape_, const std::vector<float>& t)
-    : type(DataType::kDataTypeFloat32), shape(shape_) {
-    if (!shape.empty()) {
-        data.resize(elemcount() * elemsize());
-        memcpy((void*) data.data(), (const void*) t.data(), data.size());
+Attribute::Attribute(const std::initializer_list<int>& shape, const std::vector<float>& t)
+    : type_(DataType::kDataTypeFloat32), shape_(shape) {
+    if (!shape_.empty()) {
+        data_.resize(size() * GetElemSize());
+        memcpy((void*) data_.data(), (const void*) t.data(), data_.size());
     }
 }
 
-size_t Attribute::elemsize() const {
-    return type_to_elemsize(type);
+size_t Attribute::GetElemSize() const {
+    return SizeOf(type_);
 }
 
-int Attribute::elemcount() const {
-    if (shape.empty()) {
+size_t Attribute::size() const {
+    if (shape_.empty()) {
         return 0;
     }
 
-    return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<>());
+    return std::accumulate(shape_.begin(), shape_.end(), 1, std::multiplies<>());
 }
 
 std::vector<float> Attribute::get_float32_data() const {
-    std::vector<float> v(elemcount());
-    if (type == DataType::kDataTypeFloat32) {
-        memcpy((void*) v.data(), (const void*) data.data(), data.size());
-    } else if (type == DataType::kDataTypeFloat64) {
-        const auto* p = (const double*) data.data();
+    std::vector<float> v(size());
+    if (type_ == DataType::kDataTypeFloat32) {
+        memcpy((void*) v.data(), (const void*) data_.data(), data_.size());
+    } else if (type_ == DataType::kDataTypeFloat64) {
+        const auto* p = (const double*) data_.data();
         for (auto& item: v) {
             item = static_cast<float>(*p++);
         }
-    } else if (type == DataType::kDataTypeFloat16) {
-        const auto* p = (const unsigned short*) data.data();
+    } else if (type_ == DataType::kDataTypeFloat16) {
+        const auto* p = (const unsigned short*) data_.data();
         for (auto& item: v) {
             item = float16_to_float32(*p++);
         }
     } else {
-        fprintf(stderr, "cannot convert type_ %d to float32 data\n", static_cast<int>(type));
+        fprintf(stderr, "cannot convert type_ %d to float32 data\n", static_cast<int>(type_));
     }
     return v;
 }
 
-void Attribute::set_float32_data(const std::vector<float>& data_) {
-    data.resize(data_.size() * elemsize());
-    switch (type) {
+void Attribute::set_float32_data(const std::vector<float>& data) {
+    data_.resize(data.size() * GetElemSize());
+    switch (type_) {
         case DataType::kDataTypeFloat32: {
-            memcpy((void*) data.data(), (const void*) data_.data(), data.size());
+            memcpy((void*) data_.data(), (const void*) data.data(), data_.size());
             break;
         }
 
         case DataType::kDataTypeFloat64: {
-            auto* p = (double*) data.data();
-            for (const auto& item: data_) {
+            auto* p = (double*) data_.data();
+            for (const auto& item: data) {
                 *p = item;
                 ++p;
             }
@@ -497,32 +490,32 @@ void Attribute::set_float32_data(const std::vector<float>& data_) {
         }
 
         case DataType::kDataTypeFloat16: {
-            auto* p = (unsigned short*) data.data();
-            for (const auto& item: data_) {
+            auto* p = (unsigned short*) data_.data();
+            for (const auto& item: data) {
                 *p = float32_to_float16(item);
                 ++p;
             }
         }
 
         default:
-            fprintf(stderr, "cannot convert float32 data to type_ %d\n", static_cast<int>(type));
+            fprintf(stderr, "cannot convert float32 data to type_ %d\n", static_cast<int>(type_));
     }
 }
 
 bool operator==(const Attribute& lhs, const Attribute& rhs) {
-    if (lhs.type != rhs.type) {
+    if (lhs.type() != rhs.type()) {
         return false;
     }
 
-    if (lhs.type == DataType::kDataTypeUnknown) {
+    if (lhs.type() == DataType::kDataTypeUnknown) {
         return true;
     }
 
-    if (lhs.shape != rhs.shape) {
+    if (lhs.shape_ != rhs.shape_) {
         return false;
     }
 
-    if (lhs.data != rhs.data) {
+    if (lhs.data_ != rhs.data_) {
         return false;
     }
     return true;
@@ -530,23 +523,23 @@ bool operator==(const Attribute& lhs, const Attribute& rhs) {
 
 Attribute operator+(const Attribute& a, const Attribute& b) {
     Attribute c;
-    if (a.type != b.type) {
+    if (a.type() != b.type()) {
         fprintf(stderr, "concat attribute type_ mismatch\n");
         return c;
     }
 
-    if (a.shape != b.shape) {
+    if (a.shape_ != b.shape_) {
         fprintf(stderr, "concat attribute shape mismatch\n");
         return c;
     }
 
-    c.type = a.type;
-    c.shape = a.shape;
-    c.shape[0] += b.shape[0];// concat the first dim
+    c.SetType(a.type());
+    c.shape_ = a.shape_;
+    c.shape_[0] += b.shape_[0];// concat the first dim
 
-    c.data.resize(a.data.size() + b.data.size());
-    memcpy(c.data.data(), a.data.data(), a.data.size());
-    memcpy(c.data.data() + a.data.size(), b.data.data(), b.data.size());
+    c.data_.resize(a.data_.size() + b.data_.size());
+    memcpy(c.data_.data(), a.data_.data(), a.data_.size());
+    memcpy(c.data_.data() + a.data_.size(), b.data_.data(), b.data_.size());
     return c;
 }
 
@@ -641,31 +634,32 @@ static void load_shape(Operator* op, const std::string& key, const std::string& 
 static void load_attribute(Operator* op, const std::string& key, const std::string& value, StoreZipReader& szr) {
     Attribute& a = op->attrs[key];
 
-    // parse type_
+    // parse type
     std::string typestr = value.substr(value.find_last_of(')') + 1);
-    a.type = string_to_type(typestr.c_str());
+    a.SetType(string_to_type(typestr.c_str()));
+    //    a.type_ = string_to_type(typestr.c_str());
 
-    if (a.type == DataType::kDataTypeUnknown) {
+    if (a.type() == DataType::kDataTypeUnknown) {
         return;
     }
 
     // parse shape
     std::string lc = value.substr(1, value.find_last_of(')') - 1);
     std::istringstream lcss(lc);
-    a.shape.clear();
+    a.shape_.clear();
     while (!lcss.eof()) {
         std::string elem;
         std::getline(lcss, elem, ',');
-        a.shape.push_back(std::stoi(elem));
+        a.shape_.push_back(std::stoi(elem));
     }
 
-    if (a.shape.empty()) {
+    if (a.shape_.empty()) {
         return;
     }
 
     // parse data
-    size_t size = std::accumulate(a.shape.begin(), a.shape.end(), 1, std::multiplies<>());
-    size_t bytesize = size * type_to_elemsize(a.type);
+    size_t size = std::accumulate(a.shape_.begin(), a.shape_.end(), 1, std::multiplies<>());
+    size_t bytesize = size * SizeOf(a.type());
 
     std::string filename = op->name + "." + key;
     size_t filesize = szr.get_file_size(filename);
@@ -678,8 +672,8 @@ static void load_attribute(Operator* op, const std::string& key, const std::stri
         fprintf(stderr, "file size not match expect %lu but got %lu\n", bytesize, filesize);
     }
 
-    a.data.resize(bytesize);
-    szr.read_file(filename, (char*) a.data.data());
+    a.data_.resize(bytesize);
+    szr.read_file(filename, (char*) a.data_.data());
 }
 
 int Graph::save(const std::string& paramPath, const std::string& binPath) {
@@ -729,15 +723,15 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
             fprintf(paramfp, "(");
             const Attribute& attr = it.second;
 
-            size_t size = attr.shape.size();
-            for (const auto& x: attr.shape) {
+            size_t size = attr.shape_.size();
+            for (const auto& x: attr.shape_) {
                 fprintf(paramfp, "%d%s", x, (--size ? "," : ""));
             }
             fprintf(paramfp, ")");
-            fprintf(paramfp, "%s", type_to_string(attr.type));
+            fprintf(paramfp, "%s", DataTypeToString(attr.type()).c_str());
 
             std::string filename = op->name + "." + it.first;
-            szw.write_file(filename, attr.data.data(), attr.data.size());
+            szw.write_file(filename, attr.data_.data(), attr.data_.size());
         }
 
         if (op->input_names.size() == op->inputs.size()) {
@@ -768,7 +762,7 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
             }
 
             fprintf(paramfp, ")");
-            fprintf(paramfp, "%s", type_to_string(operand->type));
+            fprintf(paramfp, "%s", DataTypeToString(operand->type).c_str());
         }
 
         for (const auto* operand: op->outputs) {
@@ -789,7 +783,7 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
             }
 
             fprintf(paramfp, ")");
-            fprintf(paramfp, "%s", type_to_string(operand->type));
+            fprintf(paramfp, "%s", DataTypeToString(operand->type).c_str());
         }
         fprintf(paramfp, "\n");
     }

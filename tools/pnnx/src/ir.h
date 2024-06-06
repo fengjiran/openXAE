@@ -504,9 +504,9 @@ public:
     /**
      * @brief Default constructor.
      */
-    Attribute() : type(DataType::kDataTypeUnknown) {}
+    Attribute() : type_(DataType::kDataTypeUnknown) {}
 
-    Attribute(const std::initializer_list<int>& shape_, const std::vector<float>& t);
+    Attribute(const std::initializer_list<int>& shape, const std::vector<float>& t);
 
 #if BUILD_TORCH2PNNX
     Attribute(const at::Tensor& t);
@@ -515,15 +515,30 @@ public:
     Attribute(const onnx::TensorProto& t);
 #endif
 
-    NODISCARD size_t elemsize() const;
+    Attribute(const Attribute&) = default;
+    Attribute(Attribute&&) = default;
+    Attribute& operator=(const Attribute&) = delete;
+    Attribute& operator=(Attribute&&) = delete;
 
-    NODISCARD int elemcount() const;
+    NODISCARD const DataType& type() const {
+        return type_;
+    }
+
+    void SetType(DataType type) {
+        type_ = type;
+    }
+
+    NODISCARD size_t GetElemSize() const;
+
+    NODISCARD size_t size() const;
 
     // convenient routines for manipulate fp16/fp32 weight
     NODISCARD std::vector<float> get_float32_data() const;
+
     void set_float32_data(const std::vector<float>& data_);
+
     /**
-     * @brief Runtime data type_.
+     * @brief Runtime data type.
      *
      * 0 = null \n
      * 1 = float32 \n
@@ -540,10 +555,13 @@ public:
      * 12 = complex32 \n
      * 13 = bf16
      */
-    DataType type;
-    std::vector<int> shape;
-    std::vector<char> data;
+
+    std::vector<int> shape_;
+    std::vector<char> data_;
     std::map<std::string, Parameter> params;
+
+private:
+    DataType type_;
 };
 
 bool operator==(const Attribute& lhs, const Attribute& rhs);
