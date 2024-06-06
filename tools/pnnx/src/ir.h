@@ -46,7 +46,7 @@ class OnnxAttributeProxy;
 namespace pnnx {
 
 /**
- * @brief Runtime parameter type_.
+ * @brief Runtime parameter type.
  *
  * Enumerates the parameter type_ supported for workload.
  */
@@ -64,9 +64,9 @@ enum class ParameterType {
 };
 
 /**
- * @brief Runtime data type_.
+ * @brief Runtime data type.
  *
- * Enumerates the data type_ supported for workload.
+ * Enumerates the data type supported for workload.
  */
 enum class DataType {
     kDataTypeUnknown = 0,
@@ -94,22 +94,22 @@ public:
     Parameter() : type_(ParameterType::kParameterUnknown) {}
 
     /**
-     * @brief Constructor for bool type_ parameter.
-     * @param val bool type_ value.
+     * @brief Constructor for bool type parameter.
+     * @param val bool type value.
      */
     explicit Parameter(bool val)
         : type_(ParameterType::kParameterBool), boolVal_(val) {}
 
     /**
-     * @brief Constructor for int type_ parameter.
-     * @param val int type_ value.
+     * @brief Constructor for int type parameter.
+     * @param val int type value.
      */
     explicit Parameter(int val)
         : type_(ParameterType::kParameterInt), intVal_(val) {}
 
     /**
-     * @brief Constructor for long type_ parameter.
-     * @param val long type_ value.
+     * @brief Constructor for long type parameter.
+     * @param val long type value.
      */
     explicit Parameter(long val) : type_(ParameterType::kParameterInt) {
         if (val == std::numeric_limits<long>::min()) {
@@ -123,8 +123,8 @@ public:
     }
 
     /**
-     * @brief Constructor for long long type_ parameter.
-     * @param val long long type_ value.
+     * @brief Constructor for long long type parameter.
+     * @param val long long type value.
      */
     explicit Parameter(long long val) : type_(ParameterType::kParameterInt) {
         if (val == std::numeric_limits<long long>::min()) {
@@ -138,43 +138,43 @@ public:
     }
 
     /**
-     * @brief Constructor for float type_ parameter.
-     * @param val float type_ value.
+     * @brief Constructor for float type parameter.
+     * @param val float type value.
      */
     explicit Parameter(float val)
         : type_(ParameterType::kParameterFloat), floatVal_(val) {}
 
     /**
-     * @brief Constructor for double type_ parameter.
-     * @param val double type_ value.
+     * @brief Constructor for double type parameter.
+     * @param val double type value.
      */
     explicit Parameter(double val)
         : type_(ParameterType::kParameterFloat), floatVal_(static_cast<float>(val)) {}
 
     /**
-     * @brief Constructor for string type_ parameter.
-     * @param val string type_ value.
+     * @brief Constructor for string type parameter.
+     * @param val string type value.
      */
     explicit Parameter(const char* val)
         : type_(ParameterType::kParameterString), strVal_(val) {}
 
     /**
-     * @brief Constructor for string type_ parameter.
-     * @param val string type_ value.
+     * @brief Constructor for string type parameter.
+     * @param val string type value.
      */
     explicit Parameter(std::string val)
         : type_(ParameterType::kParameterString), strVal_(std::move(val)) {}
 
     /**
-     * @brief Constructor for array int type_ parameter.
-     * @param val init list of int type_ value.
+     * @brief Constructor for array int type parameter.
+     * @param val init list of int type value.
      */
     Parameter(const std::initializer_list<int>& val)
         : type_(ParameterType::kParameterArrayInt), arrayIntVal_(val) {}
 
     /**
-     * @brief Constructor for array int type_ parameter.
-     * @param val init list of int64 type_ value.
+     * @brief Constructor for array int type parameter.
+     * @param val init list of int64 type value.
      */
     Parameter(const std::initializer_list<int64_t>& val) : type_(ParameterType::kParameterArrayInt) {
         for (const auto& x: val) {
@@ -191,15 +191,15 @@ public:
     }
 
     /**
-     * @brief Constructor for array int type_ parameter.
-     * @param val vector of int type_ value.
+     * @brief Constructor for array int type parameter.
+     * @param val vector of int type value.
      */
     explicit Parameter(const std::vector<int>& val)
         : type_(ParameterType::kParameterArrayInt), arrayIntVal_(val) {}
 
     /**
-     * @brief Constructor for array int64 type_ parameter.
-     * @param val vector of int64 type_ value.
+     * @brief Constructor for array int64 type parameter.
+     * @param val vector of int64 type value.
      */
     explicit Parameter(const std::vector<int64_t>& val) : type_(ParameterType::kParameterArrayInt) {
         for (const auto& x: val) {
@@ -216,15 +216,15 @@ public:
     }
 
     /**
-     * @brief Constructor for array float type_ parameter.
-     * @param val init list of float type_ value.
+     * @brief Constructor for array float type parameter.
+     * @param val init list of float type value.
      */
     Parameter(const std::initializer_list<float>& val)
         : type_(ParameterType::kParameterArrayFloat), arrayFloatVal_(val) {}
 
     /**
-     * @brief Constructor for array double type_ parameter.
-     * @param val init list of double type_ value.
+     * @brief Constructor for array double type parameter.
+     * @param val init list of double type value.
      */
     Parameter(const std::initializer_list<double>& val)
         : type_(ParameterType::kParameterArrayFloat) {
@@ -234,15 +234,15 @@ public:
     }
 
     /**
-     * @brief Constructor for array float type_ parameter.
-     * @param val vector of float type_ value.
+     * @brief Constructor for array float type parameter.
+     * @param val vector of float type value.
      */
     explicit Parameter(const std::vector<float>& val)
         : type_(ParameterType::kParameterArrayFloat), arrayFloatVal_(val) {}
 
     /**
-     * @brief Constructor for array float type_ parameter.
-     * @param val vector of double type_ value.
+     * @brief Constructor for array float type parameter.
+     * @param val vector of double type value.
      */
     explicit Parameter(const std::vector<double>& val)
         : type_(ParameterType::kParameterArrayFloat) {
@@ -252,8 +252,8 @@ public:
     }
 
     /**
-     * @brief Constructor for array string type_ parameter.
-     * @param val init list of string type_ value.
+     * @brief Constructor for array string type parameter.
+     * @param val init list of string type value.
      */
     Parameter(const std::initializer_list<const char*>& val)
         : type_(ParameterType::kParameterArrayString) {
@@ -263,43 +263,43 @@ public:
     }
 
     /**
-     * @brief Constructor for array string type_ parameter.
-     * @param val init list of string type_ value.
+     * @brief Constructor for array string type parameter.
+     * @param val init list of string type value.
      */
     Parameter(const std::initializer_list<std::string>& val)
         : type_(ParameterType::kParameterArrayString), arrayStringVal_(val) {}
 
     /**
-     * @brief Constructor for array string type_ parameter.
-     * @param val vector of string type_ value.
+     * @brief Constructor for array string type parameter.
+     * @param val vector of string type value.
      */
     explicit Parameter(const std::vector<std::string>& val)
         : type_(ParameterType::kParameterArrayString), arrayStringVal_(val) {}
 
     /**
-     * @brief Constructor for complex type_ parameter.
-     * @param val complex type_ value.
+     * @brief Constructor for complex type parameter.
+     * @param val complex type value.
      */
     explicit Parameter(const std::complex<float>& val)
         : type_(ParameterType::kParameterComplex), complexVal_(val) {}
 
     /**
-     * @brief Constructor for complex type_ parameter.
-     * @param val complex type_ value.
+     * @brief Constructor for complex type parameter.
+     * @param val complex type value.
      */
     explicit Parameter(const std::complex<double>& val)
         : type_(ParameterType::kParameterComplex), complexVal_(val) {}
 
     /**
-     * @brief Constructor for array complex type_ parameter.
-     * @param val init list of complex type_ value.
+     * @brief Constructor for array complex type parameter.
+     * @param val init list of complex type value.
      */
     Parameter(const std::initializer_list<std::complex<float>>& val)
         : type_(ParameterType::kParameterArrayComplex), arrayComplexVal_(val) {}
 
     /**
-     * @brief Constructor for array complex type_ parameter.
-     * @param val init list of complex type_ value.
+     * @brief Constructor for array complex type parameter.
+     * @param val init list of complex type value.
      */
     Parameter(const std::initializer_list<std::complex<double>>& val)
         : type_(ParameterType::kParameterArrayComplex) {
@@ -309,15 +309,15 @@ public:
     }
 
     /**
-     * @brief Constructor for array complex type_ parameter.
-     * @param val vector of complex type_ value.
+     * @brief Constructor for array complex type parameter.
+     * @param val vector of complex type value.
      */
     explicit Parameter(const std::vector<std::complex<float>>& val)
         : type_(ParameterType::kParameterArrayComplex), arrayComplexVal_(val) {}
 
     /**
-     * @brief Constructor for array complex type_ parameter.
-     * @param val vector of complex type_ value.
+     * @brief Constructor for array complex type parameter.
+     * @param val vector of complex type value.
      */
     explicit Parameter(const std::vector<std::complex<double>>& val)
         : type_(ParameterType::kParameterArrayComplex) {
