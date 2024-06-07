@@ -615,7 +615,7 @@ static void load_shape(Operator* op, const std::string& key, const std::string& 
 
     // parse type, e.g. #input=(1,3,10,10)f32
     std::string typestr = value.substr(value.find_last_of(')') + 1);
-    operand->type_ = string_to_type(typestr.c_str());
+    operand->SetType(string_to_type(typestr.c_str()));
 
     // parse shape
     std::string lc = value.substr(1, value.find_last_of(')') - 1);
@@ -769,7 +769,7 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
             }
 
             fprintf(paramfp, ")");
-            fprintf(paramfp, "%s", DataTypeToString(operand->type_).c_str());
+            fprintf(paramfp, "%s", DataTypeToString(operand->type()).c_str());
         }
 
         for (const auto* operand: op->outputs) {
@@ -790,7 +790,7 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
             }
 
             fprintf(paramfp, ")");
-            fprintf(paramfp, "%s", DataTypeToString(operand->type_).c_str());
+            fprintf(paramfp, "%s", DataTypeToString(operand->type()).c_str());
         }
         fprintf(paramfp, "\n");
     }

@@ -515,8 +515,10 @@ public:
     Attribute(const onnx::TensorProto& t);
 #endif
 
-    Attribute(const Attribute&) = default;
-    Attribute(Attribute&&) = default;
+    Attribute(const Attribute&) = delete;
+    Attribute(Attribute&& other) noexcept
+        : type_(other.type_), data_(std::move(other.data_)), shape_(std::move(other.shape_)) {}
+
     Attribute& operator=(const Attribute&) = delete;
     Attribute& operator=(Attribute&&) = delete;
 
@@ -575,7 +577,7 @@ private:
     DataType type_;
     std::vector<int> shape_;
     std::vector<char> data_;
-    std::map<std::string, Parameter> params;
+    //    std::map<std::string, Parameter> params;
 };
 
 bool operator==(const Attribute& lhs, const Attribute& rhs);
@@ -596,8 +598,27 @@ public:
     Operand(std::string name, DataType type, std::vector<int> shape)
         : name_(std::move(name)), type_(type), shape_(std::move(shape)) {}
 
+    NODISCARD const DataType& type() const {
+        return type_;
+    }
+
+    void SetType(DataType type) {
+        type_ = type;
+    }
+
     void remove_consumer(const Operator*);
 
+
+    std::vector<int> shape_;
+
+    Operator* producer{};
+    std::vector<Operator*> consumers;
+
+    // keep std::string typed member the last for cross cxxabi compatibility
+    std::string name_;
+    std::map<std::string, Parameter> params;
+
+private:
     /**
      * @brief Runtime data type_.
      *
@@ -617,14 +638,6 @@ public:
      * 13 = bf16
      */
     DataType type_;
-    std::vector<int> shape_;
-
-    Operator* producer{};
-    std::vector<Operator*> consumers;
-
-    // keep std::string typed member the last for cross cxxabi compatibility
-    std::string name_;
-    std::map<std::string, Parameter> params;
 };
 
 class Operator {
@@ -695,7 +708,7 @@ public:
 
     int parse(const std::string& param);
 
-//private:
+    //private:
     Operator* CreateOperator(const std::string& type, const std::string& name);
 
     Operator* CreateOperatorBefore(const std::string& type, const std::string& name, const Operator* cur);
