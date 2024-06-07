@@ -595,8 +595,16 @@ class Operand {
 public:
     Operand() : type_(DataType::kDataTypeUnknown) {}
 
+    explicit Operand(std::string name) : name_(std::move(name)), type_(DataType::kDataTypeUnknown) {}
+
     Operand(std::string name, DataType type, std::vector<int> shape)
         : name_(std::move(name)), type_(type), shape_(std::move(shape)) {}
+
+
+    Operand(const Operand&) = delete;
+    Operand(Operand&&) = delete;
+    Operand& operator=(const Operand&) = delete;
+    Operand& operator=(Operand&&) = delete;
 
     NODISCARD const DataType& type() const {
         return type_;
@@ -606,17 +614,43 @@ public:
         type_ = type;
     }
 
+    NODISCARD const std::vector<int>& GetShape() const {
+        return shape_;
+    }
+
+    std::vector<int>& GetShape() {
+        return shape_;
+    }
+
+    NODISCARD const std::string& name() const {
+        return name_;
+    }
+
+    std::map<std::string, Parameter>& GetParams() {
+        return params_;
+    }
+
+    NODISCARD const std::map<std::string, Parameter>& GetParams() const {
+        return params_;
+    }
+
+    void SetProducer(Operator* op) {
+        producer_ = op;
+    }
+
+    void AddConsumer(Operator* op) {
+        consumers_.push_back(op);
+    }
+
+    NODISCARD const std::vector<Operator*>& GetConsumers() const {
+        return consumers_;
+    }
+
+    std::vector<Operator*>& GetConsumers() {
+        return consumers_;
+    }
+
     void remove_consumer(const Operator*);
-
-
-    std::vector<int> shape_;
-
-    Operator* producer{};
-    std::vector<Operator*> consumers;
-
-    // keep std::string typed member the last for cross cxxabi compatibility
-    std::string name_;
-    std::map<std::string, Parameter> params;
 
 private:
     /**
@@ -638,6 +672,13 @@ private:
      * 13 = bf16
      */
     DataType type_;
+    std::vector<int> shape_;
+    Operator* producer_{};
+    std::vector<Operator*> consumers_;
+
+    // keep std::string typed member the last for cross cxxabi compatibility
+    std::string name_;
+    std::map<std::string, Parameter> params_;
 };
 
 class Operator {
@@ -661,23 +702,26 @@ public:
     Operand* named_input(const std::string& key);
     NODISCARD const Operand* named_input(const std::string& key) const;
 
-    NODISCARD std::string GetOpType() const {
+    NODISCARD const std::string& type() const {
         return type_;
     }
 
-    NODISCARD std::string GetOpName() const {
+    NODISCARD const std::string& name() const {
         return name_;
     }
 
     std::vector<Operand*> inputs;
     std::vector<Operand*> outputs;
 
-    // keep std::string typed member the last for cross cxxabi compatibility
-    std::string type_;
-    std::string name_;
+
     std::vector<std::string> input_names;
     std::map<std::string, Parameter> params;
     std::map<std::string, Attribute> attrs;
+
+private:
+    // keep std::string typed member the last for cross cxxabi compatibility
+    std::string type_;
+    std::string name_;
 };
 
 class Graph {

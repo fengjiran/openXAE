@@ -125,7 +125,7 @@ TEST(IRTEST, create_pnnx_graph) {
     Operator input_op("pnnx_input_0", "pnnx.Input");
     Operand t1("0", DataType::kDataTypeFloat32, {1, 32});
     input_op.outputs.push_back(&t1);
-    t1.producer = &input_op;
+    t1.SetProducer(&input_op);
 
     Operator linear("linear", "nn.Linear");
     linear.params["bias"] = Parameter(true);
@@ -134,11 +134,11 @@ TEST(IRTEST, create_pnnx_graph) {
 
     linear.input_names.emplace_back("0");
     linear.inputs.push_back(&t1);
-    t1.consumers.push_back(&linear);
+    t1.AddConsumer(&linear);
 
     Operand t2("1", DataType::kDataTypeFloat32, {1, 128});
     linear.outputs.push_back(&t2);
-    t2.producer = &linear;
+    t2.SetProducer(&linear);
 
     auto bias = torch::rand({128});
     auto weight = torch::rand({128, 32});
@@ -150,16 +150,16 @@ TEST(IRTEST, create_pnnx_graph) {
     Operator sigmoid("F.sigmoid_0", "F.sigmoid");
     sigmoid.input_names.emplace_back("1");
     sigmoid.inputs.push_back(&t2);
-    t2.consumers.push_back(&sigmoid);
+    t2.AddConsumer(&sigmoid);
 
     Operand t3("2", DataType::kDataTypeFloat32, {1, 128});
     sigmoid.outputs.push_back(&t3);
-    t3.producer = &sigmoid;
+    t3.SetProducer(&sigmoid);
 
     Operator output("pnnx_output_0", "pnnx.Output");
     output.input_names.emplace_back("2");
     output.inputs.push_back(&t3);
-    t3.consumers.push_back(&output);
+    t3.AddConsumer(&output);
 
     Graph graph;
     graph.ops.push_back(&input_op);
