@@ -118,8 +118,6 @@ TEST(IRTEST, pnnx_graph_load) {
     ASSERT_EQ(status_load, 0);
 
     int status_save = graph.save("test_linear1.pnnx.param", "test_linear1.pnnx.bin");
-
-    graph.save_("test_save.pnnx.param", "test_save.pnnx.bin");
     ASSERT_EQ(status_save, 0);
 }
 

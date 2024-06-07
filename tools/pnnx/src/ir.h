@@ -792,7 +792,6 @@ public:
     int load(const std::string& paramPath, const std::string& binPath);
 
     int save(const std::string& paramPath, const std::string& binPath);
-    int save_(const std::string& paramPath, const std::string& binPath);
 
     int python(const std::string& pyPath, const std::string& binPath);
 
