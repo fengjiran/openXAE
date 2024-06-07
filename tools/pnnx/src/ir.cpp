@@ -12,7 +12,6 @@
 #include <iostream>
 #include <numeric>
 #include <sstream>
-//#include <stack>
 
 namespace pnnx {
 
@@ -46,7 +45,7 @@ static bool IsInteger(DataType type) {
     return flag;
 }
 
-static std::string DataTypeToString(DataType type) {
+static std::string DataType2String(DataType type) {
     std::string str;
     switch (type) {
         case DataType::kDataTypeFloat32:
@@ -95,7 +94,7 @@ static std::string DataTypeToString(DataType type) {
     return str;
 }
 
-static const char* type_to_numpy_string(DataType type) {
+static const char* DataType2NumpyString(DataType type) {
     const char* str;
     switch (type) {
         case DataType::kDataTypeFloat32:
@@ -144,7 +143,7 @@ static const char* type_to_numpy_string(DataType type) {
     return str;
 }
 
-static const char* type_to_dtype_string(DataType type) {
+static const char* DataType2TorchString(DataType type) {
     const char* str;
     switch (type) {
         case DataType::kDataTypeFloat32:
@@ -734,7 +733,7 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
             for (const auto& x: attr.GetShape()) {
                 paramFile << x << (--size ? "," : "");
             }
-            paramFile << ")" << DataTypeToString(attr.type());
+            paramFile << ")" << DataType2String(attr.type());
 
             std::string filename = op->name() + "." + it.first;
             szw.write_file(filename, attr.GetRawData().data(), attr.GetRawData().size());
@@ -766,7 +765,7 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
                 }
             }
 
-            paramFile << ")" << DataTypeToString(operand->type());
+            paramFile << ")" << DataType2String(operand->type());
         }
 
         // dump output operands
@@ -785,7 +784,7 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
                 }
             }
 
-            paramFile << ")" << DataTypeToString(operand->type());
+            paramFile << ")" << DataType2String(operand->type());
         }
         paramFile << std::endl;
     }
@@ -794,15 +793,15 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
 }
 
 int Graph::load(const std::string& paramPath, const std::string& binPath) {
-    std::ifstream inFile(paramPath, std::ios::in | std::ios::binary);
-    if (!inFile.is_open()) {
-        std::fprintf(stderr, "param file open failed.\n");
+    std::ifstream paramFile(paramPath, std::ios::in | std::ios::binary);
+    if (!paramFile.is_open()) {
+        std::cerr << "param file " << paramPath << " open failed!\n";
         return -1;
     }
 
     StoreZipReader szr;
     if (szr.open(binPath) != 0) {
-        std::fprintf(stderr, "bin file open failed.\n");
+        std::cerr << "bin file " << binPath << " open failed!\n";
         return -1;
     }
 
@@ -810,7 +809,7 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
     int magicNum = 0;
     {
         std::string line;
-        std::getline(inFile, line);
+        std::getline(paramFile, line);
         std::istringstream iss(line);
         iss >> magicNum;
     }
@@ -820,37 +819,36 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
     int operandNum = 0;
     {
         std::string line;
-        std::getline(inFile, line);
+        std::getline(paramFile, line);
         std::istringstream iss(line);
         iss >> operatorNum >> operandNum;
     }
 
     for (int i = 0; i < operatorNum; ++i) {
         std::string line;
-        std::getline(inFile, line);
+        std::getline(paramFile, line);
         std::istringstream iss(line);
 
         std::string type;
         std::string name;
+        int inputOperandNum = 0;
+        int outputOperandNum = 0;
 
-        int inputNum = 0;
-        int outputNum = 0;
-
-        iss >> type >> name >> inputNum >> outputNum;
+        iss >> type >> name >> inputOperandNum >> outputOperandNum;
 
         Operator* op = CreateOperator(type, name);
-        for (int j = 0; j < inputNum; ++j) {
-            std::string operand_name;
-            iss >> operand_name;
-            Operand* r = GetOperand(operand_name);
+        for (int j = 0; j < inputOperandNum; ++j) {
+            std::string operandName;
+            iss >> operandName;
+            Operand* r = GetOperand(operandName);
             r->AddConsumer(op);
             op->AddInputOperand(r);
         }
 
-        for (int j = 0; j < outputNum; ++j) {
-            std::string operand_name;
-            iss >> operand_name;
-            Operand* r = CreateOperand(operand_name);
+        for (int j = 0; j < outputOperandNum; ++j) {
+            std::string operandName;
+            iss >> operandName;
+            Operand* r = CreateOperand(operandName);
             r->SetProducer(op);
             op->AddOutputOperand(r);
         }
