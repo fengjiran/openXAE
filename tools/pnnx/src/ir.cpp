@@ -8,9 +8,11 @@
 #include <cstdint>
 #include <cstring>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
 #include <numeric>
 #include <sstream>
-#include <stack>
+//#include <stack>
 
 namespace pnnx {
 
@@ -683,59 +685,95 @@ static void load_attribute(Operator* op, const std::string& key, const std::stri
     szr.read_file(filename, (char*) a.GetRawData().data());
 }
 
-int Graph::save(const std::string& paramPath, const std::string& binPath) {
-    FILE* paramfp = fopen(paramPath.c_str(), "wb");
-    if (!paramfp) {
-        fprintf(stderr, "fopen %s failed!\n", paramPath.c_str());
+int Graph::save_(const std::string& paramPath, const std::string& binPath) {
+    std::ofstream paramFile(paramPath, std::ios::out | std::ios::binary);
+    if (!paramFile.is_open()) {
+        std::cerr << "param file " << paramPath << " open failed!\n";
         return -1;
     }
 
     StoreZipWriter szw;
     if (szw.open(binPath) != 0) {
-        fprintf(stderr, "open %s failed!\n", binPath.c_str());
+        std::cerr << "bin file " << binPath << " open failed!\n";
         return -1;
     }
 
     // magic number
-    fprintf(paramfp, "7767517\n");
+    paramFile << "7767517" << std::endl;
 
     // op number and operand number
-    fprintf(paramfp, "%d %d\n", (int) ops.size(), (int) operands.size());
+    paramFile << static_cast<int>(ops.size()) << " " << static_cast<int>(operands.size()) << std::endl;
 
-    // dump op info of graph
+    // dump op info
     for (const auto* op: ops) {
-        // dump basic info of op
-        fprintf(paramfp, "%-24s %-24s %d %d", op->type().c_str(), op->name().c_str(), (int) op->GetInputOperands().size(), (int) op->GetOutputOperands().size());
+        paramFile << std::left << std::setw(24) << op->type() << " "
+                  << std::left << std::setw(24) << op->name() << " "
+                  << static_cast<int>(op->GetInputOperands().size()) << " "
+                  << static_cast<int>(op->GetOutputOperands().size());
 
-        // dump op input operand info
+
+
+        paramFile << std::endl;
+    }
+
+    paramFile.close();
+    return 0;
+}
+
+int Graph::save(const std::string& paramPath, const std::string& binPath) {
+    FILE* paramFile = fopen(paramPath.c_str(), "wb");
+    if (!paramFile) {
+        fprintf(stderr, "param file %s open failed!\n", paramPath.c_str());
+        return -1;
+    }
+
+    StoreZipWriter szw;
+    if (szw.open(binPath) != 0) {
+        fprintf(stderr, "bin file %s open failed!\n", binPath.c_str());
+        return -1;
+    }
+
+    // magic number
+    fprintf(paramFile, "7767517\n");
+
+    // op number and operand number
+    fprintf(paramFile, "%d %d\n", (int) ops.size(), (int) operands.size());
+
+    // dump op info
+    for (const auto* op: ops) {
+        // dump basic op info
+        fprintf(paramFile, "%-24s %-24s %d %d",
+                op->type().c_str(),
+                op->name().c_str(),
+                static_cast<int>(op->GetInputOperands().size()),
+                static_cast<int>(op->GetOutputOperands().size()));
+
+        // dump op input operand name
         for (const auto* operand: op->GetInputOperands()) {
-            fprintf(paramfp, " %s", operand->name().c_str());
+            fprintf(paramFile, " %s", operand->name().c_str());
         }
 
-        // dump op output operand info
+        // dump op output operand name
         for (const auto* operand: op->GetOutputOperands()) {
-            fprintf(paramfp, " %s", operand->name().c_str());
+            fprintf(paramFile, " %s", operand->name().c_str());
         }
 
         // dump op param info
         for (const auto& it: op->GetParameters()) {
-            fprintf(paramfp, " %s=", it.first.c_str());
-            std::string s = Parameter::Encode2String(it.second);
-            fprintf(paramfp, "%s", s.c_str());
+            fprintf(paramFile, " %s=%s",
+                    it.first.c_str(), Parameter::Encode2String(it.second).c_str());
         }
 
         // dump op attrs info
         for (const auto& it: op->GetAttributes()) {
-            fprintf(paramfp, " @%s=", it.first.c_str());
-            fprintf(paramfp, "(");
-            const Attribute& attr = it.second;
+            fprintf(paramFile, " @%s=(", it.first.c_str());
+            const auto& attr = it.second;
 
             size_t size = attr.GetShape().size();
             for (const auto& x: attr.GetShape()) {
-                fprintf(paramfp, "%d%s", x, (--size ? "," : ""));
+                fprintf(paramFile, "%d%s", x, (--size ? "," : ""));
             }
-            fprintf(paramfp, ")");
-            fprintf(paramfp, "%s", DataTypeToString(attr.type()).c_str());
+            fprintf(paramFile, ")%s", DataTypeToString(attr.type()).c_str());
 
             std::string filename = op->name() + "." + it.first;
             szw.write_file(filename, attr.GetRawData().data(), attr.GetRawData().size());
@@ -747,54 +785,56 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
                     continue;
                 }
                 const auto* operand = op->GetInputOperands()[i];
-                fprintf(paramfp, " $%s=%s", op->GetInputNames()[i].c_str(), operand->name().c_str());
+                fprintf(paramFile, " $%s=%s", op->GetInputNames()[i].c_str(), operand->name().c_str());
             }
         }
 
+        // dump input operands
         for (const auto* operand: op->GetInputOperands()) {
             if (operand->GetShape().empty()) {
                 continue;
             }
 
-            fprintf(paramfp, " #%s=", operand->name().c_str());
-            fprintf(paramfp, "(");
+            fprintf(paramFile, " #%s=(", operand->name().c_str());
+            //            fprintf(paramFile, "(");
 
             size_t size = operand->GetShape().size();
             for (const auto& x: operand->GetShape()) {
                 if (x == -1) {
-                    fprintf(paramfp, "%s", (--size ? "?," : "?"));
+                    fprintf(paramFile, "%s", (--size ? "?," : "?"));
                 } else {
-                    fprintf(paramfp, "%d%s", x, (--size ? "," : ""));
+                    fprintf(paramFile, "%d%s", x, (--size ? "," : ""));
                 }
             }
 
-            fprintf(paramfp, ")");
-            fprintf(paramfp, "%s", DataTypeToString(operand->type()).c_str());
+            //            fprintf(paramFile, ")");
+            fprintf(paramFile, ")%s", DataTypeToString(operand->type()).c_str());
         }
 
+        // dump output operands
         for (const auto* operand: op->GetOutputOperands()) {
             if (operand->GetShape().empty()) {
                 continue;
             }
 
-            fprintf(paramfp, " #%s=", operand->name().c_str());
-            fprintf(paramfp, "(");
+            fprintf(paramFile, " #%s=(", operand->name().c_str());
+            //            fprintf(paramFile, "(");
 
             size_t size = operand->GetShape().size();
             for (const auto& x: operand->GetShape()) {
                 if (x == -1) {
-                    fprintf(paramfp, "%s", (--size ? "?," : "?"));
+                    fprintf(paramFile, "%s", (--size ? "?," : "?"));
                 } else {
-                    fprintf(paramfp, "%d%s", x, (--size ? "," : ""));
+                    fprintf(paramFile, "%d%s", x, (--size ? "," : ""));
                 }
             }
 
-            fprintf(paramfp, ")");
-            fprintf(paramfp, "%s", DataTypeToString(operand->type()).c_str());
+            //            fprintf(paramFile, ")");
+            fprintf(paramFile, ")%s", DataTypeToString(operand->type()).c_str());
         }
-        fprintf(paramfp, "\n");
+        fprintf(paramFile, "\n");
     }
-    fclose(paramfp);
+    fclose(paramFile);
 
     return 0;
 }

@@ -687,6 +687,11 @@ public:
 
     Operator(std::string name, std::string type) : name_(std::move(name)), type_(std::move(type)) {}
 
+    Operator(const Operator&) = delete;
+    Operator(Operator&&) = delete;
+    Operator& operator=(const Operator&) = delete;
+    Operator& operator=(Operator&&) = delete;
+
     NODISCARD bool HasParam(const std::string& key) const {
         return params_.find(key) != params_.end();
     }
@@ -787,6 +792,7 @@ public:
     int load(const std::string& paramPath, const std::string& binPath);
 
     int save(const std::string& paramPath, const std::string& binPath);
+    int save_(const std::string& paramPath, const std::string& binPath);
 
     int python(const std::string& pyPath, const std::string& binPath);
 
