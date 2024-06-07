@@ -247,84 +247,91 @@ static DataType string_to_type(const char* s) {
 }
 
 std::string Parameter::Encode2String(const Parameter& param) {
-    if (param.type() == ParameterType::kParameterUnknown) {
-        return "None";
-    }
-
-    if (param.type() == ParameterType::kParameterBool) {
-        if (param.toBool()) {
-            return "True";
-        } else {
-            return "False";
+    std::string code;
+    switch (param.type()) {
+        case ParameterType::kParameterUnknown: {
+            code = "None";
+            break;
         }
-    }
 
-    if (param.type() == ParameterType::kParameterInt) {
-        return std::to_string(param.toInt());
-    }
-
-    if (param.type() == ParameterType::kParameterFloat) {
-        char buf[64];
-        snprintf(buf, sizeof(buf), "%e", param.toFloat());
-        return buf;
-    }
-
-    if (param.type() == ParameterType::kParameterString) {
-        return param.toString();
-    }
-
-    if (param.type() == ParameterType::kParameterArrayInt) {
-        std::string s("(");
-        size_t size = param.toArrayInt().size();
-        for (const auto& ele: param.toArrayInt()) {
-            s += (std::to_string(ele) + (--size ? "," : ""));
+        case ParameterType::kParameterBool: {
+            code = param.toBool() ? "True" : "False";
+            break;
         }
-        s += ")";
-        return s;
-    }
 
-    if (param.type() == ParameterType::kParameterArrayFloat) {
-        std::string s("(");
-        size_t size = param.toArrayFloat().size();
-        for (const auto& ele: param.toArrayFloat()) {
+        case ParameterType::kParameterInt: {
+            code = std::to_string(param.toInt());
+            break;
+        }
+
+        case ParameterType::kParameterFloat: {
             char buf[64];
-            snprintf(buf, sizeof(buf), "%e", ele);
-            s += (std::string(buf) + (--size ? "," : ""));
+            snprintf(buf, sizeof(buf), "%e", param.toFloat());
+            code = buf;
+            break;
         }
-        s += ")";
-        return s;
-    }
 
-    if (param.type() == ParameterType::kParameterArrayString) {
-        std::string s("(");
-        size_t size = param.toArrayString().size();
-        for (const auto& ele: param.toArrayString()) {
-            s += (ele + (--size ? "," : ""));
+        case ParameterType::kParameterString: {
+            code = param.toString();
+            break;
         }
-        s += ")";
-        return s;
-    }
 
-    if (param.type() == ParameterType::kParameterComplex) {
-        char buf[128];
-        snprintf(buf, sizeof(buf), "%e+%ei", param.toComplex().real(), param.toComplex().imag());
-        return buf;
-    }
+        case ParameterType::kParameterArrayInt: {
+            code += "(";
+            size_t size = param.toArrayInt().size();
+            for (const auto& ele: param.toArrayInt()) {
+                code += (std::to_string(ele) + (--size ? "," : ""));
+            }
+            code += ")";
+            break;
+        }
 
-    if (param.type() == ParameterType::kParameterArrayComplex) {
-        std::string s("(");
-        size_t size = param.toArrayComplex().size();
-        for (const auto& ele: param.toArrayComplex()) {
+        case ParameterType::kParameterArrayFloat: {
+            code += "(";
+            size_t size = param.toArrayFloat().size();
+            for (const auto& ele: param.toArrayFloat()) {
+                char buf[64];
+                snprintf(buf, sizeof(buf), "%e", ele);
+                code += (std::string(buf) + (--size ? "," : ""));
+            }
+            code += ")";
+            break;
+        }
+
+        case ParameterType::kParameterArrayString: {
+            code += "(";
+            size_t size = param.toArrayString().size();
+            for (const auto& ele: param.toArrayString()) {
+                code += (ele + (--size ? "," : ""));
+            }
+            code += ")";
+            break;
+        }
+
+        case ParameterType::kParameterComplex: {
             char buf[128];
-            snprintf(buf, sizeof(buf), "%e+%ei", ele.real(), ele.imag());
-            s += (std::string(buf) + (--size ? "," : ""));
+            snprintf(buf, sizeof(buf), "%e+%ei", param.toComplex().real(), param.toComplex().imag());
+            code = buf;
+            break;
         }
-        s += ")";
-        return s;
+
+        case ParameterType::kParameterArrayComplex: {
+            code += "(";
+            size_t size = param.toArrayComplex().size();
+            for (const auto& ele: param.toArrayComplex()) {
+                char buf[128];
+                snprintf(buf, sizeof(buf), "%e+%ei", ele.real(), ele.imag());
+                code += (std::string(buf) + (--size ? "," : ""));
+            }
+            code += ")";
+            break;
+        }
+
+        default:
+            fprintf(stderr, "unknown parameter type %d\n", static_cast<int>(param.type()));
     }
 
-    fprintf(stderr, "unknown parameter type_ %d\n", static_cast<int>(param.type_));
-    return {};
+    return code;
 }
 
 Parameter Parameter::ParseFromString(const std::string& value) {
@@ -363,7 +370,7 @@ Parameter Parameter::ParseFromString(const std::string& value) {
             } else {
                 // array integer
                 p.SetType(ParameterType::kParameterArrayInt);
-                p.arrayIntVal_.push_back(std::stoi(elem));
+                p.AddElemToArrayInt(std::stoi(elem));
             }
         }
         return p;
@@ -454,14 +461,14 @@ size_t Attribute::size() const {
 
 std::vector<float> Attribute::CastToFloat32() const {
     std::vector<float> v(size());
-    if (type_ == DataType::kDataTypeFloat32) {
+    if (type() == DataType::kDataTypeFloat32) {
         memcpy((void*) v.data(), (const void*) data_.data(), data_.size());
-    } else if (type_ == DataType::kDataTypeFloat64) {
+    } else if (type() == DataType::kDataTypeFloat64) {
         const auto* p = (const double*) data_.data();
         for (auto& item: v) {
             item = static_cast<float>(*p++);
         }
-    } else if (type_ == DataType::kDataTypeFloat16) {
+    } else if (type() == DataType::kDataTypeFloat16) {
         const auto* p = (const unsigned short*) data_.data();
         for (auto& item: v) {
             item = float16_to_float32(*p++);
@@ -474,7 +481,7 @@ std::vector<float> Attribute::CastToFloat32() const {
 
 void Attribute::SetFloat32Data(const std::vector<float>& newData) {
     data_.resize(newData.size() * GetElemSize());
-    switch (type_) {
+    switch (type()) {
         case DataType::kDataTypeFloat32: {
             memcpy((void*) data_.data(), (const void*) newData.data(), data_.size());
             break;
@@ -576,7 +583,7 @@ static void load_input_key(Operator* op, const std::string& key, const std::stri
     op->input_names.resize(op->inputs.size());
     for (size_t i = 0; i < op->inputs.size(); ++i) {
         const auto* operand = op->inputs[i];
-        if (operand->name == value) {
+        if (operand->name_ == value) {
             op->input_names[i] = key;
             break;
         }
@@ -586,7 +593,7 @@ static void load_input_key(Operator* op, const std::string& key, const std::stri
 static void load_shape(Operator* op, const std::string& key, const std::string& value) {
     Operand* operand = nullptr;
     for (const auto r: op->inputs) {
-        if (r->name == key) {
+        if (r->name_ == key) {
             operand = r;
             break;
         }
@@ -594,7 +601,7 @@ static void load_shape(Operator* op, const std::string& key, const std::string& 
 
     if (!operand) {
         for (const auto r: op->outputs) {
-            if (r->name == key) {
+            if (r->name_ == key) {
                 operand = r;
                 break;
             }
@@ -602,31 +609,31 @@ static void load_shape(Operator* op, const std::string& key, const std::string& 
     }
 
     if (!operand) {
-        fprintf(stderr, "no such operand %s for operator %s\n", key.c_str(), op->name.c_str());
+        fprintf(stderr, "no such operand %s for operator %s\n", key.c_str(), op->name_.c_str());
         return;
     }
 
-    // parse type_, e.g. #input=(1,3,10,10)f32
+    // parse type, e.g. #input=(1,3,10,10)f32
     std::string typestr = value.substr(value.find_last_of(')') + 1);
-    operand->type = string_to_type(typestr.c_str());
+    operand->type_ = string_to_type(typestr.c_str());
 
     // parse shape
     std::string lc = value.substr(1, value.find_last_of(')') - 1);
     std::istringstream lcss(lc);
-    operand->shape.clear();
+    operand->shape_.clear();
     while (!lcss.eof()) {
         std::string elem;
         std::getline(lcss, elem, ',');
         if (elem == "?") {
-            operand->shape.push_back(-1);
+            operand->shape_.push_back(-1);
         } else if (elem[0] == '%') {
             // encode %abc as symbolic tag
-            operand->shape.push_back(-233);
-            size_t index = operand->shape.size() - 1;
+            operand->shape_.push_back(-233);
+            size_t index = operand->shape_.size() - 1;
             std::string s = elem.substr(1);
             operand->params[std::string("__shape__") + std::to_string(index)] = Parameter(s);
         } else {
-            operand->shape.push_back(std::stoi(elem));
+            operand->shape_.push_back(std::stoi(elem));
         }
     }
 }
@@ -661,7 +668,7 @@ static void load_attribute(Operator* op, const std::string& key, const std::stri
     size_t size = std::accumulate(a.GetShape().begin(), a.GetShape().end(), 1, std::multiplies<>());
     size_t bytesize = size * SizeOf(a.type());
 
-    std::string filename = op->name + "." + key;
+    std::string filename = op->name_ + "." + key;
     size_t filesize = szr.get_file_size(filename);
     if (filesize == 0) {
         // no such file
@@ -698,16 +705,16 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
     // dump op info of graph
     for (const auto* op: ops) {
         // dump basic info of op
-        fprintf(paramfp, "%-24s %-24s %d %d", op->type.c_str(), op->name.c_str(), (int) op->inputs.size(), (int) op->outputs.size());
+        fprintf(paramfp, "%-24s %-24s %d %d", op->type_.c_str(), op->name_.c_str(), (int) op->inputs.size(), (int) op->outputs.size());
 
         // dump op input operand info
         for (const auto* operand: op->inputs) {
-            fprintf(paramfp, " %s", operand->name.c_str());
+            fprintf(paramfp, " %s", operand->name_.c_str());
         }
 
         // dump op output operand info
         for (const auto* operand: op->outputs) {
-            fprintf(paramfp, " %s", operand->name.c_str());
+            fprintf(paramfp, " %s", operand->name_.c_str());
         }
 
         // dump op param info
@@ -730,7 +737,7 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
             fprintf(paramfp, ")");
             fprintf(paramfp, "%s", DataTypeToString(attr.type()).c_str());
 
-            std::string filename = op->name + "." + it.first;
+            std::string filename = op->name_ + "." + it.first;
             szw.write_file(filename, attr.GetRawData().data(), attr.GetRawData().size());
         }
 
@@ -740,20 +747,20 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
                     continue;
                 }
                 const auto* operand = op->inputs[i];
-                fprintf(paramfp, " $%s=%s", op->input_names[i].c_str(), operand->name.c_str());
+                fprintf(paramfp, " $%s=%s", op->input_names[i].c_str(), operand->name_.c_str());
             }
         }
 
         for (const auto* operand: op->inputs) {
-            if (operand->shape.empty()) {
+            if (operand->shape_.empty()) {
                 continue;
             }
 
-            fprintf(paramfp, " #%s=", operand->name.c_str());
+            fprintf(paramfp, " #%s=", operand->name_.c_str());
             fprintf(paramfp, "(");
 
-            size_t size = operand->shape.size();
-            for (const auto& x: operand->shape) {
+            size_t size = operand->shape_.size();
+            for (const auto& x: operand->shape_) {
                 if (x == -1) {
                     fprintf(paramfp, "%s", (--size ? "?," : "?"));
                 } else {
@@ -762,19 +769,19 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
             }
 
             fprintf(paramfp, ")");
-            fprintf(paramfp, "%s", DataTypeToString(operand->type).c_str());
+            fprintf(paramfp, "%s", DataTypeToString(operand->type_).c_str());
         }
 
         for (const auto* operand: op->outputs) {
-            if (operand->shape.empty()) {
+            if (operand->shape_.empty()) {
                 continue;
             }
 
-            fprintf(paramfp, " #%s=", operand->name.c_str());
+            fprintf(paramfp, " #%s=", operand->name_.c_str());
             fprintf(paramfp, "(");
 
-            size_t size = operand->shape.size();
-            for (const auto& x: operand->shape) {
+            size_t size = operand->shape_.size();
+            for (const auto& x: operand->shape_) {
                 if (x == -1) {
                     fprintf(paramfp, "%s", (--size ? "?," : "?"));
                 } else {
@@ -783,7 +790,7 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
             }
 
             fprintf(paramfp, ")");
-            fprintf(paramfp, "%s", DataTypeToString(operand->type).c_str());
+            fprintf(paramfp, "%s", DataTypeToString(operand->type_).c_str());
         }
         fprintf(paramfp, "\n");
     }
@@ -884,38 +891,38 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
 
 Operator* Graph::CreateOperator(const std::string& type, const std::string& name) {
     auto* op = new Operator;
-    op->type = type;
-    op->name = name;
+    op->type_ = type;
+    op->name_ = name;
     ops.push_back(op);
     return op;
 }
 
 Operator* Graph::CreateOperatorBefore(const std::string& type, const std::string& name, const Operator* cur) {
     auto* op = new Operator;
-    op->type = type;
-    op->name = name;
+    op->type_ = type;
+    op->name_ = name;
     ops.insert(std::find(ops.begin(), ops.end(), cur), op);
     return op;
 }
 
 Operator* Graph::CreateOperatorAfter(const std::string& type, const std::string& name, const Operator* cur) {
     auto* op = new Operator;
-    op->type = type;
-    op->name = name;
+    op->type_ = type;
+    op->name_ = name;
     ops.insert(std::find(ops.begin(), ops.end(), cur) + 1, op);
     return op;
 }
 
 Operand* Graph::CreateOperand(const std::string& name) {
     auto* r = new Operand;
-    r->name = name;
+    r->name_ = name;
     operands.push_back(r);
     return r;
 }
 
 Operand* Graph::GetOperand(const std::string& name) {
     for (auto* r: operands) {
-        if (r->name == name) {
+        if (r->name_ == name) {
             return r;
         }
     }
@@ -924,7 +931,7 @@ Operand* Graph::GetOperand(const std::string& name) {
 
 const Operand* Graph::GetOperand(const std::string& name) const {
     for (const auto* r: operands) {
-        if (r->name == name) {
+        if (r->name_ == name) {
             return r;
         }
     }

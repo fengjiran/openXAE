@@ -591,9 +591,13 @@ Attribute operator+(const Attribute& a, const Attribute& b);
 class Operator;
 class Operand {
 public:
+    Operand() : type_(DataType::kDataTypeUnknown) {}
+
+    Operand(std::string name, DataType type, std::vector<int> shape)
+        : name_(std::move(name)), type_(type), shape_(std::move(shape)) {}
+
     void remove_consumer(const Operator*);
-    Operator* producer{};
-    std::vector<Operator*> consumers;
+
     /**
      * @brief Runtime data type_.
      *
@@ -612,56 +616,55 @@ public:
      * 12 = complex32 \n
      * 13 = bf16
      */
-    DataType type;
-    std::vector<int> shape;
+    DataType type_;
+    std::vector<int> shape_;
+
+    Operator* producer{};
+    std::vector<Operator*> consumers;
 
     // keep std::string typed member the last for cross cxxabi compatibility
-    std::string name;
+    std::string name_;
     std::map<std::string, Parameter> params;
-
-private:
-    Operand() : type(DataType::kDataTypeUnknown) {}
-    friend class Graph;
 };
 
 class Operator {
 public:
-    bool has_param(const std::string& key) const {
+    Operator() = default;
+
+    Operator(std::string name, std::string type) : name_(std::move(name)), type_(std::move(type)) {}
+
+    NODISCARD bool has_param(const std::string& key) const {
         return params.find(key) != params.end();
     }
 
-    bool has_attr(const std::string& key) const {
+    NODISCARD bool has_attr(const std::string& key) const {
         return attrs.find(key) != attrs.end();
     }
 
-    bool has_input(const std::string& key) const {
+    NODISCARD bool has_input(const std::string& key) const {
         return std::find(input_names.begin(), input_names.end(), key) != input_names.end();
     }
 
     Operand* named_input(const std::string& key);
-    const Operand* named_input(const std::string& key) const;
+    NODISCARD const Operand* named_input(const std::string& key) const;
 
-    std::string GetOpType() const {
-        return type;
+    NODISCARD std::string GetOpType() const {
+        return type_;
     }
 
-    std::string GetOpName() const {
-        return name;
+    NODISCARD std::string GetOpName() const {
+        return name_;
     }
 
     std::vector<Operand*> inputs;
     std::vector<Operand*> outputs;
 
     // keep std::string typed member the last for cross cxxabi compatibility
-    std::string type;
-    std::string name;
+    std::string type_;
+    std::string name_;
     std::vector<std::string> input_names;
     std::map<std::string, Parameter> params;
     std::map<std::string, Attribute> attrs;
-
-private:
-    friend class Graph;
-    Operator() = default;
 };
 
 class Graph {
@@ -692,7 +695,7 @@ public:
 
     int parse(const std::string& param);
 
-private:
+//private:
     Operator* CreateOperator(const std::string& type, const std::string& name);
 
     Operator* CreateOperatorBefore(const std::string& type, const std::string& name, const Operator* cur);
@@ -717,7 +720,7 @@ private:
     std::vector<Operator*> ops;
     std::vector<Operand*> operands;
 
-    std::vector<std::shared_ptr<Operator>> ops_;
+    //    std::vector<std::shared_ptr<Operator>> ops_;
 };
 
 }// namespace pnnx

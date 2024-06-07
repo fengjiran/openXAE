@@ -121,4 +121,58 @@ TEST(IRTEST, pnnx_graph_load) {
     ASSERT_EQ(status_save, 0);
 }
 
+TEST(IRTEST, create_pnnx_graph) {
+    Operator input_op("pnnx_input_0", "pnnx.Input");
+    Operand t1("0", DataType::kDataTypeFloat32, {1, 32});
+    input_op.outputs.push_back(&t1);
+    t1.producer = &input_op;
+
+    Operator linear("linear", "nn.Linear");
+    linear.params["bias"] = Parameter(true);
+    linear.params["in_features"] = Parameter(32);
+    linear.params["out_features"] = Parameter(128);
+
+    linear.input_names.emplace_back("0");
+    linear.inputs.push_back(&t1);
+    t1.consumers.push_back(&linear);
+
+    Operand t2("1", DataType::kDataTypeFloat32, {1, 128});
+    linear.outputs.push_back(&t2);
+    t2.producer = &linear;
+
+    auto bias = torch::rand({128});
+    auto weight = torch::rand({128, 32});
+    bias.contiguous();
+    weight.contiguous();
+    linear.attrs.insert(std::make_pair("bias", Attribute({128}, std::vector<float>(bias.data_ptr<float>(), bias.data_ptr<float>() + bias.numel()))));
+    linear.attrs.insert(std::make_pair("weight", Attribute({128, 32}, std::vector<float>(weight.data_ptr<float>(), weight.data_ptr<float>() + weight.numel()))));
+
+    Operator sigmoid("F.sigmoid_0", "F.sigmoid");
+    sigmoid.input_names.emplace_back("1");
+    sigmoid.inputs.push_back(&t2);
+    t2.consumers.push_back(&sigmoid);
+
+    Operand t3("2", DataType::kDataTypeFloat32, {1, 128});
+    sigmoid.outputs.push_back(&t3);
+    t3.producer = &sigmoid;
+
+    Operator output("pnnx_output_0", "pnnx.Output");
+    output.input_names.emplace_back("2");
+    output.inputs.push_back(&t3);
+    t3.consumers.push_back(&output);
+
+    Graph graph;
+    graph.ops.push_back(&input_op);
+    graph.ops.push_back(&linear);
+    graph.ops.push_back(&sigmoid);
+    graph.ops.push_back(&output);
+
+    graph.operands.push_back(&t1);
+    graph.operands.push_back(&t2);
+    graph.operands.push_back(&t3);
+    graph.save("linear.pnnx.param", "linea.pnnx.bin");
+    graph.ops.clear();
+    graph.operands.clear();
+}
+
 }// namespace pnnx
