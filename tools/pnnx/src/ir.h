@@ -650,7 +650,7 @@ public:
         return consumers_;
     }
 
-    void remove_consumer(const Operator*);
+    void RemoveConsumer(const Operator* op);
 
 private:
     /**
@@ -687,16 +687,16 @@ public:
 
     Operator(std::string name, std::string type) : name_(std::move(name)), type_(std::move(type)) {}
 
-    NODISCARD bool has_param(const std::string& key) const {
-        return params.find(key) != params.end();
+    NODISCARD bool HasParam(const std::string& key) const {
+        return params_.find(key) != params_.end();
     }
 
-    NODISCARD bool has_attr(const std::string& key) const {
-        return attrs.find(key) != attrs.end();
+    NODISCARD bool HasAttr(const std::string& key) const {
+        return attrs_.find(key) != attrs_.end();
     }
 
-    NODISCARD bool has_input(const std::string& key) const {
-        return std::find(input_names.begin(), input_names.end(), key) != input_names.end();
+    NODISCARD bool HasInput(const std::string& key) const {
+        return std::find(inputNames_.begin(), inputNames_.end(), key) != inputNames_.end();
     }
 
     Operand* named_input(const std::string& key);
@@ -710,18 +710,58 @@ public:
         return name_;
     }
 
-    std::vector<Operand*> inputs;
-    std::vector<Operand*> outputs;
+    NODISCARD const std::vector<std::string>& GetInputNames() const {
+        return inputNames_;
+    }
 
+    std::vector<std::string>& GetInputNames() {
+        return inputNames_;
+    }
 
-    std::vector<std::string> input_names;
-    std::map<std::string, Parameter> params;
-    std::map<std::string, Attribute> attrs;
+    NODISCARD const std::vector<Operand*>& GetInputOperands() const {
+        return inputOperands_;
+    }
+
+    NODISCARD const std::vector<Operand*>& GetOutputOperands() const {
+        return outputOperands_;
+    }
+
+    void AddInputOperand(Operand* operand) {
+        inputOperands_.push_back(operand);
+    }
+
+    void AddOutputOperand(Operand* operand) {
+        outputOperands_.push_back(operand);
+    }
+
+    NODISCARD const std::map<std::string, Parameter>& GetParameters() const {
+        return params_;
+    }
+
+    std::map<std::string, Parameter>& GetParameters() {
+        return params_;
+    }
+
+    NODISCARD const std::map<std::string, Attribute>& GetAttributes() const {
+        return attrs_;
+    }
+
+    std::map<std::string, Attribute>& GetAttributes() {
+        return attrs_;
+    }
 
 private:
     // keep std::string typed member the last for cross cxxabi compatibility
     std::string type_;
     std::string name_;
+
+    std::vector<std::string> inputNames_;
+
+    std::vector<Operand*> inputOperands_;
+    std::vector<Operand*> outputOperands_;
+
+    std::map<std::string, Parameter> params_;
+    std::map<std::string, Attribute> attrs_;
 };
 
 class Graph {

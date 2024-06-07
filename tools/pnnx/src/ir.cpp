@@ -550,7 +550,7 @@ Attribute operator+(const Attribute& a, const Attribute& b) {
     return c;
 }
 
-void Operand::remove_consumer(const Operator* op) {
+void Operand::RemoveConsumer(const Operator* op) {
     auto it = std::find(consumers_.begin(), consumers_.end(), op);
     if (it != consumers_.end()) {
         consumers_.erase(it);
@@ -558,33 +558,33 @@ void Operand::remove_consumer(const Operator* op) {
 }
 
 Operand* Operator::named_input(const std::string& key) {
-    for (size_t i = 0; i < input_names.size(); ++i) {
-        if (key == input_names[i]) {
-            return inputs[i];
+    for (size_t i = 0; i < inputNames_.size(); ++i) {
+        if (key == inputNames_[i]) {
+            return inputOperands_[i];
         }
     }
     return nullptr;
 }
 
 const Operand* Operator::named_input(const std::string& key) const {
-    for (size_t i = 0; i < input_names.size(); ++i) {
-        if (key == input_names[i]) {
-            return inputs[i];
+    for (size_t i = 0; i < inputNames_.size(); ++i) {
+        if (key == inputNames_[i]) {
+            return inputOperands_[i];
         }
     }
     return nullptr;
 }
 
 static void load_parameter(Operator* op, const std::string& key, const std::string& value) {
-    op->params[key] = Parameter::ParseFromString(value);
+    op->GetParameters()[key] = Parameter::ParseFromString(value);
 }
 
 static void load_input_key(Operator* op, const std::string& key, const std::string& value) {
-    op->input_names.resize(op->inputs.size());
-    for (size_t i = 0; i < op->inputs.size(); ++i) {
-        const auto* operand = op->inputs[i];
+    op->GetInputNames().resize(op->GetInputOperands().size());
+    for (size_t i = 0; i < op->GetInputOperands().size(); ++i) {
+        const auto* operand = op->GetInputOperands()[i];
         if (operand->name() == value) {
-            op->input_names[i] = key;
+            op->GetInputNames()[i] = key;
             break;
         }
     }
@@ -592,7 +592,7 @@ static void load_input_key(Operator* op, const std::string& key, const std::stri
 
 static void load_shape(Operator* op, const std::string& key, const std::string& value) {
     Operand* operand = nullptr;
-    for (const auto r: op->inputs) {
+    for (const auto r: op->GetInputOperands()) {
         if (r->name() == key) {
             operand = r;
             break;
@@ -600,7 +600,7 @@ static void load_shape(Operator* op, const std::string& key, const std::string& 
     }
 
     if (!operand) {
-        for (const auto r: op->outputs) {
+        for (const auto r: op->GetOutputOperands()) {
             if (r->name() == key) {
                 operand = r;
                 break;
@@ -639,7 +639,7 @@ static void load_shape(Operator* op, const std::string& key, const std::string& 
 }
 
 static void load_attribute(Operator* op, const std::string& key, const std::string& value, StoreZipReader& szr) {
-    Attribute& a = op->attrs[key];
+    Attribute& a = op->GetAttributes()[key];
 
     // parse type
     std::string typestr = value.substr(value.find_last_of(')') + 1);
@@ -705,27 +705,27 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
     // dump op info of graph
     for (const auto* op: ops) {
         // dump basic info of op
-        fprintf(paramfp, "%-24s %-24s %d %d", op->type().c_str(), op->name().c_str(), (int) op->inputs.size(), (int) op->outputs.size());
+        fprintf(paramfp, "%-24s %-24s %d %d", op->type().c_str(), op->name().c_str(), (int) op->GetInputOperands().size(), (int) op->GetOutputOperands().size());
 
         // dump op input operand info
-        for (const auto* operand: op->inputs) {
+        for (const auto* operand: op->GetInputOperands()) {
             fprintf(paramfp, " %s", operand->name().c_str());
         }
 
         // dump op output operand info
-        for (const auto* operand: op->outputs) {
+        for (const auto* operand: op->GetOutputOperands()) {
             fprintf(paramfp, " %s", operand->name().c_str());
         }
 
         // dump op param info
-        for (const auto& it: op->params) {
+        for (const auto& it: op->GetParameters()) {
             fprintf(paramfp, " %s=", it.first.c_str());
             std::string s = Parameter::Encode2String(it.second);
             fprintf(paramfp, "%s", s.c_str());
         }
 
         // dump op attrs info
-        for (const auto& it: op->attrs) {
+        for (const auto& it: op->GetAttributes()) {
             fprintf(paramfp, " @%s=", it.first.c_str());
             fprintf(paramfp, "(");
             const Attribute& attr = it.second;
@@ -741,17 +741,17 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
             szw.write_file(filename, attr.GetRawData().data(), attr.GetRawData().size());
         }
 
-        if (op->input_names.size() == op->inputs.size()) {
-            for (size_t i = 0; i < op->inputs.size(); ++i) {
-                if (op->input_names[i].empty()) {
+        if (op->GetInputNames().size() == op->GetInputOperands().size()) {
+            for (size_t i = 0; i < op->GetInputOperands().size(); ++i) {
+                if (op->GetInputNames()[i].empty()) {
                     continue;
                 }
-                const auto* operand = op->inputs[i];
-                fprintf(paramfp, " $%s=%s", op->input_names[i].c_str(), operand->name().c_str());
+                const auto* operand = op->GetInputOperands()[i];
+                fprintf(paramfp, " $%s=%s", op->GetInputNames()[i].c_str(), operand->name().c_str());
             }
         }
 
-        for (const auto* operand: op->inputs) {
+        for (const auto* operand: op->GetInputOperands()) {
             if (operand->GetShape().empty()) {
                 continue;
             }
@@ -772,7 +772,7 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
             fprintf(paramfp, "%s", DataTypeToString(operand->type()).c_str());
         }
 
-        for (const auto* operand: op->outputs) {
+        for (const auto* operand: op->GetOutputOperands()) {
             if (operand->GetShape().empty()) {
                 continue;
             }
@@ -850,7 +850,7 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
             iss >> operand_name;
             Operand* r = GetOperand(operand_name);
             r->AddConsumer(op);
-            op->inputs.push_back(r);
+            op->AddInputOperand(r);
         }
 
         for (int j = 0; j < outputNum; ++j) {
@@ -858,7 +858,7 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
             iss >> operand_name;
             Operand* r = CreateOperand(operand_name);
             r->SetProducer(op);
-            op->outputs.push_back(r);
+            op->AddOutputOperand(r);
         }
 
         while (!iss.eof()) {
