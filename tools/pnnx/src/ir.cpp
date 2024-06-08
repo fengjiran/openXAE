@@ -4,8 +4,6 @@
 #include "ir.h"
 #include "storezip.h"
 #include <cfloat>
-//#include <climits>
-//#include <cstdint>
 #include <cstring>
 #include <fstream>
 #include <iomanip>

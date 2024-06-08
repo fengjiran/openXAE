@@ -766,6 +766,9 @@ private:
 
     std::map<std::string, Parameter> params_;
     std::map<std::string, Attribute> attrs_;
+
+    std::map<std::string, std::shared_ptr<Parameter>> params;
+    std::map<std::string, std::shared_ptr<Attribute>> attrs;
 };
 
 class Graph {
