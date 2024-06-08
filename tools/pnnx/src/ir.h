@@ -634,23 +634,23 @@ public:
         return params_;
     }
 
-    void SetProducer(Operator* op) {
+    void SetProducer(const std::shared_ptr<Operator>& op) {
         producer_ = op;
     }
 
-    void AddConsumer(Operator* op) {
+    void AddConsumer(const std::shared_ptr<Operator>& op) {
         consumers_.push_back(op);
     }
 
-    NODISCARD const std::vector<Operator*>& GetConsumers() const {
+    NODISCARD const std::vector<std::shared_ptr<Operator>>& GetConsumers() const {
         return consumers_;
     }
 
-    std::vector<Operator*>& GetConsumers() {
+    std::vector<std::shared_ptr<Operator>>& GetConsumers() {
         return consumers_;
     }
 
-    void RemoveConsumer(const Operator* op);
+    void RemoveConsumer(const std::shared_ptr<Operator>& op);
 
 private:
     /**
@@ -673,8 +673,8 @@ private:
      */
     DataType type_;
     std::vector<int> shape_;
-    Operator* producer_{};
-    std::vector<Operator*> consumers_;
+    std::shared_ptr<Operator> producer_;
+    std::vector<std::shared_ptr<Operator>> consumers_;
 
     // keep std::string typed member the last for cross cxxabi compatibility
     std::string name_;
@@ -796,12 +796,11 @@ public:
 
     int parse(const std::string& param);
 
-    //private:
-    Operator* CreateOperator(const std::string& type, const std::string& name);
+    std::shared_ptr<Operator> CreateOperator(const std::string& type, const std::string& name);
 
-    Operator* CreateOperatorBefore(const std::string& type, const std::string& name, const Operator* cur);
+    std::shared_ptr<Operator> CreateOperatorBefore(const std::string& type, const std::string& name, const std::shared_ptr<Operator>& cur);
 
-    Operator* CreateOperatorAfter(const std::string& type, const std::string& name, const Operator* cur);
+    std::shared_ptr<Operator> CreateOperatorAfter(const std::string& type, const std::string& name, const std::shared_ptr<Operator>& cur);
 
     std::shared_ptr<Operand> CreateOperand(const std::string& name);
 
@@ -816,12 +815,10 @@ public:
     Operand* new_operand(const onnx::TensorProto& t);
 #endif
 
-private:
-    std::vector<Operator*> ops;
+//private:
 
+    std::vector<std::shared_ptr<Operator>> ops_;
     std::vector<std::shared_ptr<Operand>> operands_;
-
-    //    std::vector<std::shared_ptr<Operator>> ops_;
 };
 
 }// namespace pnnx

@@ -551,7 +551,7 @@ Attribute operator+(const Attribute& a, const Attribute& b) {
     return c;
 }
 
-void Operand::RemoveConsumer(const Operator* op) {
+void Operand::RemoveConsumer(const std::shared_ptr<Operator>& op) {
     auto it = std::find(consumers_.begin(), consumers_.end(), op);
     if (it != consumers_.end()) {
         consumers_.erase(it);
@@ -568,11 +568,11 @@ std::shared_ptr<Operand> Operator::GetNamedInput(const std::string& key) const {
 }
 
 
-static void LoadParameter(Operator* op, const std::string& key, const std::string& value) {
+static void LoadParameter(const std::shared_ptr<Operator>& op, const std::string& key, const std::string& value) {
     op->GetParameters()[key] = Parameter::ParseFromString(value);
 }
 
-static void LoadInputName(Operator* op, const std::string& key, const std::string& value) {
+static void LoadInputName(const std::shared_ptr<Operator>& op, const std::string& key, const std::string& value) {
     op->GetInputNames().resize(op->GetInputOperands().size());
     for (size_t i = 0; i < op->GetInputOperands().size(); ++i) {
         const auto& operand = op->GetInputOperands()[i];
@@ -583,7 +583,7 @@ static void LoadInputName(Operator* op, const std::string& key, const std::strin
     }
 }
 
-static void LoadOperand(Operator* op, const std::string& key, const std::string& value) {
+static void LoadOperand(const std::shared_ptr<Operator>& op, const std::string& key, const std::string& value) {
     std::shared_ptr<Operand> operand;
     for (const auto& r: op->GetInputOperands()) {
         if (r->name() == key) {
@@ -632,7 +632,7 @@ static void LoadOperand(Operator* op, const std::string& key, const std::string&
     }
 }
 
-static void LoadAttribute(Operator* op, const std::string& key, const std::string& value, StoreZipReader& szr) {
+static void LoadAttribute(const std::shared_ptr<Operator>& op, const std::string& key, const std::string& value, StoreZipReader& szr) {
     Attribute& attr = op->GetAttributes()[key];
 
     // parse attribute data type
@@ -694,10 +694,10 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
     paramFile << "7767517" << std::endl;
 
     // op number and operand number
-    paramFile << static_cast<int>(ops.size()) << " " << static_cast<int>(operands_.size()) << std::endl;
+    paramFile << static_cast<int>(ops_.size()) << " " << static_cast<int>(operands_.size()) << std::endl;
 
     // dump op info
-    for (const auto* op: ops) {
+    for (const auto& op: ops_) {
         paramFile << std::left << std::setw(24) << op->type() << " "
                   << std::left << std::setw(24) << op->name() << " "
                   << static_cast<int>(op->GetInputOperands().size()) << " "
@@ -829,11 +829,11 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
 
         iss >> type >> name >> inputOperandNum >> outputOperandNum;
 
-        Operator* op = CreateOperator(type, name);
+        const auto& op = CreateOperator(type, name);
         for (int j = 0; j < inputOperandNum; ++j) {
             std::string operandName;
             iss >> operandName;
-            auto r = GetOperand(operandName);
+            const auto& r = GetOperand(operandName);
             r->AddConsumer(op);
             op->AddInputOperand(r);
         }
@@ -841,7 +841,7 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
         for (int j = 0; j < outputOperandNum; ++j) {
             std::string operandName;
             iss >> operandName;
-            auto r = CreateOperand(operandName);
+            const auto& r = CreateOperand(operandName);
             r->SetProducer(op);
             op->AddOutputOperand(r);
         }
@@ -874,21 +874,21 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
     return 0;
 }
 
-Operator* Graph::CreateOperator(const std::string& type, const std::string& name) {
-    auto* op = new Operator(name, type);
-    ops.push_back(op);
+std::shared_ptr<Operator> Graph::CreateOperator(const std::string& type, const std::string& name) {
+    auto op = std::make_shared<Operator>(name, type);
+    ops_.push_back(op);
     return op;
 }
 
-Operator* Graph::CreateOperatorBefore(const std::string& type, const std::string& name, const Operator* cur) {
-    auto* op = new Operator(name, type);
-    ops.insert(std::find(ops.begin(), ops.end(), cur), op);
+std::shared_ptr<Operator> Graph::CreateOperatorBefore(const std::string& type, const std::string& name, const std::shared_ptr<Operator>& cur) {
+    auto op = std::make_shared<Operator>(name, type);
+    ops_.insert(std::find(ops_.begin(), ops_.end(), cur), op);
     return op;
 }
 
-Operator* Graph::CreateOperatorAfter(const std::string& type, const std::string& name, const Operator* cur) {
-    auto* op = new Operator(name, type);
-    ops.insert(std::find(ops.begin(), ops.end(), cur) + 1, op);
+std::shared_ptr<Operator> Graph::CreateOperatorAfter(const std::string& type, const std::string& name, const std::shared_ptr<Operator>& cur) {
+    auto op = std::make_shared<Operator>(name, type);
+    ops_.insert(std::find(ops_.begin(), ops_.end(), cur) + 1, op);
     return op;
 }
 
@@ -909,16 +909,8 @@ std::shared_ptr<Operand> Graph::GetOperand(const std::string& name) {
 
 
 Graph::~Graph() {
-    for (auto x: ops) {
-        delete x;
-    }
-
-//    for (auto x: operands) {
-//        delete x;
-//    }
-
-    ops.clear();
-//    operands.clear();
+    ops_.clear();
+    operands_.clear();
 }
 
 }// namespace pnnx
