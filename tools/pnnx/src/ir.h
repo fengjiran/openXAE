@@ -704,8 +704,7 @@ public:
         return std::find(inputNames_.begin(), inputNames_.end(), key) != inputNames_.end();
     }
 
-    Operand* named_input(const std::string& key);
-    NODISCARD const Operand* named_input(const std::string& key) const;
+    NODISCARD std::shared_ptr<Operand> GetNamedInput(const std::string& key) const;
 
     NODISCARD const std::string& type() const {
         return type_;
@@ -723,19 +722,19 @@ public:
         return inputNames_;
     }
 
-    NODISCARD const std::vector<Operand*>& GetInputOperands() const {
+    NODISCARD const std::vector<std::shared_ptr<Operand>>& GetInputOperands() const {
         return inputOperands_;
     }
 
-    NODISCARD const std::vector<Operand*>& GetOutputOperands() const {
+    NODISCARD const std::vector<std::shared_ptr<Operand>>& GetOutputOperands() const {
         return outputOperands_;
     }
 
-    void AddInputOperand(Operand* operand) {
+    void AddInputOperand(const std::shared_ptr<Operand>& operand) {
         inputOperands_.push_back(operand);
     }
 
-    void AddOutputOperand(Operand* operand) {
+    void AddOutputOperand(const std::shared_ptr<Operand>& operand) {
         outputOperands_.push_back(operand);
     }
 
@@ -762,8 +761,8 @@ private:
 
     std::vector<std::string> inputNames_;
 
-    std::vector<Operand*> inputOperands_;
-    std::vector<Operand*> outputOperands_;
+    std::vector<std::shared_ptr<Operand>> inputOperands_;
+    std::vector<std::shared_ptr<Operand>> outputOperands_;
 
     std::map<std::string, Parameter> params_;
     std::map<std::string, Attribute> attrs_;
@@ -804,11 +803,9 @@ public:
 
     Operator* CreateOperatorAfter(const std::string& type, const std::string& name, const Operator* cur);
 
-    Operand* CreateOperand(const std::string& name);
+    std::shared_ptr<Operand> CreateOperand(const std::string& name);
 
-    Operand* GetOperand(const std::string& name);
-
-    const Operand* GetOperand(const std::string& name) const;
+    std::shared_ptr<Operand> GetOperand(const std::string& name);
 
 #if BUILD_TORCH2PNNX
     Operand* new_operand(const torch::jit::Value* v);
@@ -819,8 +816,10 @@ public:
     Operand* new_operand(const onnx::TensorProto& t);
 #endif
 
+private:
     std::vector<Operator*> ops;
-    std::vector<Operand*> operands;
+
+    std::vector<std::shared_ptr<Operand>> operands_;
 
     //    std::vector<std::shared_ptr<Operator>> ops_;
 };

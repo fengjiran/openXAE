@@ -4,8 +4,8 @@
 #include "ir.h"
 #include "storezip.h"
 #include <cfloat>
-#include <climits>
-#include <cstdint>
+//#include <climits>
+//#include <cstdint>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
@@ -230,20 +230,20 @@ static size_t SizeOf(DataType type) {
     return size;
 }
 
-static DataType string_to_type(const char* s) {
-    if (std::strcmp(s, "f32") == 0) return DataType::kDataTypeFloat32;
-    if (std::strcmp(s, "f64") == 0) return DataType::kDataTypeFloat64;
-    if (std::strcmp(s, "f16") == 0) return DataType::kDataTypeFloat16;
-    if (std::strcmp(s, "i32") == 0) return DataType::kDataTypeInt32;
-    if (std::strcmp(s, "i64") == 0) return DataType::kDataTypeInt64;
-    if (std::strcmp(s, "i16") == 0) return DataType::kDataTypeInt16;
-    if (std::strcmp(s, "i8") == 0) return DataType::kDataTypeInt8;
-    if (std::strcmp(s, "u8") == 0) return DataType::kDataTypeUInt8;
-    if (std::strcmp(s, "bool") == 0) return DataType::kDataTypeBool;
-    if (std::strcmp(s, "c64") == 0) return DataType::kDataTypeComplex64;
-    if (std::strcmp(s, "c128") == 0) return DataType::kDataTypeComplex128;
-    if (std::strcmp(s, "c32") == 0) return DataType::kDataTypeComplex32;
-    if (std::strcmp(s, "bf16") == 0) return DataType::kDataTypeBFloat16;
+static DataType String2Type(const std::string& s) {
+    if (s == "f32") return DataType::kDataTypeFloat32;
+    if (s == "f64") return DataType::kDataTypeFloat64;
+    if (s == "f16") return DataType::kDataTypeFloat16;
+    if (s == "i32") return DataType::kDataTypeInt32;
+    if (s == "i64") return DataType::kDataTypeInt64;
+    if (s == "i16") return DataType::kDataTypeInt16;
+    if (s == "i8") return DataType::kDataTypeInt8;
+    if (s == "u8") return DataType::kDataTypeUInt8;
+    if (s == "bool") return DataType::kDataTypeBool;
+    if (s == "c64") return DataType::kDataTypeComplex64;
+    if (s == "c128") return DataType::kDataTypeComplex128;
+    if (s == "c32") return DataType::kDataTypeComplex32;
+    if (s == "bf16") return DataType::kDataTypeBFloat16;
     return DataType::kDataTypeUnknown;
 }
 
@@ -329,7 +329,7 @@ std::string Parameter::Encode2String(const Parameter& param) {
         }
 
         default:
-            fprintf(stderr, "unknown parameter type %d\n", static_cast<int>(param.type()));
+            std::cerr << "Unknown parameter type.\n";
     }
 
     return code;
@@ -475,7 +475,7 @@ std::vector<float> Attribute::CastToFloat32() const {
             item = float16_to_float32(*p++);
         }
     } else {
-        fprintf(stderr, "cannot convert type %d to float32 data\n", static_cast<int>(type_));
+        std::cerr << "Cannot convert to float32 type.\n";
     }
     return v;
 }
@@ -506,7 +506,7 @@ void Attribute::SetFloat32Data(const std::vector<float>& newData) {
         }
 
         default:
-            fprintf(stderr, "cannot convert float32 newData to type_ %d\n", static_cast<int>(type_));
+            std::cerr << "Cannot convert to float32 type.\n";
     }
 }
 
@@ -532,12 +532,12 @@ bool operator==(const Attribute& lhs, const Attribute& rhs) {
 Attribute operator+(const Attribute& a, const Attribute& b) {
     Attribute c;
     if (a.type() != b.type()) {
-        fprintf(stderr, "concat attribute type_ mismatch\n");
+        std::cerr << "concat attribute type mismatch\n";
         return c;
     }
 
     if (a.GetShape() != b.GetShape()) {
-        fprintf(stderr, "concat attribute shape mismatch\n");
+        std::cerr << "concat attribute shape mismatch\n";
         return c;
     }
 
@@ -558,32 +558,24 @@ void Operand::RemoveConsumer(const Operator* op) {
     }
 }
 
-Operand* Operator::named_input(const std::string& key) {
+std::shared_ptr<Operand> Operator::GetNamedInput(const std::string& key) const {
     for (size_t i = 0; i < inputNames_.size(); ++i) {
         if (key == inputNames_[i]) {
             return inputOperands_[i];
         }
     }
-    return nullptr;
+    return {};
 }
 
-const Operand* Operator::named_input(const std::string& key) const {
-    for (size_t i = 0; i < inputNames_.size(); ++i) {
-        if (key == inputNames_[i]) {
-            return inputOperands_[i];
-        }
-    }
-    return nullptr;
-}
 
-static void load_parameter(Operator* op, const std::string& key, const std::string& value) {
+static void LoadParameter(Operator* op, const std::string& key, const std::string& value) {
     op->GetParameters()[key] = Parameter::ParseFromString(value);
 }
 
-static void load_input_key(Operator* op, const std::string& key, const std::string& value) {
+static void LoadInputName(Operator* op, const std::string& key, const std::string& value) {
     op->GetInputNames().resize(op->GetInputOperands().size());
     for (size_t i = 0; i < op->GetInputOperands().size(); ++i) {
-        const auto* operand = op->GetInputOperands()[i];
+        const auto& operand = op->GetInputOperands()[i];
         if (operand->name() == value) {
             op->GetInputNames()[i] = key;
             break;
@@ -591,9 +583,9 @@ static void load_input_key(Operator* op, const std::string& key, const std::stri
     }
 }
 
-static void load_shape(Operator* op, const std::string& key, const std::string& value) {
-    Operand* operand = nullptr;
-    for (const auto r: op->GetInputOperands()) {
+static void LoadOperand(Operator* op, const std::string& key, const std::string& value) {
+    std::shared_ptr<Operand> operand;
+    for (const auto& r: op->GetInputOperands()) {
         if (r->name() == key) {
             operand = r;
             break;
@@ -601,7 +593,7 @@ static void load_shape(Operator* op, const std::string& key, const std::string& 
     }
 
     if (!operand) {
-        for (const auto r: op->GetOutputOperands()) {
+        for (const auto& r: op->GetOutputOperands()) {
             if (r->name() == key) {
                 operand = r;
                 break;
@@ -610,13 +602,13 @@ static void load_shape(Operator* op, const std::string& key, const std::string& 
     }
 
     if (!operand) {
-        fprintf(stderr, "no such operand %s for operator %s\n", key.c_str(), op->name().c_str());
+        std::cerr << "operator " << op->name() << " has no such operand! " << key << std::endl;
         return;
     }
 
-    // parse type, e.g. #input=(1,3,10,10)f32
-    std::string typestr = value.substr(value.find_last_of(')') + 1);
-    operand->SetType(string_to_type(typestr.c_str()));
+    // parse data type, e.g. #input=(1,3,10,10)f32
+    std::string str = value.substr(value.find_last_of(')') + 1);
+    operand->SetType(String2Type(str));
 
     // parse shape
     std::string lc = value.substr(1, value.find_last_of(')') - 1);
@@ -628,6 +620,7 @@ static void load_shape(Operator* op, const std::string& key, const std::string& 
         if (elem == "?") {
             operand->GetShape().push_back(-1);
         } else if (elem[0] == '%') {
+            // this shape is a variable,
             // encode %abc as symbolic tag
             operand->GetShape().push_back(-233);
             size_t index = operand->GetShape().size() - 1;
@@ -639,35 +632,35 @@ static void load_shape(Operator* op, const std::string& key, const std::string& 
     }
 }
 
-static void load_attribute(Operator* op, const std::string& key, const std::string& value, StoreZipReader& szr) {
-    Attribute& a = op->GetAttributes()[key];
+static void LoadAttribute(Operator* op, const std::string& key, const std::string& value, StoreZipReader& szr) {
+    Attribute& attr = op->GetAttributes()[key];
 
-    // parse type
-    std::string typestr = value.substr(value.find_last_of(')') + 1);
-    a.SetType(string_to_type(typestr.c_str()));
-    //    a.type_ = string_to_type(typestr.c_str());
-
-    if (a.type() == DataType::kDataTypeUnknown) {
+    // parse attribute data type
+    std::string str = value.substr(value.find_last_of(')') + 1);
+    DataType type = String2Type(str);
+    if (type == DataType::kDataTypeUnknown) {
         return;
     }
+
+    attr.SetType(type);
 
     // parse shape
     std::string lc = value.substr(1, value.find_last_of(')') - 1);
     std::istringstream lcss(lc);
-    a.GetShape().clear();
+    attr.GetShape().clear();
     while (!lcss.eof()) {
         std::string elem;
         std::getline(lcss, elem, ',');
-        a.GetShape().push_back(std::stoi(elem));
+        attr.GetShape().push_back(std::stoi(elem));
     }
 
-    if (a.GetShape().empty()) {
+    if (attr.GetShape().empty()) {
         return;
     }
 
     // parse data
-    size_t size = std::accumulate(a.GetShape().begin(), a.GetShape().end(), 1, std::multiplies<>());
-    size_t bytesize = size * SizeOf(a.type());
+    size_t sizeInByte =
+            std::accumulate(attr.GetShape().begin(), attr.GetShape().end(), 1, std::multiplies<>()) * SizeOf(type);
 
     std::string filename = op->name() + "." + key;
     size_t filesize = szr.get_file_size(filename);
@@ -676,12 +669,12 @@ static void load_attribute(Operator* op, const std::string& key, const std::stri
         return;
     }
 
-    if (filesize != bytesize) {
-        fprintf(stderr, "file size not match expect %lu but got %lu\n", bytesize, filesize);
+    if (filesize != sizeInByte) {
+        std::cerr << "file size not match, expect " << sizeInByte << " but got " << filesize << std::endl;
     }
 
-    a.GetRawData().resize(bytesize);
-    szr.read_file(filename, (char*) a.GetRawData().data());
+    attr.GetRawData().resize(sizeInByte);
+    szr.read_file(filename, (char*) attr.GetRawData().data());
 }
 
 int Graph::save(const std::string& paramPath, const std::string& binPath) {
@@ -701,7 +694,7 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
     paramFile << "7767517" << std::endl;
 
     // op number and operand number
-    paramFile << static_cast<int>(ops.size()) << " " << static_cast<int>(operands.size()) << std::endl;
+    paramFile << static_cast<int>(ops.size()) << " " << static_cast<int>(operands_.size()) << std::endl;
 
     // dump op info
     for (const auto* op: ops) {
@@ -711,12 +704,12 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
                   << static_cast<int>(op->GetOutputOperands().size());
 
         // dump op input operand name
-        for (const auto* operand: op->GetInputOperands()) {
+        for (const auto& operand: op->GetInputOperands()) {
             paramFile << " " << operand->name();
         }
 
         // dump op output operand name
-        for (const auto* operand: op->GetOutputOperands()) {
+        for (const auto& operand: op->GetOutputOperands()) {
             paramFile << " " << operand->name();
         }
 
@@ -744,13 +737,13 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
                 if (op->GetInputNames()[i].empty()) {
                     continue;
                 }
-                const auto* operand = op->GetInputOperands()[i];
+                const auto& operand = op->GetInputOperands()[i];
                 paramFile << " $" << op->GetInputNames()[i] << "=" << operand->name();
             }
         }
 
         // dump input operands
-        for (const auto* operand: op->GetInputOperands()) {
+        for (const auto& operand: op->GetInputOperands()) {
             if (operand->GetShape().empty()) {
                 continue;
             }
@@ -769,7 +762,7 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
         }
 
         // dump output operands
-        for (const auto* operand: op->GetOutputOperands()) {
+        for (const auto& operand: op->GetOutputOperands()) {
             if (operand->GetShape().empty()) {
                 continue;
             }
@@ -840,7 +833,7 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
         for (int j = 0; j < inputOperandNum; ++j) {
             std::string operandName;
             iss >> operandName;
-            Operand* r = GetOperand(operandName);
+            auto r = GetOperand(operandName);
             r->AddConsumer(op);
             op->AddInputOperand(r);
         }
@@ -848,7 +841,7 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
         for (int j = 0; j < outputOperandNum; ++j) {
             std::string operandName;
             iss >> operandName;
-            Operand* r = CreateOperand(operandName);
+            auto r = CreateOperand(operandName);
             r->SetProducer(op);
             op->AddOutputOperand(r);
         }
@@ -863,17 +856,17 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
             std::getline(pss, key, '=');
             std::getline(pss, value);
             if (key[0] == '@') {
-                // attribute
-                load_attribute(op, key.substr(1), value, szr);
+                // load attribute raw data, shape and data type
+                LoadAttribute(op, key.substr(1), value, szr);
             } else if (key[0] == '$') {
                 // operand input key
-                load_input_key(op, key.substr(1), value);
+                LoadInputName(op, key.substr(1), value);
             } else if (key[0] == '#') {
-                // operand shape
-                load_shape(op, key.substr(1), value);
+                // load operand shape and data type
+                LoadOperand(op, key.substr(1), value);
             } else {
-                // parameter
-                load_parameter(op, key, value);
+                // load parameter
+                LoadParameter(op, key, value);
             }
         }
     }
@@ -899,41 +892,33 @@ Operator* Graph::CreateOperatorAfter(const std::string& type, const std::string&
     return op;
 }
 
-Operand* Graph::CreateOperand(const std::string& name) {
-    auto* r = new Operand(name);
-    operands.push_back(r);
+std::shared_ptr<Operand> Graph::CreateOperand(const std::string& name) {
+    auto r = std::make_shared<Operand>(name);
+    operands_.push_back(r);
     return r;
 }
 
-Operand* Graph::GetOperand(const std::string& name) {
-    for (auto* r: operands) {
+std::shared_ptr<Operand> Graph::GetOperand(const std::string& name) {
+    for (const auto& r: operands_) {
         if (r->name() == name) {
             return r;
         }
     }
-    return nullptr;
+    return {};
 }
 
-const Operand* Graph::GetOperand(const std::string& name) const {
-    for (const auto* r: operands) {
-        if (r->name() == name) {
-            return r;
-        }
-    }
-    return nullptr;
-}
 
 Graph::~Graph() {
     for (auto x: ops) {
         delete x;
     }
 
-    for (auto x: operands) {
-        delete x;
-    }
+//    for (auto x: operands) {
+//        delete x;
+//    }
 
     ops.clear();
-    operands.clear();
+//    operands.clear();
 }
 
 }// namespace pnnx
