@@ -121,6 +121,8 @@ TEST(IRTEST, pnnx_graph_load) {
 }
 
 TEST(IRTEST, create_pnnx_graph) {
+    Graph graph;
+
     auto input_op = std::make_shared<Operator>("pnnx_input_0", "pnnx.Input");
     auto t1 = std::make_shared<Operand>("0", DataType::kDataTypeFloat32, std::vector<int>{1, 32});
     input_op->AddOutputOperand(t1);
@@ -158,7 +160,6 @@ TEST(IRTEST, create_pnnx_graph) {
     output->AddInputOperand(t3);
     t3->AddConsumer(output);
 
-    Graph graph;
     graph.ops_.push_back(input_op);
     graph.ops_.push_back(linear);
     graph.ops_.push_back(sigmoid);
