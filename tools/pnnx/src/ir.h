@@ -801,6 +801,13 @@ public:
 
     std::shared_ptr<Operator> CreateOperator(const std::string& type, const std::string& name);
 
+    std::shared_ptr<Operand> CreateOperator(const std::string& type, const std::string& name,
+                                            const std::vector<std::shared_ptr<Parameter>>& params,
+                                            const std::vector<std::shared_ptr<Attribute>>& attrs,
+                                            const std::string& outputName,
+                                            DataType outputType,
+                                            const std::vector<int>& outputShape);
+
     std::shared_ptr<Operator> CreateOperatorBefore(const std::string& type, const std::string& name, const std::shared_ptr<Operator>& cur);
 
     std::shared_ptr<Operator> CreateOperatorAfter(const std::string& type, const std::string& name, const std::shared_ptr<Operator>& cur);
@@ -818,7 +825,7 @@ public:
     Operand* new_operand(const onnx::TensorProto& t);
 #endif
 
-//private:
+    //private:
 
     std::vector<std::shared_ptr<Operator>> ops_;
     std::vector<std::shared_ptr<Operand>> operands_;
