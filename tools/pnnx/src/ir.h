@@ -93,7 +93,7 @@ public:
 
 private:
     /**
-     * @brief Parameter type_
+     * @brief Parameter type
      *
      * 0 = null \n
      * 1 = bool \n
@@ -499,7 +499,7 @@ public:
 
 private:
     /**
-     * @brief Parameter type_
+     * @brief Parameter type
      *
      * 0 = null \n
      * 1 = bool \n
