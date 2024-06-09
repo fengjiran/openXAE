@@ -934,10 +934,4 @@ std::shared_ptr<Operand> Graph::GetOperand(const std::string& name) {
     return {};
 }
 
-
-//Graph::~Graph() {
-//    ops_.clear();
-//    operands_.clear();
-//}
-
 }// namespace pnnx

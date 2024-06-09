@@ -789,11 +789,6 @@ public:
 
     Graph& operator=(Graph&&) = delete;
 
-    /**
-     * @brief Destructor.
-     */
-    //    ~Graph();
-
     int load(const std::string& paramPath, const std::string& binPath);
 
     int save(const std::string& paramPath, const std::string& binPath);
