@@ -632,15 +632,15 @@ static void LoadOperand(const std::shared_ptr<Operator>& op, const std::string& 
 }
 
 static void LoadAttribute(const std::shared_ptr<Operator>& op, const std::string& key, const std::string& value, StoreZipReader& szr) {
-    op->GetAttributes()[key] = std::make_shared<Attribute>();
-    std::shared_ptr<Attribute>& attr = op->GetAttributes()[key];
-
     // parse attribute data type
     std::string str = value.substr(value.find_last_of(')') + 1);
     DataType type = String2Type(str);
     if (type == DataType::kDataTypeUnknown) {
         return;
     }
+
+    op->GetAttributes()[key] = std::make_shared<Attribute>();
+    std::shared_ptr<Attribute>& attr = op->GetAttributes()[key];
 
     attr->SetType(type);
 
