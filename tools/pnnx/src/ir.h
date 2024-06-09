@@ -85,6 +85,37 @@ enum class DataType {
     kDataTypeBFloat16 = 13
 };
 
+template<typename T>
+class Parameter_ {
+public:
+    Parameter_(T val)
+        : type_(ParameterType::kParameterUnknown), value_(val) {}
+
+private:
+    /**
+     * @brief Parameter type_
+     *
+     * 0 = null \n
+     * 1 = bool \n
+     * 2 = int \n
+     * 3 = float \n
+     * 4 = string \n
+     * 5 = array int \n
+     * 6 = array float \n
+     * 7 = array string \n
+     * 8 = others \n
+     * 10 = complex \n
+     * 11 = array complex
+     */
+    ParameterType type_;
+
+    T value_;
+};
+
+template<typename T>
+class Parameter_<std::vector<T>> {
+    //
+};
 
 class Parameter {
 public:
