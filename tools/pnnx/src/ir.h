@@ -792,7 +792,7 @@ public:
     /**
      * @brief Destructor.
      */
-//    ~Graph();
+    //    ~Graph();
 
     int load(const std::string& paramPath, const std::string& binPath);
 
@@ -830,8 +830,7 @@ public:
     Operand* new_operand(const onnx::TensorProto& t);
 #endif
 
-    //private:
-
+private:
     std::vector<std::shared_ptr<Operator>> ops_;
     std::vector<std::shared_ptr<Operand>> operands_;
 };
