@@ -122,55 +122,32 @@ TEST(IRTEST, pnnx_graph_load) {
 
 TEST(IRTEST, create_pnnx_graph) {
     Graph graph;
-
-    auto input_op = std::make_shared<Operator>("pnnx_input_0", "pnnx.Input");
-    auto t1 = std::make_shared<Operand>("0", DataType::kDataTypeFloat32, std::vector<int>{1, 32});
-    input_op->AddOutputOperand(t1);
-    t1->SetProducer(input_op);
-
-    auto linear = std::make_shared<Operator>("linear", "nn.Linear");
-    linear->GetParameters()["bias"] = Parameter(true);
-    linear->GetParameters()["in_features"] = Parameter(32);
-    linear->GetParameters()["out_features"] = Parameter(128);
-
-    linear->AddInputOperand(t1);
-    t1->AddConsumer(linear);
-
-    auto t2 = std::make_shared<Operand>("1", DataType::kDataTypeFloat32, std::vector<int>{1, 128});
-    linear->AddOutputOperand(t2);
-    t2->SetProducer(linear);
+    auto t1 = graph.CreateOperator("pnnx.Input", "pnnx_input_0",
+                                   {}, {}, {}, {},
+                                   "0", DataType::kDataTypeFloat32, {1, 32});
 
     auto bias = torch::rand({128});
     auto weight = torch::rand({128, 32});
     bias.contiguous();
     weight.contiguous();
-    linear->GetAttributes().insert(std::make_pair("bias", Attribute({128}, std::vector<float>(bias.data_ptr<float>(), bias.data_ptr<float>() + bias.numel()))));
-    linear->GetAttributes().insert(std::make_pair("weight", Attribute({128, 32}, std::vector<float>(weight.data_ptr<float>(), weight.data_ptr<float>() + weight.numel()))));
 
-    auto sigmoid = std::make_shared<Operator>("F.sigmoid_0", "F.sigmoid");
-    sigmoid->GetInputNames().emplace_back("input");
-    sigmoid->AddInputOperand(t2);
-    t2->AddConsumer(sigmoid);
+    auto t2 = graph.CreateOperator("nn.Linear", "linear",
+                                   {{"bias", std::make_shared<Parameter>(true)},
+                                    {"in_features", std::make_shared<Parameter>(32)},
+                                    {"out_features", std::make_shared<Parameter>(128)}},
+                                   {{"bias", std::make_shared<Attribute>(std::vector<int>{128}, std::vector<float>(bias.data_ptr<float>(), bias.data_ptr<float>() + bias.numel()))},
+                                    {"weight", std::make_shared<Attribute>(std::vector<int>{128, 32}, std::vector<float>(weight.data_ptr<float>(), weight.data_ptr<float>() + weight.numel()))}},
+                                   {t1}, {},
+                                   "1",DataType::kDataTypeFloat32, {1, 128});
 
-    auto t3 = std::make_shared<Operand>("2", DataType::kDataTypeFloat32, std::vector<int>{1, 128});
-    sigmoid->AddOutputOperand(t3);
-    t3->SetProducer(sigmoid);
+    auto t3 = graph.CreateOperator("F.sigmoid", "F.sigmoid_0",
+                                   {}, {}, {t2}, {"input"},
+                                   "2", DataType::kDataTypeFloat32, {1, 128});
 
-    auto output = std::make_shared<Operator>("pnnx_output_0", "pnnx.Output");
-    output->AddInputOperand(t3);
-    t3->AddConsumer(output);
-
-    graph.ops_.push_back(input_op);
-    graph.ops_.push_back(linear);
-    graph.ops_.push_back(sigmoid);
-    graph.ops_.push_back(output);
-
-    graph.operands_.push_back(t1);
-    graph.operands_.push_back(t2);
-    graph.operands_.push_back(t3);
+    auto t4 = graph.CreateOperator("pnnx.Output", "pnnx_output_0",
+                                   {}, {}, {t3}, {}, {}, {}, {});
+    ASSERT_TRUE(!t4);
     graph.save("linear.pnnx.param", "linea.pnnx.bin");
-//    graph.ops.clear();
-//    graph.operands.clear();
 }
 
 }// namespace pnnx

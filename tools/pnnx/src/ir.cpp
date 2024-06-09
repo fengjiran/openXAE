@@ -438,7 +438,7 @@ bool operator==(const Parameter& lhs, const Parameter& rhs) {
     return false;
 }
 
-Attribute::Attribute(const std::initializer_list<int>& shape, const std::vector<float>& t)
+Attribute::Attribute(const std::vector<int>& shape, const std::vector<float>& t)
     : type_(DataType::kDataTypeFloat32), shape_(shape) {
     if (!shape_.empty()) {
         data_.resize(size() * GetElemSize());
@@ -567,7 +567,8 @@ std::shared_ptr<Operand> Operator::GetNamedInput(const std::string& key) const {
 
 
 static void LoadParameter(const std::shared_ptr<Operator>& op, const std::string& key, const std::string& value) {
-    op->GetParameters()[key] = Parameter::ParseFromString(value);
+//    op->GetParameters()[key] = Parameter::ParseFromString(value);
+    op->GetParameters()[key] = std::make_shared<Parameter>(Parameter::ParseFromString(value));
 }
 
 static void LoadInputName(const std::shared_ptr<Operator>& op, const std::string& key, const std::string& value) {
@@ -631,7 +632,8 @@ static void LoadOperand(const std::shared_ptr<Operator>& op, const std::string& 
 }
 
 static void LoadAttribute(const std::shared_ptr<Operator>& op, const std::string& key, const std::string& value, StoreZipReader& szr) {
-    Attribute& attr = op->GetAttributes()[key];
+    op->GetAttributes()[key] = std::make_shared<Attribute>();
+    std::shared_ptr<Attribute>& attr = op->GetAttributes()[key];
 
     // parse attribute data type
     std::string str = value.substr(value.find_last_of(')') + 1);
@@ -640,25 +642,25 @@ static void LoadAttribute(const std::shared_ptr<Operator>& op, const std::string
         return;
     }
 
-    attr.SetType(type);
+    attr->SetType(type);
 
     // parse shape
     std::string lc = value.substr(1, value.find_last_of(')') - 1);
     std::istringstream lcss(lc);
-    attr.GetShape().clear();
+    attr->GetShape().clear();
     while (!lcss.eof()) {
         std::string elem;
         std::getline(lcss, elem, ',');
-        attr.GetShape().push_back(std::stoi(elem));
+        attr->GetShape().push_back(std::stoi(elem));
     }
 
-    if (attr.GetShape().empty()) {
+    if (attr->GetShape().empty()) {
         return;
     }
 
     // parse data
     size_t sizeInByte =
-            std::accumulate(attr.GetShape().begin(), attr.GetShape().end(), 1, std::multiplies<>()) * SizeOf(type);
+            std::accumulate(attr->GetShape().begin(), attr->GetShape().end(), 1, std::multiplies<>()) * SizeOf(type);
 
     std::string filename = op->name() + "." + key;
     size_t filesize = szr.get_file_size(filename);
@@ -671,8 +673,8 @@ static void LoadAttribute(const std::shared_ptr<Operator>& op, const std::string
         std::cerr << "file size not match, expect " << sizeInByte << " but got " << filesize << std::endl;
     }
 
-    attr.GetRawData().resize(sizeInByte);
-    szr.read_file(filename, (char*) attr.GetRawData().data());
+    attr->GetRawData().resize(sizeInByte);
+    szr.read_file(filename, (char*) attr->GetRawData().data());
 }
 
 int Graph::save(const std::string& paramPath, const std::string& binPath) {
@@ -713,21 +715,21 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
 
         // dump op param info
         for (const auto& it: op->GetParameters()) {
-            paramFile << " " << it.first << "=" << Parameter::Encode2String(it.second);
+            paramFile << " " << it.first << "=" << Parameter::Encode2String(*it.second);
         }
 
         // dump op attrs info
         for (const auto& it: op->GetAttributes()) {
             paramFile << " @" << it.first << "=(";
             const auto& attr = it.second;
-            size_t size = attr.GetShape().size();
-            for (const auto& x: attr.GetShape()) {
+            size_t size = attr->GetShape().size();
+            for (const auto& x: attr->GetShape()) {
                 paramFile << x << (--size ? "," : "");
             }
-            paramFile << ")" << DataType2String(attr.type());
+            paramFile << ")" << DataType2String(attr->type());
 
             std::string filename = op->name() + "." + it.first;
-            szw.write_file(filename, attr.GetRawData().data(), attr.GetRawData().size());
+            szw.write_file(filename, attr->GetRawData().data(), attr->GetRawData().size());
         }
 
         if (op->GetInputNames().size() == op->GetInputOperands().size()) {
@@ -872,6 +874,33 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
     return 0;
 }
 
+std::shared_ptr<Operand> Graph::CreateOperator(const std::string& type, const std::string& name,
+                                               const std::map<std::string, std::shared_ptr<Parameter>>& params,
+                                               const std::map<std::string, std::shared_ptr<Attribute>>& attrs,
+                                               const std::vector<std::shared_ptr<Operand>>& inputOperands,
+                                               const std::vector<std::string>& inputOperandNames,
+                                               const std::string& outputName,
+                                               DataType outputType,
+                                               const std::vector<int>& outputShape) {
+    auto op = std::make_shared<Operator>(name, type, params, attrs, inputOperands, inputOperandNames);
+    ops_.push_back(op);
+
+    for (const auto& it: inputOperands) {
+        it->AddConsumer(op);
+    }
+
+    if (!outputName.empty() && !outputShape.empty()) {
+        auto outOperand = std::make_shared<Operand>(outputName, outputType, outputShape);
+        op->AddOutputOperand(outOperand);
+        outOperand->SetProducer(op);
+
+        operands_.push_back(outOperand);
+        return outOperand;
+    }
+
+    return {};
+}
+
 std::shared_ptr<Operator> Graph::CreateOperator(const std::string& type, const std::string& name) {
     auto op = std::make_shared<Operator>(name, type);
     ops_.push_back(op);
@@ -906,9 +935,9 @@ std::shared_ptr<Operand> Graph::GetOperand(const std::string& name) {
 }
 
 
-Graph::~Graph() {
-    ops_.clear();
-    operands_.clear();
-}
+//Graph::~Graph() {
+//    ops_.clear();
+//    operands_.clear();
+//}
 
 }// namespace pnnx

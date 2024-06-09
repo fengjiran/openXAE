@@ -506,7 +506,7 @@ public:
      */
     Attribute() : type_(DataType::kDataTypeUnknown) {}
 
-    Attribute(const std::initializer_list<int>& shape, const std::vector<float>& t);
+    Attribute(const std::vector<int>& shape, const std::vector<float>& t);
 
 #if BUILD_TORCH2PNNX
     Attribute(const at::Tensor& t);
@@ -687,6 +687,12 @@ public:
 
     Operator(std::string name, std::string type) : name_(std::move(name)), type_(std::move(type)) {}
 
+    Operator(std::string name, std::string type, std::map<std::string, std::shared_ptr<Parameter>> params,
+             std::map<std::string, std::shared_ptr<Attribute>> attrs, std::vector<std::shared_ptr<Operand>> inputOperands,
+             std::vector<std::string> inputNames)
+        : name_(std::move(name)), type_(std::move(type)), params_(std::move(params)), attrs_(std::move(attrs)),
+          inputOperands_(std::move(inputOperands)), inputNames_(std::move(inputNames)) {}
+
     Operator(const Operator&) = delete;
     Operator(Operator&&) = delete;
     Operator& operator=(const Operator&) = delete;
@@ -738,19 +744,19 @@ public:
         outputOperands_.push_back(operand);
     }
 
-    NODISCARD const std::map<std::string, Parameter>& GetParameters() const {
+    NODISCARD const std::map<std::string, std::shared_ptr<Parameter>>& GetParameters() const {
         return params_;
     }
 
-    std::map<std::string, Parameter>& GetParameters() {
+    std::map<std::string, std::shared_ptr<Parameter>>& GetParameters() {
         return params_;
     }
 
-    NODISCARD const std::map<std::string, Attribute>& GetAttributes() const {
+    NODISCARD const std::map<std::string, std::shared_ptr<Attribute>>& GetAttributes() const {
         return attrs_;
     }
 
-    std::map<std::string, Attribute>& GetAttributes() {
+    std::map<std::string, std::shared_ptr<Attribute>>& GetAttributes() {
         return attrs_;
     }
 
@@ -764,11 +770,8 @@ private:
     std::vector<std::shared_ptr<Operand>> inputOperands_;
     std::vector<std::shared_ptr<Operand>> outputOperands_;
 
-    std::map<std::string, Parameter> params_;
-    std::map<std::string, Attribute> attrs_;
-
-    std::map<std::string, std::shared_ptr<Parameter>> params;
-    std::map<std::string, std::shared_ptr<Attribute>> attrs;
+    std::map<std::string, std::shared_ptr<Parameter>> params_;
+    std::map<std::string, std::shared_ptr<Attribute>> attrs_;
 };
 
 class Graph {
@@ -789,7 +792,7 @@ public:
     /**
      * @brief Destructor.
      */
-    ~Graph();
+//    ~Graph();
 
     int load(const std::string& paramPath, const std::string& binPath);
 
@@ -802,8 +805,10 @@ public:
     std::shared_ptr<Operator> CreateOperator(const std::string& type, const std::string& name);
 
     std::shared_ptr<Operand> CreateOperator(const std::string& type, const std::string& name,
-                                            const std::vector<std::shared_ptr<Parameter>>& params,
-                                            const std::vector<std::shared_ptr<Attribute>>& attrs,
+                                            const std::map<std::string, std::shared_ptr<Parameter>>& params,
+                                            const std::map<std::string, std::shared_ptr<Attribute>>& attrs,
+                                            const std::vector<std::shared_ptr<Operand>>& inputOperands,
+                                            const std::vector<std::string>& inputOperandNames,
                                             const std::string& outputName,
                                             DataType outputType,
                                             const std::vector<int>& outputShape);
