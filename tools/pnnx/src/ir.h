@@ -6,18 +6,7 @@
 #define OPENXAE_IR_H
 
 #include "utils.h"
-#include <algorithm>
-#include <climits>
-#include <complex>
-#include <initializer_list>
-#include <limits>
-#include <map>
-#include <memory>
-#include <set>
-#include <string>
-//#include <utility>
-#include <type_traits>
-#include <vector>
+
 
 #if BUILD_TORCH2PNNX
 namespace torch {
@@ -86,14 +75,6 @@ enum class DataType {
     kDataTypeBFloat16 = 13
 };
 
-template<typename T, typename U>
-constexpr bool is_decay_equivalent = std::is_same_v<std::decay_t<T>, U>
-        //        || std::is_convertible_v<T, U>
-        ;
-
-template<typename T>
-using param_t = typename std::enable_if<is_decay_equivalent<T, int>, ParameterType>::type;
-
 template<typename T>
 ParameterType get_parameter_type() {
     if (std::is_same_v<T, bool>) {
@@ -108,27 +89,40 @@ ParameterType get_parameter_type() {
         return ParameterType::kParameterFloat;
     }
 
-    if (std::is_same_v<std::decay_t<T>, std::string> || std::is_convertible_v<T, std::string>) {
-        return ParameterType::kParameterString;
-    }
-
     if (std::is_same_v<std::decay_t<T>, std::complex<float>>) {
         return ParameterType::kParameterComplex;
     }
 
+    if (is_string_v<T>) {
+        return ParameterType::kParameterString;
+    }
+
+    if (is_std_vector_int_v<T>) {
+        return ParameterType::kParameterArrayInt;
+    }
+
+    if (is_std_vector_float_v<T>) {
+        return ParameterType::kParameterArrayFloat;
+    }
+
+    if (is_std_vector_string_v<T>) {
+        return ParameterType::kParameterArrayString;
+    }
+
+    if (is_std_vector_complex_v<T>) {
+        return ParameterType::kParameterArrayComplex;
+    }
+
     return ParameterType::kParameterUnknown;
 }
+
 
 template<typename T>
 class Parameter_ {
 public:
     Parameter_() = default;
 
-    explicit Parameter_(T val) : value_(val) {
-        if (is_decay_equivalent<T, bool>) {
-            type_ = ParameterType::kParameterBool;
-        }
-    }
+    explicit Parameter_(T val) : type_(get_parameter_type<T>()), value_(val) {}
 
 private:
     /**

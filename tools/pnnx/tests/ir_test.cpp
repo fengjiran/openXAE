@@ -22,6 +22,9 @@ TEST(IRTEST, type_check) {
     static_assert(std::is_same_v<std::decay_t<const char*>, std::string>
             || std::is_convertible_v<const char*, std::string>);
 
+    static_assert(is_std_vector_int_v<std::vector<int>>);
+    static_assert(is_std_vector_float_v<std::vector<float>>);
+
     EXPECT_TRUE(get_parameter_type<bool>() == ParameterType::kParameterBool);
     EXPECT_TRUE(get_parameter_type<int>() == ParameterType::kParameterInt);
     EXPECT_TRUE(get_parameter_type<long>() == ParameterType::kParameterInt);
@@ -29,7 +32,15 @@ TEST(IRTEST, type_check) {
     EXPECT_TRUE(get_parameter_type<float>() == ParameterType::kParameterFloat);
     EXPECT_TRUE(get_parameter_type<double>() == ParameterType::kParameterFloat);
     EXPECT_TRUE(get_parameter_type<std::complex<float>>() == ParameterType::kParameterComplex);
-
+    EXPECT_TRUE(get_parameter_type<const char*>() == ParameterType::kParameterString);
+    EXPECT_TRUE(get_parameter_type<std::string>() == ParameterType::kParameterString);
+    EXPECT_TRUE(get_parameter_type<std::vector<int>>() == ParameterType::kParameterArrayInt);
+    EXPECT_TRUE(get_parameter_type<std::vector<int64_t>>() == ParameterType::kParameterArrayInt);
+    EXPECT_TRUE(get_parameter_type<std::vector<float>>() == ParameterType::kParameterArrayFloat);
+    EXPECT_TRUE(get_parameter_type<std::vector<double>>() == ParameterType::kParameterArrayFloat);
+    EXPECT_TRUE(get_parameter_type<std::vector<std::string>>() == ParameterType::kParameterArrayString);
+    EXPECT_TRUE(get_parameter_type<std::vector<const char*>>() == ParameterType::kParameterArrayString);
+    EXPECT_TRUE(get_parameter_type<std::vector<std::complex<float>>>() == ParameterType::kParameterArrayComplex);
 }
 
 TEST(IRTEST, Parameter) {
