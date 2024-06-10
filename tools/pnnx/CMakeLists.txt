@@ -22,8 +22,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 message(STATUS "PNNX source dir = " ${CMAKE_CURRENT_SOURCE_DIR})
 include(PNNXPyTorch)
 
-# c++14 is required for using torch headers
-set(CMAKE_CXX_STANDARD 14)
+# c++17 is required for using torch headers and
+# CTAD (Class Template Argument Deduction)
+set(CMAKE_CXX_STANDARD 17)
 
 option(PNNX_COVERAGE "build for coverage" OFF)
 
