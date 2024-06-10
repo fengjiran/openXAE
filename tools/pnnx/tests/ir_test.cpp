@@ -9,6 +9,29 @@
 
 namespace pnnx {
 
+TEST(IRTEST, type_check) {
+    Parameter_ a(3);
+    Parameter_ b = make_parameter(5);
+    static_assert(std::is_integral_v<long>);
+    static_assert(std::is_integral_v<uint8_t>);
+    static_assert(std::is_integral_v<short>);
+    static_assert(std::is_integral_v<long long>);
+    static_assert(std::is_integral_v<bool>);
+    static_assert(std::is_floating_point_v<float>);
+    static_assert(std::is_floating_point_v<double>);
+    static_assert(std::is_same_v<std::decay_t<const char*>, std::string>
+            || std::is_convertible_v<const char*, std::string>);
+
+    EXPECT_TRUE(get_parameter_type<bool>() == ParameterType::kParameterBool);
+    EXPECT_TRUE(get_parameter_type<int>() == ParameterType::kParameterInt);
+    EXPECT_TRUE(get_parameter_type<long>() == ParameterType::kParameterInt);
+    EXPECT_TRUE(get_parameter_type<long long>() == ParameterType::kParameterInt);
+    EXPECT_TRUE(get_parameter_type<float>() == ParameterType::kParameterFloat);
+    EXPECT_TRUE(get_parameter_type<double>() == ParameterType::kParameterFloat);
+    EXPECT_TRUE(get_parameter_type<std::complex<float>>() == ParameterType::kParameterComplex);
+
+}
+
 TEST(IRTEST, Parameter) {
     // null parameter
     Parameter p_null;

@@ -15,7 +15,8 @@
 #include <memory>
 #include <set>
 #include <string>
-#include <utility>
+//#include <utility>
+#include <type_traits>
 #include <vector>
 
 #if BUILD_TORCH2PNNX
@@ -85,11 +86,49 @@ enum class DataType {
     kDataTypeBFloat16 = 13
 };
 
+template<typename T, typename U>
+constexpr bool is_decay_equivalent = std::is_same_v<std::decay_t<T>, U>
+        //        || std::is_convertible_v<T, U>
+        ;
+
+template<typename T>
+using param_t = typename std::enable_if<is_decay_equivalent<T, int>, ParameterType>::type;
+
+template<typename T>
+ParameterType get_parameter_type() {
+    if (std::is_same_v<T, bool>) {
+        return ParameterType::kParameterBool;
+    }
+
+    if (std::is_integral_v<T>) {
+        return ParameterType::kParameterInt;
+    }
+
+    if (std::is_floating_point_v<T>) {
+        return ParameterType::kParameterFloat;
+    }
+
+    if (std::is_same_v<std::decay_t<T>, std::string> || std::is_convertible_v<T, std::string>) {
+        return ParameterType::kParameterString;
+    }
+
+    if (std::is_same_v<std::decay_t<T>, std::complex<float>>) {
+        return ParameterType::kParameterComplex;
+    }
+
+    return ParameterType::kParameterUnknown;
+}
+
 template<typename T>
 class Parameter_ {
 public:
-    Parameter_(T val)
-        : type_(ParameterType::kParameterUnknown), value_(val) {}
+    Parameter_() = default;
+
+    explicit Parameter_(T val) : value_(val) {
+        if (is_decay_equivalent<T, bool>) {
+            type_ = ParameterType::kParameterBool;
+        }
+    }
 
 private:
     /**
@@ -116,6 +155,11 @@ template<typename T>
 class Parameter_<std::vector<T>> {
     //
 };
+
+template<typename... Args>
+auto make_parameter(Args&&... args) {
+    return Parameter_<Args...>(std::forward<Args>(args)...);
+}
 
 class Parameter {
 public:
