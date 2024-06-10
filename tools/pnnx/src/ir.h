@@ -120,9 +120,27 @@ ParameterType get_parameter_type() {
 template<typename T>
 class Parameter_ {
 public:
-    Parameter_() = default;
+    using value_type = T;
+
+    Parameter_() : type_(ParameterType::kParameterUnknown) {}
 
     explicit Parameter_(T val) : type_(get_parameter_type<T>()), value_(val) {}
+
+    NODISCARD const ParameterType& type() const {
+        return type_;
+    }
+
+    void SetType(ParameterType type) {
+        type_ = type;
+    }
+
+//    typename std::is_same<T, bool>::type toBool() const {
+//        return value_;
+//    }
+//
+//    typename std::is_same<T, int>::type toInt() const {
+//        return value_;
+//    }
 
 private:
     /**
@@ -142,12 +160,21 @@ private:
      */
     ParameterType type_;
 
-    T value_;
+    T value_ {};
 };
 
 template<typename T>
 class Parameter_<std::vector<T>> {
-    //
+public:
+    Parameter_() : type_(ParameterType::kParameterUnknown) {}
+
+    NODISCARD const ParameterType& type() const {
+        return type_;
+    }
+
+private:
+    ParameterType type_;
+    std::vector<T> value_;
 };
 
 template<typename... Args>

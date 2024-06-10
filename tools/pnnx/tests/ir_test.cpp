@@ -10,8 +10,9 @@
 namespace pnnx {
 
 TEST(IRTEST, type_check) {
-    Parameter_ a(3);
-    Parameter_ b = make_parameter(5);
+    Parameter_ a((int)10l);
+    static_assert(std::is_same_v<decltype(a)::value_type, int>);
+    Parameter_ b = make_parameter<int>(2);
     static_assert(std::is_integral_v<long>);
     static_assert(std::is_integral_v<uint8_t>);
     static_assert(std::is_integral_v<short>);
