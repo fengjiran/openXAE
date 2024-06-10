@@ -7,7 +7,6 @@
 
 #include "utils.h"
 
-
 #if BUILD_TORCH2PNNX
 namespace torch {
 namespace jit {
@@ -134,13 +133,35 @@ public:
         type_ = type;
     }
 
-//    typename std::is_same<T, bool>::type toBool() const {
-//        return value_;
-//    }
-//
-//    typename std::is_same<T, int>::type toInt() const {
-//        return value_;
-//    }
+    template<typename U = T>
+    auto toBool() const
+            -> typename std::enable_if<std::is_same_v<U, bool>, U>::type {
+        return value_;
+    }
+
+    template<typename U = T>
+    auto toInt() const
+            -> typename std::enable_if<std::is_integral_v<U>, U>::type {
+        return value_;
+    }
+
+    template<typename U = T>
+    auto toFloat() const
+            -> typename std::enable_if<std::is_floating_point_v<U>, U>::type {
+        return value_;
+    }
+
+    template<typename U = T>
+    auto toString() const
+            -> typename std::enable_if<is_string_v<U>, U>::type {
+        return value_;
+    }
+
+    template<typename U = T>
+    auto toComplex() const
+            -> typename std::enable_if<std::is_same_v<std::decay_t<U>, std::complex<float>>, U>::type {
+        return value_;
+    }
 
 private:
     /**
@@ -160,7 +181,7 @@ private:
      */
     ParameterType type_;
 
-    T value_ {};
+    T value_{};
 };
 
 template<typename T>
