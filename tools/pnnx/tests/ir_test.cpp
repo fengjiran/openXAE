@@ -24,6 +24,13 @@ TEST(IRTEST, type_check) {
 
     static_assert(is_std_vector_int_v<std::vector<int>>);
     static_assert(is_std_vector_float_v<std::vector<float>>);
+    static_assert(is_std_vector_string_v<std::vector<std::string>>);
+    static_assert(is_std_vector_complex_v<std::vector<std::complex<float>>>);
+
+    static_assert(is_std_vector_int_v<std::initializer_list<int>>);
+    static_assert(is_std_vector_float_v<std::initializer_list<float>>);
+    static_assert(is_std_vector_string_v<std::initializer_list<std::string>>);
+    static_assert(is_std_vector_complex_v<std::initializer_list<std::complex<float>>>);
 
     EXPECT_TRUE(get_parameter_type<bool>() == ParameterType::kParameterBool);
     EXPECT_TRUE(get_parameter_type<int>() == ParameterType::kParameterInt);
@@ -36,6 +43,7 @@ TEST(IRTEST, type_check) {
     EXPECT_TRUE(get_parameter_type<std::string>() == ParameterType::kParameterString);
     EXPECT_TRUE(get_parameter_type<std::vector<int>>() == ParameterType::kParameterArrayInt);
     EXPECT_TRUE(get_parameter_type<std::vector<int64_t>>() == ParameterType::kParameterArrayInt);
+    EXPECT_TRUE(get_parameter_type<std::initializer_list<int>>() == ParameterType::kParameterArrayInt);
     EXPECT_TRUE(get_parameter_type<std::vector<float>>() == ParameterType::kParameterArrayFloat);
     EXPECT_TRUE(get_parameter_type<std::vector<double>>() == ParameterType::kParameterArrayFloat);
     EXPECT_TRUE(get_parameter_type<std::vector<std::string>>() == ParameterType::kParameterArrayString);

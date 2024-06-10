@@ -61,12 +61,18 @@ struct is_vector<std::vector<T, alloc>> : std::true_type {
 };
 
 template<typename T>
+struct is_vector<std::initializer_list<T>> : std::true_type {
+    using elem_type = T;
+};
+
+template<typename T>
 using is_std_vector =
         typename is_vector<std::remove_cv_t<std::remove_reference_t<T>>>::type;
 
 template<typename T>
 constexpr bool is_std_vector_v = is_std_vector<T>::value;
 
+//
 template<typename T>
 constexpr bool is_std_vector_int_v = is_std_vector_v<T> && std::is_integral_v<typename is_vector<T>::elem_type>;
 
