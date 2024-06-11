@@ -133,51 +133,49 @@ public:
         type_ = type;
     }
 
-    template<typename U = T>
-    auto toBool() const
-            -> typename std::enable_if<std::is_same_v<U, bool>, U>::type {
+    T toValue() const {
         return value_;
     }
 
-    template<typename U = T>
-    auto toInt() const
-            -> typename std::enable_if<std::is_integral_v<U>, U>::type {
-        return value_;
+    template<typename U,
+             typename std::enable_if<std::is_convertible_v<U, T>>::type* = nullptr>
+    void SetValue(U&& value) {
+        value_ = std::forward<U>(value);
     }
 
-    template<typename U = T>
-    auto toFloat() const
-            -> typename std::enable_if<std::is_floating_point_v<U>, U>::type {
-        return value_;
-    }
-
-    template<typename U = T>
-    auto toString() const
-            -> typename std::enable_if<is_string_v<U>, U>::type {
-        return value_;
-    }
-
-    template<typename U = T>
-    auto toComplex() const
-            -> typename std::enable_if<std::is_same_v<std::decay_t<U>, std::complex<float>>, U>::type {
-        return value_;
-    }
+    //    template<typename U = T,
+    //             typename std::enable_if<std::is_same_v<U, bool>, U>::type* = nullptr>
+    //    auto toBool() const {
+    //        return value_;
+    //    }
+    //
+    //    template<typename U = T,
+    //             typename std::enable_if<std::is_integral_v<U> && !std::is_same_v<U, bool>, U>::type* = nullptr>
+    //    auto toInt() const {
+    //        return value_;
+    //    }
+    //
+    //    template<typename U = T,
+    //             typename std::enable_if<std::is_floating_point_v<U>, U>::type* = nullptr>
+    //    auto toFloat() const {
+    //        return value_;
+    //    }
+    //
+    //    template<typename U = T,
+    //             typename std::enable_if<is_string_v<U>, U>::type* = nullptr>
+    //    auto toString() const {
+    //        return value_;
+    //    }
+    //
+    //    template<typename U = T,
+    //             typename std::enable_if<std::is_same_v<std::decay_t<U>, std::complex<float>>, U>::type* = nullptr>
+    //    auto toComplex() const {
+    //        return value_;
+    //    }
 
 private:
     /**
      * @brief Parameter type
-     *
-     * 0 = null \n
-     * 1 = bool \n
-     * 2 = int \n
-     * 3 = float \n
-     * 4 = string \n
-     * 5 = array int \n
-     * 6 = array float \n
-     * 7 = array string \n
-     * 8 = others \n
-     * 10 = complex \n
-     * 11 = array complex
      */
     ParameterType type_;
 
@@ -187,10 +185,33 @@ private:
 template<typename T>
 class Parameter_<std::vector<T>> {
 public:
+    using value_type = std::vector<T>;
+
     Parameter_() : type_(ParameterType::kParameterUnknown) {}
+
+    explicit Parameter_(const std::vector<T>& val)
+        : type_(get_parameter_type<std::vector<T>>()), value_(val) {}
 
     NODISCARD const ParameterType& type() const {
         return type_;
+    }
+
+    void SetType(ParameterType type) {
+        type_ = type;
+    }
+
+    std::vector<T> toValue() const {
+        return value_;
+    }
+
+    void SetValue(std::vector<T> value) {
+        value_ = std::move(value);
+    }
+
+    template<typename U,
+             typename std::enable_if<std::is_convertible_v<U, T>>::type* = nullptr>
+    void AddElemToArray(U&& value) {
+        value_.push_back(std::forward<U>(value));
     }
 
 private:
@@ -198,10 +219,22 @@ private:
     std::vector<T> value_;
 };
 
+// CTAD Deduction Guides
+Parameter_(const char*) -> Parameter_<std::string>;
+
+Parameter_(std::initializer_list<const char*>) -> Parameter_<std::vector<std::string>>;
+
+Parameter_(std::vector<const char*>) -> Parameter_<std::vector<std::string>>;
+
+template<typename T>
+Parameter_(std::initializer_list<T>) -> Parameter_<std::vector<T>>;
+
 template<typename... Args>
 auto make_parameter(Args&&... args) {
     return Parameter_<Args...>(std::forward<Args>(args)...);
 }
+
+//static std::string Parameter2String(const Parameter_& param);
 
 class Parameter {
 public:

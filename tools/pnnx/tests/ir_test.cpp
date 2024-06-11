@@ -10,11 +10,6 @@
 namespace pnnx {
 
 TEST(IRTEST, type_check) {
-    Parameter_ a(10);
-    static_assert(std::is_same_v<decltype(a)::value_type, int>);
-    std::cout << a.toInt() << std::endl;
-
-    Parameter_ b = make_parameter<int>(2);
     static_assert(std::is_integral_v<long>);
     static_assert(std::is_integral_v<uint8_t>);
     static_assert(std::is_integral_v<short>);
@@ -22,8 +17,7 @@ TEST(IRTEST, type_check) {
     static_assert(std::is_integral_v<bool>);
     static_assert(std::is_floating_point_v<float>);
     static_assert(std::is_floating_point_v<double>);
-    static_assert(std::is_same_v<std::decay_t<const char*>, std::string>
-            || std::is_convertible_v<const char*, std::string>);
+    static_assert(std::is_same_v<std::decay_t<const char*>, std::string> || std::is_convertible_v<const char*, std::string>);
 
     static_assert(is_std_vector_int_v<std::vector<int>>);
     static_assert(is_std_vector_float_v<std::vector<float>>);
@@ -114,6 +108,70 @@ TEST(IRTEST, Parameter) {
     ASSERT_EQ(Parameter::Encode2String(p_c), "2.000000e+00+3.000000e+00i");
 }
 
+TEST(IRTEST, new_parameter) {
+    Parameter_ p1(true);
+    static_assert(std::is_same_v<decltype(p1)::value_type, bool>);
+    EXPECT_EQ(p1.type(), ParameterType::kParameterBool);
+    EXPECT_TRUE(p1.toValue());
+    p1.SetValue(false);
+    EXPECT_FALSE(p1.toValue());
+
+    Parameter_ p2(10);
+    static_assert(std::is_same_v<decltype(p2)::value_type, int>);
+    EXPECT_EQ(p2.type(), ParameterType::kParameterInt);
+    EXPECT_EQ(p2.toValue(), 10);
+    p2.SetValue(20);
+    EXPECT_EQ(p2.toValue(), 20);
+
+    Parameter_ p3(2.5);
+    static_assert(std::is_same_v<decltype(p3)::value_type, double>);
+    EXPECT_EQ(p3.type(), ParameterType::kParameterFloat);
+    EXPECT_EQ(p3.toValue(), 2.5);
+    p3.SetValue(5.0);
+    EXPECT_EQ(p3.toValue(), 5.0);
+
+    Parameter_ p4("hello");
+    static_assert(std::is_same_v<decltype(p4)::value_type, std::string>);
+    EXPECT_EQ(p4.type(), ParameterType::kParameterString);
+    EXPECT_EQ(p4.toValue(), "hello");
+    p4.SetValue("world");
+    EXPECT_EQ(p4.toValue(), "world");
+
+    Parameter_ p5(std::complex<float>(2, 3));
+    static_assert(std::is_same_v<decltype(p5)::value_type, std::complex<float>>);
+    EXPECT_EQ(p5.type(), ParameterType::kParameterComplex);
+    EXPECT_EQ(p5.toValue(), std::complex<float>(2, 3));
+    p5.SetValue(std::complex<float>(3, 4));
+    EXPECT_EQ(p5.toValue(), std::complex<float>(3, 4));
+
+    Parameter_ p6(std::vector<int>{1, 2, 3});
+    static_assert(std::is_same_v<decltype(p6)::value_type, std::vector<int>>);
+    EXPECT_EQ(p6.type(), ParameterType::kParameterArrayInt);
+    EXPECT_EQ(p6.toValue(), (std::vector<int>{1, 2, 3}));
+    p6.SetValue({4, 5, 6});
+    EXPECT_EQ(p6.toValue(), (std::vector<int>{4, 5, 6}));
+    p6.AddElemToArray(7);
+    EXPECT_EQ(p6.toValue(), (std::vector<int>{4, 5, 6, 7}));
+
+    Parameter_ p7({1, 2, 3});
+    static_assert(std::is_same_v<decltype(p7)::value_type, std::vector<int>>);
+    EXPECT_EQ(p7.type(), ParameterType::kParameterArrayInt);
+    EXPECT_EQ(p7.toValue(), (std::vector<int>{1, 2, 3}));
+    p7.SetValue({4, 5, 6});
+    EXPECT_EQ(p7.toValue(), (std::vector<int>{4, 5, 6}));
+    p7.AddElemToArray(7);
+    EXPECT_EQ(p7.toValue(), (std::vector<int>{4, 5, 6, 7}));
+
+    Parameter_ p8({"hello", "world"});
+    static_assert(std::is_same_v<decltype(p8)::value_type, std::vector<std::string>>);
+    EXPECT_EQ(p8.type(), ParameterType::kParameterArrayString);
+    EXPECT_EQ(p8.toValue(), (std::vector<std::string>{"hello", "world"}));
+    p8.SetValue({"Effective", "Modern", "C++"});
+    EXPECT_EQ(p8.toValue(), (std::vector<std::string>{"Effective", "Modern", "C++"}));
+    p8.AddElemToArray("Scott Meyers");
+    EXPECT_EQ(p8.toValue(), (std::vector<std::string>{"Effective", "Modern", "C++", "Scott Meyers"}));
+}
+
 TEST(IRTEST, libtorch) {
     auto options = torch::TensorOptions()
                            .dtype(torch::kFloat32)
@@ -183,7 +241,7 @@ TEST(IRTEST, create_pnnx_graph) {
                                    {{"bias", std::make_shared<Attribute>(std::vector<int>{128}, std::vector<float>(bias.data_ptr<float>(), bias.data_ptr<float>() + bias.numel()))},
                                     {"weight", std::make_shared<Attribute>(std::vector<int>{128, 32}, std::vector<float>(weight.data_ptr<float>(), weight.data_ptr<float>() + weight.numel()))}},
                                    {t1}, {},
-                                   "1",DataType::kDataTypeFloat32, {1, 128});
+                                   "1", DataType::kDataTypeFloat32, {1, 128});
 
     auto t3 = graph.CreateOperator("F.sigmoid", "F.sigmoid_0",
                                    {}, {}, {t2}, {"input"},
