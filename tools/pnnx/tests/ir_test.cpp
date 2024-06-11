@@ -23,11 +23,22 @@ TEST(IRTEST, type_check) {
     static_assert(is_std_vector_float_v<std::vector<float>>);
     static_assert(is_std_vector_string_v<std::vector<std::string>>);
     static_assert(is_std_vector_complex_v<std::vector<std::complex<float>>>);
-
     static_assert(is_std_vector_int_v<std::initializer_list<int>>);
     static_assert(is_std_vector_float_v<std::initializer_list<float>>);
     static_assert(is_std_vector_string_v<std::initializer_list<std::string>>);
     static_assert(is_std_vector_complex_v<std::initializer_list<std::complex<float>>>);
+
+    static_assert(GetParameterType<bool>::value == ParameterType::kParameterBool);
+    static_assert(GetParameterType<int>::value == ParameterType::kParameterInt);
+    static_assert(GetParameterType<long>::value == ParameterType::kParameterInt);
+    static_assert(GetParameterType<long long>::value == ParameterType::kParameterInt);
+    static_assert(GetParameterType<char>::value == ParameterType::kParameterInt);
+    static_assert(GetParameterType<float>::value == ParameterType::kParameterFloat);
+    static_assert(GetParameterType<double>::value == ParameterType::kParameterFloat);
+    static_assert(GetParameterType<std::string>::value == ParameterType::kParameterString);
+    static_assert(GetParameterType<const char*>::value == ParameterType::kParameterString);
+    static_assert(GetParameterType<std::complex<float>>::value == ParameterType::kParameterComplex);
+    static_assert(GetParameterType<std::vector<int>>::value == ParameterType::kParameterArrayInt);
 
     EXPECT_TRUE(get_parameter_type<bool>() == ParameterType::kParameterBool);
     EXPECT_TRUE(get_parameter_type<int>() == ParameterType::kParameterInt);
@@ -109,6 +120,7 @@ TEST(IRTEST, Parameter) {
 }
 
 TEST(IRTEST, new_parameter) {
+    /// test bool type
     Parameter_ p1(true);
     static_assert(std::is_same_v<decltype(p1)::value_type, bool>);
     EXPECT_EQ(p1.type(), ParameterType::kParameterBool);
@@ -116,34 +128,45 @@ TEST(IRTEST, new_parameter) {
     p1.SetValue(false);
     EXPECT_FALSE(p1.toValue());
 
+//    EXPECT_EQ(Parameter2String(p1), "False");
+
+    /// test integer type
     Parameter_ p2(10);
     static_assert(std::is_same_v<decltype(p2)::value_type, int>);
     EXPECT_EQ(p2.type(), ParameterType::kParameterInt);
     EXPECT_EQ(p2.toValue(), 10);
     p2.SetValue(20);
     EXPECT_EQ(p2.toValue(), 20);
+    EXPECT_EQ(p2, make_parameter(20));
 
+    /// test float type
     Parameter_ p3(2.5);
     static_assert(std::is_same_v<decltype(p3)::value_type, double>);
     EXPECT_EQ(p3.type(), ParameterType::kParameterFloat);
     EXPECT_EQ(p3.toValue(), 2.5);
     p3.SetValue(5.0);
     EXPECT_EQ(p3.toValue(), 5.0);
+    EXPECT_EQ(p3, make_parameter(5.0));
 
+    /// test string type
     Parameter_ p4("hello");
     static_assert(std::is_same_v<decltype(p4)::value_type, std::string>);
     EXPECT_EQ(p4.type(), ParameterType::kParameterString);
     EXPECT_EQ(p4.toValue(), "hello");
     p4.SetValue("world");
     EXPECT_EQ(p4.toValue(), "world");
+    EXPECT_EQ(p4, make_parameter(std::string("world")));
 
+    /// test complex type
     Parameter_ p5(std::complex<float>(2, 3));
     static_assert(std::is_same_v<decltype(p5)::value_type, std::complex<float>>);
     EXPECT_EQ(p5.type(), ParameterType::kParameterComplex);
     EXPECT_EQ(p5.toValue(), std::complex<float>(2, 3));
     p5.SetValue(std::complex<float>(3, 4));
     EXPECT_EQ(p5.toValue(), std::complex<float>(3, 4));
+    EXPECT_EQ(p5, Parameter_(std::complex<float>(3, 4)));
 
+    /// test vector<int> type
     Parameter_ p6(std::vector<int>{1, 2, 3});
     static_assert(std::is_same_v<decltype(p6)::value_type, std::vector<int>>);
     EXPECT_EQ(p6.type(), ParameterType::kParameterArrayInt);
@@ -152,6 +175,7 @@ TEST(IRTEST, new_parameter) {
     EXPECT_EQ(p6.toValue(), (std::vector<int>{4, 5, 6}));
     p6.AddElemToArray(7);
     EXPECT_EQ(p6.toValue(), (std::vector<int>{4, 5, 6, 7}));
+    EXPECT_EQ(p6, make_parameter(std::vector<int>{4, 5, 6, 7}));
 
     Parameter_ p7({1, 2, 3});
     static_assert(std::is_same_v<decltype(p7)::value_type, std::vector<int>>);
@@ -170,6 +194,7 @@ TEST(IRTEST, new_parameter) {
     EXPECT_EQ(p8.toValue(), (std::vector<std::string>{"Effective", "Modern", "C++"}));
     p8.AddElemToArray("Scott Meyers");
     EXPECT_EQ(p8.toValue(), (std::vector<std::string>{"Effective", "Modern", "C++", "Scott Meyers"}));
+    EXPECT_EQ(p8, make_parameter(std::vector<std::string>{"Effective", "Modern", "C++", "Scott Meyers"}));
 }
 
 TEST(IRTEST, libtorch) {

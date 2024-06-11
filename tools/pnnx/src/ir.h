@@ -74,6 +74,56 @@ enum class DataType {
     kDataTypeBFloat16 = 13
 };
 
+using param_null_type = std::integral_constant<ParameterType, ParameterType::kParameterUnknown>;
+using param_bool_type = std::integral_constant<ParameterType, ParameterType::kParameterBool>;
+using param_int_type = std::integral_constant<ParameterType, ParameterType::kParameterInt>;
+using param_float_type = std::integral_constant<ParameterType, ParameterType::kParameterFloat>;
+using param_complex_type = std::integral_constant<ParameterType, ParameterType::kParameterComplex>;
+using param_string_type = std::integral_constant<ParameterType, ParameterType::kParameterString>;
+using param_arrayint_type = std::integral_constant<ParameterType, ParameterType::kParameterArrayInt>;
+using param_arrayfloat_type = std::integral_constant<ParameterType, ParameterType::kParameterArrayFloat>;
+using param_arraycomplex_type = std::integral_constant<ParameterType, ParameterType::kParameterArrayComplex>;
+using param_arraystring_type = std::integral_constant<ParameterType, ParameterType::kParameterArrayString>;
+
+template<typename T, typename = void>
+struct GetParameterType : param_null_type {};
+
+template<typename T>
+struct GetParameterType<T, typename std::enable_if_t<std::is_same_v<T, bool>>>
+    : param_bool_type {};
+
+template<typename T>
+struct GetParameterType<T, typename std::enable_if_t<std::is_integral_v<T> && !std::is_same_v<T, bool>>>
+    : param_int_type {};
+
+template<typename T>
+struct GetParameterType<T, typename std::enable_if_t<std::is_floating_point_v<T>>>
+    : param_float_type {};
+
+template<typename T>
+struct GetParameterType<T, typename std::enable_if_t<std::is_same_v<std::decay_t<T>, std::complex<float>>>>
+    : param_complex_type {};
+
+template<typename T>
+struct GetParameterType<T, typename std::enable_if_t<is_string_v<T>>>
+    : param_string_type {};
+
+template<typename T>
+struct GetParameterType<T, typename std::enable_if_t<is_std_vector_int_v<T>>>
+    : param_arrayint_type {};
+
+template<typename T>
+struct GetParameterType<T, typename std::enable_if_t<is_std_vector_float_v<T>>>
+    : param_arrayfloat_type {};
+
+template<typename T>
+struct GetParameterType<T, typename std::enable_if_t<is_std_vector_string_v<T>>>
+    : param_arraystring_type {};
+
+template<typename T>
+struct GetParameterType<T, typename std::enable_if_t<is_std_vector_complex_v<T>>>
+    : param_arraycomplex_type {};
+
 template<typename T>
 ParameterType get_parameter_type() {
     if (std::is_same_v<T, bool>) {
@@ -121,9 +171,11 @@ class Parameter_ {
 public:
     using value_type = T;
 
-    Parameter_() : type_(ParameterType::kParameterUnknown) {}
+    Parameter_() : type_(GetParameterType<T>::value) {}
 
-    explicit Parameter_(T val) : type_(get_parameter_type<T>()), value_(val) {}
+    explicit Parameter_(T val)
+        : type_(GetParameterType<T>::value),
+          value_(val) {}
 
     NODISCARD const ParameterType& type() const {
         return type_;
@@ -187,10 +239,10 @@ class Parameter_<std::vector<T>> {
 public:
     using value_type = std::vector<T>;
 
-    Parameter_() : type_(ParameterType::kParameterUnknown) {}
+    Parameter_() : type_(GetParameterType<std::vector<T>>::value) {}
 
     explicit Parameter_(const std::vector<T>& val)
-        : type_(get_parameter_type<std::vector<T>>()), value_(val) {}
+        : type_(GetParameterType<std::vector<T>>::value), value_(val) {}
 
     NODISCARD const ParameterType& type() const {
         return type_;
@@ -229,12 +281,45 @@ Parameter_(std::vector<const char*>) -> Parameter_<std::vector<std::string>>;
 template<typename T>
 Parameter_(std::initializer_list<T>) -> Parameter_<std::vector<T>>;
 
+template<typename T>
+bool operator==(const Parameter_<T>& lhs, const Parameter_<T>& rhs) {
+    if (lhs.type() != rhs.type()) {
+        return false;
+    }
+
+    if (lhs.type() == ParameterType::kParameterUnknown) {
+        return true;
+    }
+
+    return lhs.toValue() == rhs.toValue();
+}
+
 template<typename... Args>
 auto make_parameter(Args&&... args) {
     return Parameter_<Args...>(std::forward<Args>(args)...);
 }
 
-//static std::string Parameter2String(const Parameter_& param);
+struct Parameter2String {
+    template<typename T,
+             typename std::enable_if<GetParameterType<T>::value == ParameterType::kParameterBool>::type* = nullptr>
+    std::string operator()(const Parameter_<T>& param) {
+        return param.toValue() ? "True" : "False";
+    }
+
+    template<typename T,
+             typename std::enable_if<GetParameterType<T>::value == ParameterType::kParameterInt>::type* = nullptr>
+    std::string operator()(const Parameter_<T>& param) {
+        return std::to_string(param.toValue());
+    }
+
+    template<typename T,
+             typename std::enable_if<GetParameterType<T>::value == ParameterType::kParameterFloat>::type* = nullptr>
+    std::string operator()(const Parameter_<T>& param) {
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%e", param.toValue());
+        return buf;
+    }
+};
 
 class Parameter {
 public:

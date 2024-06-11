@@ -16,6 +16,7 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <iostream>
 
 //#ifdef __has_cpp_attribute
 //#if __has_cpp_attribute(nodiscard) > 201907L
