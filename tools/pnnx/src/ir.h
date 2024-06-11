@@ -195,11 +195,33 @@ public:
         value_ = std::forward<U>(value);
     }
 
-    //    template<typename U = T,
-    //             typename std::enable_if<std::is_same_v<U, bool>, U>::type* = nullptr>
-    //    auto toBool() const {
-    //        return value_;
-    //    }
+    template<typename U,
+             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterBool>::type* = nullptr>
+    static std::string Encode2String(const Parameter_<U>& param) {
+        return param.toValue() ? "True" : "False";
+    }
+
+    template<typename U,
+             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterInt>::type* = nullptr>
+    static std::string Encode2String(const Parameter_<U>& param) {
+        return std::to_string(param.toValue());
+    }
+
+    template<typename U,
+             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterFloat>::type* = nullptr>
+    static std::string Encode2String(const Parameter_<U>& param) {
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%e", param.toValue());
+        return buf;
+    }
+
+    template<typename U,
+             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterString>::type* = nullptr>
+    static std::string Encode2String(const Parameter_<U>& param) {
+        return param.toValue();
+    }
+
+
     //
     //    template<typename U = T,
     //             typename std::enable_if<std::is_integral_v<U> && !std::is_same_v<U, bool>, U>::type* = nullptr>
@@ -298,28 +320,6 @@ template<typename... Args>
 auto make_parameter(Args&&... args) {
     return Parameter_<Args...>(std::forward<Args>(args)...);
 }
-
-struct Parameter2String {
-    template<typename T,
-             typename std::enable_if<GetParameterType<T>::value == ParameterType::kParameterBool>::type* = nullptr>
-    std::string operator()(const Parameter_<T>& param) {
-        return param.toValue() ? "True" : "False";
-    }
-
-    template<typename T,
-             typename std::enable_if<GetParameterType<T>::value == ParameterType::kParameterInt>::type* = nullptr>
-    std::string operator()(const Parameter_<T>& param) {
-        return std::to_string(param.toValue());
-    }
-
-    template<typename T,
-             typename std::enable_if<GetParameterType<T>::value == ParameterType::kParameterFloat>::type* = nullptr>
-    std::string operator()(const Parameter_<T>& param) {
-        char buf[64];
-        snprintf(buf, sizeof(buf), "%e", param.toValue());
-        return buf;
-    }
-};
 
 class Parameter {
 public:
