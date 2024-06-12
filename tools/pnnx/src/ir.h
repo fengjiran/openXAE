@@ -185,7 +185,7 @@ public:
         type_ = type;
     }
 
-    T toValue() const {
+    NODISCARD T toValue() const {
         return value_;
     }
 
@@ -414,6 +414,29 @@ bool operator==(const Parameter_<T>& lhs, const Parameter_<T>& rhs) {
 template<typename... Args>
 auto make_parameter(Args&&... args) {
     return Parameter_<Args...>(std::forward<Args>(args)...);
+}
+
+template<typename T>
+Parameter_<T> CreateParameterFromString(const std::string& value) {
+    // string type
+    if (value.find('%') != std::string::npos) {
+        Parameter_ p(value);
+        return p;
+    }
+
+     // null type
+    if (value == "None" || value == "()" || value == "[]") {
+        return Parameter_<void*>();
+    }
+
+    // bool type
+    if (value == "True" || value == "False") {
+        return Parameter_(value == "True");
+    }
+
+    // array
+
+
 }
 
 class Parameter {

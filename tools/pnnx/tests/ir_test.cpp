@@ -28,6 +28,7 @@ TEST(IRTEST, type_check) {
     static_assert(is_std_vector_string_v<std::initializer_list<std::string>>);
     static_assert(is_std_vector_complex_v<std::initializer_list<std::complex<float>>>);
 
+    static_assert(GetParameterType<void*>::value == ParameterType::kParameterUnknown);
     static_assert(GetParameterType<bool>::value == ParameterType::kParameterBool);
     static_assert(GetParameterType<int>::value == ParameterType::kParameterInt);
     static_assert(GetParameterType<long>::value == ParameterType::kParameterInt);
@@ -39,6 +40,8 @@ TEST(IRTEST, type_check) {
     static_assert(GetParameterType<const char*>::value == ParameterType::kParameterString);
     static_assert(GetParameterType<std::complex<float>>::value == ParameterType::kParameterComplex);
     static_assert(GetParameterType<std::vector<int>>::value == ParameterType::kParameterArrayInt);
+
+    static_assert(std::is_same_v<Parameter_<void*>::value_type, void*>);
 
     EXPECT_TRUE(get_parameter_type<bool>() == ParameterType::kParameterBool);
     EXPECT_TRUE(get_parameter_type<int>() == ParameterType::kParameterInt);
