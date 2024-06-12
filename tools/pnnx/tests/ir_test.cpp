@@ -131,6 +131,7 @@ TEST(IRTEST, new_parameter) {
     p1.SetValue(false);
     EXPECT_FALSE(p1.toValue());
     EXPECT_EQ(p1.Encode2String(), "False");
+//    EXPECT_EQ(CreateParameterFromString(p1.Encode2String()), p1);
 
     /// test integer type
     Parameter_ p2(10);

@@ -435,8 +435,61 @@ Parameter_<T> CreateParameterFromString(const std::string& value) {
     }
 
     // array
+    if (value[0] == '(' || value[0] == '[') {
+        bool isArrayInt = false;
+        bool isArrayFloat = false;
+        bool isArrayString = false;
 
+        Parameter_<std::vector<int>> pArrayInt;
+        Parameter_<std::vector<float>> pArrayFloat;
+        Parameter_<std::vector<std::string>> pArrayString;
 
+        std::string lc = value.substr(1, value.size() - 2);
+        std::istringstream lcss(lc);
+        while (!lcss.eof()) {
+            std::string elem;
+            std::getline(lcss, elem, ',');
+            if ((elem[0] != '-' && (elem[0] < '0' || elem[0] > '9')) || (elem[0] == '-' && (elem[1] < '0' || elem[1] > '9'))) {
+                // array string
+                isArrayString = true;
+                pArrayString.AddElemToArray(elem);
+            } else if (elem.find('.') != std::string::npos || elem.find('e') != std::string::npos) {
+                // array float
+                isArrayFloat = true;
+                pArrayFloat.AddElemToArray(std::stof(elem));
+            } else {
+                // array integer
+                isArrayInt = true;
+                pArrayInt.AddElemToArray(std::stoi(elem));
+            }
+        }
+        if (isArrayInt && !isArrayFloat && !isArrayString) {
+            return pArrayInt;
+        }
+
+        if (!isArrayInt && isArrayFloat && !isArrayString) {
+            return pArrayFloat;
+        }
+
+        if (!isArrayInt && !isArrayFloat && isArrayString) {
+            return pArrayString;
+        }
+
+        return Parameter_<void*>();
+    }
+
+    // string
+    if ((value[0] != '-' && (value[0] < '0' || value[0] > '9')) || (value[0] == '-' && (value[1] < '0' || value[1] > '9'))) {
+        return Parameter_(value);
+    }
+
+    // float
+    if (value.find('.') != std::string::npos || value.find('e') != std::string::npos) {
+        return Parameter_(std::stof(value));
+    }
+
+    // integer
+    return Parameter_(std::stoi(value));
 }
 
 class Parameter {
