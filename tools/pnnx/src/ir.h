@@ -195,57 +195,76 @@ public:
         value_ = std::forward<U>(value);
     }
 
-    template<typename U,
+    /**
+     * @brief Encode unknown type parameter to string.
+     * @tparam U
+     * @return
+     */
+    template<typename U = T,
+             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterUnknown>::type* = nullptr>
+    NODISCARD std::string Encode2String() const {
+        return "None";
+    }
+
+    /**
+     * @brief Encode bool parameter to string.
+     * @tparam U
+     * @return
+     */
+    template<typename U = T,
              typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterBool>::type* = nullptr>
-    static std::string Encode2String(const Parameter_<U>& param) {
-        return param.toValue() ? "True" : "False";
+    NODISCARD std::string Encode2String() const {
+        return toValue() ? "True" : "False";
     }
 
-    template<typename U,
+    /**
+     * @brief Encode int parameter to string.
+     * @tparam U
+     * @return
+     */
+    template<typename U = T,
              typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterInt>::type* = nullptr>
-    static std::string Encode2String(const Parameter_<U>& param) {
-        return std::to_string(param.toValue());
+    NODISCARD std::string Encode2String() const {
+        return std::to_string(toValue());
     }
 
-    template<typename U,
+    /**
+     * @brief Encode float parameter to string.
+     * @tparam U
+     * @param param
+     * @return
+     */
+    template<typename U = T,
              typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterFloat>::type* = nullptr>
-    static std::string Encode2String(const Parameter_<U>& param) {
+    NODISCARD std::string Encode2String() const {
         char buf[64];
-        snprintf(buf, sizeof(buf), "%e", param.toValue());
+        snprintf(buf, sizeof(buf), "%e", toValue());
         return buf;
     }
 
-    template<typename U,
+    /**
+     * @brief Encode string parameter to string.
+     * @tparam U
+     * @return
+     */
+    template<typename U = T,
              typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterString>::type* = nullptr>
-    static std::string Encode2String(const Parameter_<U>& param) {
-        return param.toValue();
+    NODISCARD std::string Encode2String() const {
+        return toValue();
     }
 
-
-    //
-    //    template<typename U = T,
-    //             typename std::enable_if<std::is_integral_v<U> && !std::is_same_v<U, bool>, U>::type* = nullptr>
-    //    auto toInt() const {
-    //        return value_;
-    //    }
-    //
-    //    template<typename U = T,
-    //             typename std::enable_if<std::is_floating_point_v<U>, U>::type* = nullptr>
-    //    auto toFloat() const {
-    //        return value_;
-    //    }
-    //
-    //    template<typename U = T,
-    //             typename std::enable_if<is_string_v<U>, U>::type* = nullptr>
-    //    auto toString() const {
-    //        return value_;
-    //    }
-    //
-    //    template<typename U = T,
-    //             typename std::enable_if<std::is_same_v<std::decay_t<U>, std::complex<float>>, U>::type* = nullptr>
-    //    auto toComplex() const {
-    //        return value_;
-    //    }
+    /**
+     * @brief Encode complex parameter to string.
+     * @tparam U
+     * @return
+     */
+    template<typename U = T,
+             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterComplex>::type* = nullptr>
+    NODISCARD std::string Encode2String() const {
+        char buf[128];
+        snprintf(buf, sizeof(buf), "%e+%ei", toValue().real(), toValue().imag());
+        return buf;
+    }
 
 private:
     /**
@@ -286,6 +305,82 @@ public:
              typename std::enable_if<std::is_convertible_v<U, T>>::type* = nullptr>
     void AddElemToArray(U&& value) {
         value_.push_back(std::forward<U>(value));
+    }
+
+    /**
+     * @brief Encode array int parameter to string.
+     * @tparam U
+     * @return
+     */
+    template<typename U = std::vector<T>,
+             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterArrayInt>::type* = nullptr>
+    NODISCARD std::string Encode2String() const {
+        std::string code;
+        code += "(";
+        size_t size = toValue().size();
+        for (const auto& ele: toValue()) {
+            code += (std::to_string(ele) + (--size ? "," : ""));
+        }
+        code += ")";
+        return code;
+    }
+
+    /**
+     * @brief Encode array float parameter to string.
+     * @tparam U
+     * @return
+     */
+    template<typename U = std::vector<T>,
+             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterArrayFloat>::type* = nullptr>
+    NODISCARD std::string Encode2String() const {
+        std::string code;
+        code += "(";
+        size_t size = toValue().size();
+        for (const auto& ele: toValue()) {
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%e", ele);
+            code += (std::string(buf) + (--size ? "," : ""));
+        }
+        code += ")";
+        return code;
+    }
+
+    /**
+     * @brief Encode array string parameter to string.
+     * @tparam U
+     * @return
+     */
+    template<typename U = std::vector<T>,
+             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterArrayString>::type* = nullptr>
+    NODISCARD std::string Encode2String() const {
+        std::string code;
+        code += "(";
+        size_t size = toValue().size();
+        for (const auto& ele: toValue()) {
+            code += (ele + (--size ? "," : ""));
+        }
+        code += ")";
+        return code;
+    }
+
+    /**
+     * @brief Encode array complex parameter to string.
+     * @tparam U
+     * @return
+     */
+    template<typename U = std::vector<T>,
+             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterArrayComplex>::type* = nullptr>
+    NODISCARD std::string Encode2String() const {
+        std::string code;
+        code += "(";
+        size_t size = toValue().size();
+        for (const auto& ele: toValue()) {
+            char buf[128];
+            snprintf(buf, sizeof(buf), "%e+%ei", ele.real(), ele.imag());
+            code += (std::string(buf) + (--size ? "," : ""));
+        }
+        code += ")";
+        return code;
     }
 
 private:

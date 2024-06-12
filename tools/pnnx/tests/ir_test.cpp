@@ -127,8 +127,7 @@ TEST(IRTEST, new_parameter) {
     EXPECT_TRUE(p1.toValue());
     p1.SetValue(false);
     EXPECT_FALSE(p1.toValue());
-
-    EXPECT_EQ(p1.Encode2String(p1), "False");
+    EXPECT_EQ(p1.Encode2String(), "False");
 
     /// test integer type
     Parameter_ p2(10);
@@ -138,15 +137,17 @@ TEST(IRTEST, new_parameter) {
     p2.SetValue(20);
     EXPECT_EQ(p2.toValue(), 20);
     EXPECT_EQ(p2, make_parameter(20));
+    EXPECT_EQ(p2.Encode2String(), "20");
 
     /// test float type
     Parameter_ p3(2.5);
     static_assert(std::is_same_v<decltype(p3)::value_type, double>);
     EXPECT_EQ(p3.type(), ParameterType::kParameterFloat);
     EXPECT_EQ(p3.toValue(), 2.5);
-    p3.SetValue(5.0);
-    EXPECT_EQ(p3.toValue(), 5.0);
-    EXPECT_EQ(p3, make_parameter(5.0));
+    p3.SetValue(0.3141592657);
+    EXPECT_EQ(p3.toValue(), 0.3141592657);
+    EXPECT_EQ(p3, make_parameter(0.3141592657));
+    EXPECT_EQ(p3.Encode2String(), "3.141593e-01");
 
     /// test string type
     Parameter_ p4("hello");
@@ -165,6 +166,7 @@ TEST(IRTEST, new_parameter) {
     p5.SetValue(std::complex<float>(3, 4));
     EXPECT_EQ(p5.toValue(), std::complex<float>(3, 4));
     EXPECT_EQ(p5, Parameter_(std::complex<float>(3, 4)));
+    EXPECT_EQ(p5.Encode2String(), "3.000000e+00+4.000000e+00i");
 
     /// test vector<int> type
     Parameter_ p6(std::vector<int>{1, 2, 3});
@@ -176,7 +178,9 @@ TEST(IRTEST, new_parameter) {
     p6.AddElemToArray(7);
     EXPECT_EQ(p6.toValue(), (std::vector<int>{4, 5, 6, 7}));
     EXPECT_EQ(p6, make_parameter(std::vector<int>{4, 5, 6, 7}));
+    EXPECT_EQ(p6.Encode2String(), "(4,5,6,7)");
 
+    /// test vector<int> type
     Parameter_ p7({1, 2, 3});
     static_assert(std::is_same_v<decltype(p7)::value_type, std::vector<int>>);
     EXPECT_EQ(p7.type(), ParameterType::kParameterArrayInt);
@@ -185,7 +189,9 @@ TEST(IRTEST, new_parameter) {
     EXPECT_EQ(p7.toValue(), (std::vector<int>{4, 5, 6}));
     p7.AddElemToArray(7);
     EXPECT_EQ(p7.toValue(), (std::vector<int>{4, 5, 6, 7}));
+    EXPECT_EQ(p7.Encode2String(), "(4,5,6,7)");
 
+    /// test vector<string> type
     Parameter_ p8({"hello", "world"});
     static_assert(std::is_same_v<decltype(p8)::value_type, std::vector<std::string>>);
     EXPECT_EQ(p8.type(), ParameterType::kParameterArrayString);
@@ -195,6 +201,7 @@ TEST(IRTEST, new_parameter) {
     p8.AddElemToArray("Scott Meyers");
     EXPECT_EQ(p8.toValue(), (std::vector<std::string>{"Effective", "Modern", "C++", "Scott Meyers"}));
     EXPECT_EQ(p8, make_parameter(std::vector<std::string>{"Effective", "Modern", "C++", "Scott Meyers"}));
+    EXPECT_EQ(p8.Encode2String(), "(Effective,Modern,C++,Scott Meyers)");
 }
 
 TEST(IRTEST, libtorch) {
