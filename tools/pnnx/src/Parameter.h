@@ -6,26 +6,9 @@
 #define OPENXAE_PARAMETER_H
 
 #include "utils.h"
+#include "datatype.h"
 
 namespace pnnx {
-
-/**
- * @brief Runtime parameter type.
- *
- * Enumerates the parameter type_ supported for workload.
- */
-enum class ParameterType {
-    kParameterUnknown = 0,
-    kParameterBool = 1,
-    kParameterInt = 2,
-    kParameterFloat = 3,
-    kParameterString = 4,
-    kParameterArrayInt = 5,
-    kParameterArrayFloat = 6,
-    kParameterArrayString = 7,
-    kParameterComplex = 10,
-    kParameterArrayComplex = 11
-};
 
 using param_null_type = std::integral_constant<ParameterType, ParameterType::kParameterUnknown>;
 using param_bool_type = std::integral_constant<ParameterType, ParameterType::kParameterBool>;
@@ -205,7 +188,7 @@ public:
         type_ = type;
     }
 
-    std::vector<T> toValue() const {
+    NODISCARD std::vector<T> toValue() const {
         return value_;
     }
 

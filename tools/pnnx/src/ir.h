@@ -6,6 +6,7 @@
 #define OPENXAE_IR_H
 
 #include "Parameter.h"
+#include "Attribute.h"
 
 #if BUILD_TORCH2PNNX
 namespace torch {
@@ -33,27 +34,6 @@ class OnnxAttributeProxy;
 #endif// BUILD_ONNX2PNNX
 
 namespace pnnx {
-/**
- * @brief Runtime data type.
- *
- * Enumerates the data type supported for workload.
- */
-enum class DataType {
-    kDataTypeUnknown = 0,
-    kDataTypeFloat32 = 1,
-    kDataTypeFloat64 = 2,
-    kDataTypeFloat16 = 3,
-    kDataTypeInt32 = 4,
-    kDataTypeInt64 = 5,
-    kDataTypeInt16 = 6,
-    kDataTypeInt8 = 7,
-    kDataTypeUInt8 = 8,
-    kDataTypeBool = 9,
-    kDataTypeComplex64 = 10,
-    kDataTypeComplex128 = 11,
-    kDataTypeComplex32 = 12,
-    kDataTypeBFloat16 = 13
-};
 
 class Parameter {
 public:
@@ -467,97 +447,6 @@ private:
 };
 
 bool operator==(const Parameter& lhs, const Parameter& rhs);
-
-class Attribute {
-public:
-    /**
-     * @brief Default constructor.
-     */
-    Attribute() : type_(DataType::kDataTypeUnknown) {}
-
-    Attribute(const std::vector<int>& shape, const std::vector<float>& t);
-
-#if BUILD_TORCH2PNNX
-    Attribute(const at::Tensor& t);
-#endif
-#if BUILD_ONNX2PNNX
-    Attribute(const onnx::TensorProto& t);
-#endif
-
-    Attribute(const Attribute&) = delete;
-    Attribute(Attribute&& other) noexcept
-        : type_(other.type_), data_(std::move(other.data_)), shape_(std::move(other.shape_)) {}
-
-    Attribute& operator=(const Attribute&) = delete;
-    Attribute& operator=(Attribute&&) = delete;
-
-    NODISCARD const DataType& type() const {
-        return type_;
-    }
-
-    void SetType(DataType type) {
-        type_ = type;
-    }
-
-    NODISCARD size_t GetElemSize() const;
-
-    NODISCARD size_t size() const;
-
-    NODISCARD const std::vector<int>& GetShape() const {
-        return shape_;
-    }
-
-    std::vector<int>& GetShape() {
-        return shape_;
-    }
-
-    NODISCARD const std::vector<char>& GetRawData() const {
-        return data_;
-    }
-
-    std::vector<char>& GetRawData() {
-        return data_;
-    }
-
-    // convenient routines for manipulate fp16/fp32 weight
-    NODISCARD std::vector<float> CastToFloat32() const;
-
-    void SetFloat32Data(const std::vector<float>& newData);
-
-private:
-    /**
-     * @brief Runtime data type.
-     *
-     * 0 = null \n
-     * 1 = float32 \n
-     * 2 = float64 \n
-     * 3 = float16 \n
-     * 4 = int32 \n
-     * 5 = int64 \n
-     * 6 = int16 \n
-     * 7 = int8 \n
-     * 8 = uint8 \n
-     * 9 = bool \n
-     * 10 = complex64 \n
-     * 11 = complex128 \n
-     * 12 = complex32 \n
-     * 13 = bf16
-     */
-    DataType type_;
-    std::vector<int> shape_;
-    std::vector<char> data_;
-    //    std::map<std::string, Parameter> params;
-};
-
-bool operator==(const Attribute& lhs, const Attribute& rhs);
-
-/**
- * @brief Concat two attributes along the first axis.
- * @param a left attribute
- * @param b right attribute
- * @return new attribute object.
- */
-Attribute operator+(const Attribute& a, const Attribute& b);
 
 class Operator;
 class Operand {
