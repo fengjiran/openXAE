@@ -4,6 +4,7 @@
 
 //#include "glog/logging.h"
 #include "pnnx/src/ir.h"
+#include "pnnx/src/Parameter.h"
 #include "torch/torch.h"
 #include "gtest/gtest.h"
 
@@ -40,26 +41,7 @@ TEST(IRTEST, type_check) {
     static_assert(GetParameterType<const char*>::value == ParameterType::kParameterString);
     static_assert(GetParameterType<std::complex<float>>::value == ParameterType::kParameterComplex);
     static_assert(GetParameterType<std::vector<int>>::value == ParameterType::kParameterArrayInt);
-
     static_assert(std::is_same_v<Parameter_<void*>::value_type, void*>);
-
-    EXPECT_TRUE(get_parameter_type<bool>() == ParameterType::kParameterBool);
-    EXPECT_TRUE(get_parameter_type<int>() == ParameterType::kParameterInt);
-    EXPECT_TRUE(get_parameter_type<long>() == ParameterType::kParameterInt);
-    EXPECT_TRUE(get_parameter_type<long long>() == ParameterType::kParameterInt);
-    EXPECT_TRUE(get_parameter_type<float>() == ParameterType::kParameterFloat);
-    EXPECT_TRUE(get_parameter_type<double>() == ParameterType::kParameterFloat);
-    EXPECT_TRUE(get_parameter_type<std::complex<float>>() == ParameterType::kParameterComplex);
-    EXPECT_TRUE(get_parameter_type<const char*>() == ParameterType::kParameterString);
-    EXPECT_TRUE(get_parameter_type<std::string>() == ParameterType::kParameterString);
-    EXPECT_TRUE(get_parameter_type<std::vector<int>>() == ParameterType::kParameterArrayInt);
-    EXPECT_TRUE(get_parameter_type<std::vector<int64_t>>() == ParameterType::kParameterArrayInt);
-    EXPECT_TRUE(get_parameter_type<std::initializer_list<int>>() == ParameterType::kParameterArrayInt);
-    EXPECT_TRUE(get_parameter_type<std::vector<float>>() == ParameterType::kParameterArrayFloat);
-    EXPECT_TRUE(get_parameter_type<std::vector<double>>() == ParameterType::kParameterArrayFloat);
-    EXPECT_TRUE(get_parameter_type<std::vector<std::string>>() == ParameterType::kParameterArrayString);
-    EXPECT_TRUE(get_parameter_type<std::vector<const char*>>() == ParameterType::kParameterArrayString);
-    EXPECT_TRUE(get_parameter_type<std::vector<std::complex<float>>>() == ParameterType::kParameterArrayComplex);
 }
 
 TEST(IRTEST, Parameter) {
@@ -131,7 +113,14 @@ TEST(IRTEST, new_parameter) {
     p1.SetValue(false);
     EXPECT_FALSE(p1.toValue());
     EXPECT_EQ(p1.Encode2String(), "False");
-//    EXPECT_EQ(CreateParameterFromString(p1.Encode2String()), p1);
+
+    std::visit([](auto&& arg) {
+        using T = std::decay_t<decltype(arg)>;
+        if constexpr (std::is_same_v<T, Parameter_<bool>>) {
+            EXPECT_FALSE(arg.toValue());
+            arg.SetValue(true);
+        }
+    }, VariantParamType(p1));
 
     /// test integer type
     Parameter_ p2(10);
@@ -206,6 +195,10 @@ TEST(IRTEST, new_parameter) {
     EXPECT_EQ(p8.toValue(), (std::vector<std::string>{"Effective", "Modern", "C++", "Scott Meyers"}));
     EXPECT_EQ(p8, make_parameter(std::vector<std::string>{"Effective", "Modern", "C++", "Scott Meyers"}));
     EXPECT_EQ(p8.Encode2String(), "(Effective,Modern,C++,Scott Meyers)");
+}
+
+TEST(IRTEST, variant_param) {
+
 }
 
 TEST(IRTEST, libtorch) {

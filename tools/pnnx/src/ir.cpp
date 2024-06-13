@@ -566,8 +566,8 @@ std::shared_ptr<Operand> Operator::GetNamedInput(const std::string& key) const {
 
 
 static void LoadParameter(const std::shared_ptr<Operator>& op, const std::string& key, const std::string& value) {
-//    op->GetParameters()[key] = Parameter::ParseFromString(value);
     op->GetParameters()[key] = std::make_shared<Parameter>(Parameter::ParseFromString(value));
+    op->GetVParameters()[key] = std::make_shared<VariantParamType>(CreateParameterFromString(value));
 }
 
 static void LoadInputName(const std::shared_ptr<Operator>& op, const std::string& key, const std::string& value) {
@@ -713,8 +713,17 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
         }
 
         // dump op param info
-        for (const auto& it: op->GetParameters()) {
-            paramFile << " " << it.first << "=" << Parameter::Encode2String(*it.second);
+        //        for (const auto& it: op->GetParameters()) {
+        //            paramFile << " " << it.first << "=" << Parameter::Encode2String(*it.second);
+        //        }
+
+        for (const auto& it: op->GetVParameters()) {
+            std::string value;
+            std::visit([&value](const auto& arg) {
+                value = arg.Encode2String();
+            },
+                       *it.second);
+            paramFile << " " << it.first << "=" << value;
         }
 
         // dump op attrs info
