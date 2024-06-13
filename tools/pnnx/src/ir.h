@@ -715,23 +715,15 @@ public:
         outputOperands_.push_back(operand);
     }
 
-    NODISCARD const std::map<std::string, std::shared_ptr<Parameter>>& GetParameters() const {
-        return params_;
-    }
-
-    std::map<std::string, std::shared_ptr<Parameter>>& GetParameters() {
-        return params_;
-    }
-
     NODISCARD const std::map<std::string, std::shared_ptr<Attribute>>& GetAttributes() const {
         return attrs_;
     }
 
-    std::map<std::string, std::shared_ptr<VariantParamType>>& GetVParameters() {
+    std::map<std::string, std::shared_ptr<VariantParamType>>& GetParameters() {
         return v_params_;
     }
 
-    NODISCARD const std::map<std::string, std::shared_ptr<VariantParamType>>& GetVParameters() const {
+    NODISCARD const std::map<std::string, std::shared_ptr<VariantParamType>>& GetParameters() const {
         return v_params_;
     }
 
