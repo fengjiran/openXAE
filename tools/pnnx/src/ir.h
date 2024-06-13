@@ -657,7 +657,7 @@ public:
     Operator(std::string name, std::string type) : name_(std::move(name)), type_(std::move(type)) {}
 
     Operator(std::string name, std::string type,
-             std::map<std::string, std::shared_ptr<Parameter>> params,
+             std::map<std::string, std::shared_ptr<VariantParamType>> params,
              std::map<std::string, std::shared_ptr<Attribute>> attrs,
              std::vector<std::shared_ptr<Operand>> inputOperands,
              std::vector<std::string> inputNames)
@@ -720,11 +720,11 @@ public:
     }
 
     std::map<std::string, std::shared_ptr<VariantParamType>>& GetParameters() {
-        return v_params_;
+        return params_;
     }
 
     NODISCARD const std::map<std::string, std::shared_ptr<VariantParamType>>& GetParameters() const {
-        return v_params_;
+        return params_;
     }
 
     std::map<std::string, std::shared_ptr<Attribute>>& GetAttributes() {
@@ -741,9 +741,8 @@ private:
     std::vector<std::shared_ptr<Operand>> inputOperands_;
     std::vector<std::shared_ptr<Operand>> outputOperands_;
 
-    std::map<std::string, std::shared_ptr<Parameter>> params_;
     std::map<std::string, std::shared_ptr<Attribute>> attrs_;
-    std::map<std::string, std::shared_ptr<VariantParamType>> v_params_;
+    std::map<std::string, std::shared_ptr<VariantParamType>> params_;
 };
 
 class Graph {
@@ -772,7 +771,7 @@ public:
     std::shared_ptr<Operator> CreateOperator(const std::string& type, const std::string& name);
 
     std::shared_ptr<Operand> CreateOperator(const std::string& type, const std::string& name,
-                                            const std::map<std::string, std::shared_ptr<Parameter>>& params,
+                                            const std::map<std::string, std::shared_ptr<VariantParamType>>& params,
                                             const std::map<std::string, std::shared_ptr<Attribute>>& attrs,
                                             const std::vector<std::shared_ptr<Operand>>& inputOperands,
                                             const std::vector<std::string>& inputOperandNames,

@@ -264,9 +264,9 @@ TEST(IRTEST, create_pnnx_graph) {
     weight.contiguous();
 
     auto t2 = graph.CreateOperator("nn.Linear", "linear",
-                                   {{"bias", std::make_shared<Parameter>(true)},
-                                    {"in_features", std::make_shared<Parameter>(32)},
-                                    {"out_features", std::make_shared<Parameter>(128)}},
+                                   {{"bias", std::make_shared<VariantParamType>(Parameter_(true))},
+                                    {"in_features", std::make_shared<VariantParamType>(Parameter_(32))},
+                                    {"out_features", std::make_shared<VariantParamType>(Parameter_(128))}},
                                    {{"bias", std::make_shared<Attribute>(std::vector<int>{128}, std::vector<float>(bias.data_ptr<float>(), bias.data_ptr<float>() + bias.numel()))},
                                     {"weight", std::make_shared<Attribute>(std::vector<int>{128, 32}, std::vector<float>(weight.data_ptr<float>(), weight.data_ptr<float>() + weight.numel()))}},
                                    {t1}, {},

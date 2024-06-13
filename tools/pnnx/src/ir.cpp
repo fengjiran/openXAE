@@ -878,7 +878,7 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
 }
 
 std::shared_ptr<Operand> Graph::CreateOperator(const std::string& type, const std::string& name,
-                                               const std::map<std::string, std::shared_ptr<Parameter>>& params,
+                                               const std::map<std::string, std::shared_ptr<VariantParamType>>& params,
                                                const std::map<std::string, std::shared_ptr<Attribute>>& attrs,
                                                const std::vector<std::shared_ptr<Operand>>& inputOperands,
                                                const std::vector<std::string>& inputOperandNames,
