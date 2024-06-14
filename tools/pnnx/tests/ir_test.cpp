@@ -4,7 +4,7 @@
 
 //#include "glog/logging.h"
 #include "pnnx/src/ir.h"
-#include "pnnx/src/Parameter.h"
+#include "pnnx/src/Graph.h"
 #include "torch/torch.h"
 #include "gtest/gtest.h"
 
