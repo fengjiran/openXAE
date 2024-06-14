@@ -5,9 +5,6 @@
 #ifndef OPENXAE_IR_H
 #define OPENXAE_IR_H
 
-//#include "Attribute.h"
-//#include "Parameter.h"
-//#include "Operand.h"
 #include "Operator.h"
 
 #include <algorithm>
@@ -41,6 +38,7 @@ class OnnxAttributeProxy;
 
 namespace pnnx {
 
+/// @deprecated
 class Parameter {
 public:
     /**

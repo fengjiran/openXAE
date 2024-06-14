@@ -5,10 +5,8 @@
 #include "storezip.h"
 
 #include <cfloat>
-#include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <numeric>
 
 namespace pnnx {
 
@@ -204,10 +202,5 @@ bool operator==(const Parameter& lhs, const Parameter& rhs) {
 
     return false;
 }
-
-
-
-
-
 
 }// namespace pnnx
