@@ -5,8 +5,8 @@
 #ifndef OPENXAE_ATTRIBUTE_H
 #define OPENXAE_ATTRIBUTE_H
 
-#include "datatype.h"
 #include "utils.h"
+#include <vector>
 
 namespace pnnx {
 

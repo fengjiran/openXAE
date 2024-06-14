@@ -5,8 +5,12 @@
 #ifndef OPENXAE_IR_H
 #define OPENXAE_IR_H
 
-#include "Parameter.h"
 #include "Attribute.h"
+#include "Parameter.h"
+
+#include <algorithm>
+#include <map>
+#include <memory>
 
 #if BUILD_TORCH2PNNX
 namespace torch {

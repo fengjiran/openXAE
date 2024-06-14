@@ -6,9 +6,51 @@
 #define OPENXAE_PARAMETER_H
 
 #include "utils.h"
-#include "datatype.h"
+
+#include <vector>
+#include <variant>
+#include <complex>
 
 namespace pnnx {
+
+template<typename T>
+constexpr bool is_string_v = std::is_same_v<std::decay_t<T>, std::string> || std::is_convertible_v<T, std::string>;
+
+template<typename T>
+struct is_vector : std::false_type {
+    using elem_type = T;
+};
+
+template<typename T, typename alloc>
+struct is_vector<std::vector<T, alloc>> : std::true_type {
+    using elem_type = T;
+};
+
+template<typename T>
+struct is_vector<std::initializer_list<T>> : std::true_type {
+    using elem_type = T;
+};
+
+template<typename T>
+using is_std_vector =
+        typename is_vector<std::remove_cv_t<std::remove_reference_t<T>>>::type;
+
+template<typename T>
+constexpr bool is_std_vector_v = is_std_vector<T>::value;
+
+//
+template<typename T>
+constexpr bool is_std_vector_int_v = is_std_vector_v<T> && std::is_integral_v<typename is_vector<T>::elem_type>;
+
+template<typename T>
+constexpr bool is_std_vector_float_v = is_std_vector_v<T> && std::is_floating_point_v<typename is_vector<T>::elem_type>;
+
+template<typename T>
+constexpr bool is_std_vector_string_v = is_std_vector_v<T> && is_string_v<typename is_vector<T>::elem_type>;
+
+template<typename T>
+constexpr bool is_std_vector_complex_v = is_std_vector_v<T> && std::is_same_v<std::decay_t<typename is_vector<T>::elem_type>, std::complex<float>>;
+
 
 using param_null_type = std::integral_constant<ParameterType, ParameterType::kParameterUnknown>;
 using param_bool_type = std::integral_constant<ParameterType, ParameterType::kParameterBool>;

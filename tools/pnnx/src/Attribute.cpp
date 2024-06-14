@@ -3,47 +3,12 @@
 //
 
 #include "Attribute.h"
+
 #include <numeric>
+#include <cstring>
+#include <iostream>
 
 namespace pnnx {
-
-static size_t SizeOf(DataType type) {
-    size_t size;
-    switch (type) {
-        case DataType::kDataTypeUnknown:
-            size = 0;
-            break;
-
-        case DataType::kDataTypeInt8:
-        case DataType::kDataTypeUInt8:
-        case DataType::kDataTypeBool:
-            size = 1;
-            break;
-
-        case DataType::kDataTypeInt16:
-        case DataType::kDataTypeFloat16:
-        case DataType::kDataTypeBFloat16:
-            size = 2;
-            break;
-
-        case DataType::kDataTypeInt32:
-        case DataType::kDataTypeFloat32:
-        case DataType::kDataTypeComplex32:
-            size = 4;
-            break;
-
-        case DataType::kDataTypeInt64:
-        case DataType::kDataTypeFloat64:
-        case DataType::kDataTypeComplex64:
-            size = 8;
-            break;
-
-        case DataType::kDataTypeComplex128:
-            size = 16;
-            break;
-    }
-    return size;
-}
 
 Attribute::Attribute(const std::vector<int>& shape, const std::vector<float>& t)
     : type_(DataType::kDataTypeFloat32), shape_(shape) {
