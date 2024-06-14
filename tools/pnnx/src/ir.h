@@ -5,11 +5,14 @@
 #ifndef OPENXAE_IR_H
 #define OPENXAE_IR_H
 
-#include "Operator.h"
+#include "utils.h"
 
 #include <algorithm>
+#include <complex>
+#include <limits>
 #include <map>
 #include <memory>
+#include <numeric>
 
 #if BUILD_TORCH2PNNX
 namespace torch {

@@ -6,7 +6,6 @@
 #define OPENXAE_OPERAND_H
 
 #include "Parameter.h"
-#include "ir.h"
 #include "utils.h"
 
 #include <algorithm>
