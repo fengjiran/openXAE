@@ -15,7 +15,7 @@ namespace pnnx {
 ParameterVar CreateParameterFromString(const std::string& value) {
     // string type
     if (value.find('%') != std::string::npos) {
-        Parameter_ p(value);
+        Parameter p(value);
         return p;
     }
 
@@ -26,7 +26,7 @@ ParameterVar CreateParameterFromString(const std::string& value) {
 
     // bool type
     if (value == "True" || value == "False") {
-        return Parameter_(value == "True");
+        return Parameter(value == "True");
     }
 
     // array
@@ -35,9 +35,9 @@ ParameterVar CreateParameterFromString(const std::string& value) {
         bool isArrayFloat = false;
         bool isArrayString = false;
 
-        Parameter_<std::vector<int>> pArrayInt;
-        Parameter_<std::vector<float>> pArrayFloat;
-        Parameter_<std::vector<std::string>> pArrayString;
+        Parameter<std::vector<int>> pArrayInt;
+        Parameter<std::vector<float>> pArrayFloat;
+        Parameter<std::vector<std::string>> pArrayString;
 
         std::string lc = value.substr(1, value.size() - 2);
         std::istringstream lcss(lc);
@@ -75,16 +75,16 @@ ParameterVar CreateParameterFromString(const std::string& value) {
 
     // string
     if ((value[0] != '-' && (value[0] < '0' || value[0] > '9')) || (value[0] == '-' && (value[1] < '0' || value[1] > '9'))) {
-        return Parameter_(value);
+        return Parameter(value);
     }
 
     // float
     if (value.find('.') != std::string::npos || value.find('e') != std::string::npos) {
-        return Parameter_(std::stof(value));
+        return Parameter(std::stof(value));
     }
 
     // integer
-    return Parameter_(std::stoi(value));
+    return Parameter(std::stoi(value));
 }
 
 static void LoadParameter(const std::shared_ptr<Operator>& op, const std::string& key, const std::string& value) {
@@ -144,7 +144,7 @@ static void LoadOperand(const std::shared_ptr<Operator>& op, const std::string& 
             operand->GetShape().push_back(DimVariableTag);
             size_t index = operand->GetShape().size() - 1;
             std::string s = elem.substr(1);
-            operand->GetParams()[std::string("__shape__") + std::to_string(index)] = std::make_shared<ParameterVar>(Parameter_(s));
+            operand->GetParams()[std::string("__shape__") + std::to_string(index)] = std::make_shared<ParameterVar>(Parameter(s));
         } else {
             operand->GetShape().push_back(std::stoi(elem));
         }

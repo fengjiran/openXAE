@@ -104,13 +104,13 @@ struct GetParameterType<T, typename std::enable_if_t<is_std_vector_complex_v<T>>
 
 
 template<typename T>
-class Parameter_ {
+class Parameter {
 public:
     using value_type = T;
 
-    Parameter_() : type_(GetParameterType<T>::value) {}
+    Parameter() : type_(GetParameterType<T>::value) {}
 
-    explicit Parameter_(T val)
+    explicit Parameter(T val)
         : type_(GetParameterType<T>::value),
           value_(val) {}
 
@@ -213,13 +213,13 @@ private:
 };
 
 template<typename T>
-class Parameter_<std::vector<T>> {
+class Parameter<std::vector<T>> {
 public:
     using value_type = std::vector<T>;
 
-    Parameter_() : type_(GetParameterType<std::vector<T>>::value) {}
+    Parameter() : type_(GetParameterType<std::vector<T>>::value) {}
 
-    explicit Parameter_(const std::vector<T>& val)
+    explicit Parameter(const std::vector<T>& val)
         : type_(GetParameterType<std::vector<T>>::value), value_(val) {}
 
     NODISCARD const ParameterType& type() const {
@@ -326,17 +326,17 @@ private:
 };
 
 // CTAD Deduction Guides
-Parameter_(const char*) -> Parameter_<std::string>;
+Parameter(const char*) -> Parameter<std::string>;
 
-Parameter_(std::initializer_list<const char*>) -> Parameter_<std::vector<std::string>>;
+Parameter(std::initializer_list<const char*>) -> Parameter<std::vector<std::string>>;
 
-Parameter_(std::vector<const char*>) -> Parameter_<std::vector<std::string>>;
-
-template<typename T>
-Parameter_(std::initializer_list<T>) -> Parameter_<std::vector<T>>;
+Parameter(std::vector<const char*>) -> Parameter<std::vector<std::string>>;
 
 template<typename T>
-bool operator==(const Parameter_<T>& lhs, const Parameter_<T>& rhs) {
+Parameter(std::initializer_list<T>) -> Parameter<std::vector<T>>;
+
+template<typename T>
+bool operator==(const Parameter<T>& lhs, const Parameter<T>& rhs) {
     if (lhs.type() != rhs.type()) {
         return false;
     }
@@ -350,21 +350,21 @@ bool operator==(const Parameter_<T>& lhs, const Parameter_<T>& rhs) {
 
 template<typename... Args>
 auto make_parameter(Args&&... args) {
-    return Parameter_<Args...>(std::forward<Args>(args)...);
+    return Parameter<Args...>(std::forward<Args>(args)...);
 }
 
 
 using ParameterVar = std::variant<
-        //        Parameter_<void*>,
-        Parameter_<bool>,
-        Parameter_<int>,
-        Parameter_<float>,
-        Parameter_<double>,
-        Parameter_<std::string>,
-        Parameter_<std::complex<float>>,
-        Parameter_<std::vector<int>>,
-        Parameter_<std::vector<float>>,
-        Parameter_<std::vector<std::string>>>;
+        //        Parameter<void*>,
+        Parameter<bool>,
+        Parameter<int>,
+        Parameter<float>,
+        Parameter<double>,
+        Parameter<std::string>,
+        Parameter<std::complex<float>>,
+        Parameter<std::vector<int>>,
+        Parameter<std::vector<float>>,
+        Parameter<std::vector<std::string>>>;
 
 }// namespace pnnx
 

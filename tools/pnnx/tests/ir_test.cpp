@@ -41,7 +41,7 @@ TEST(IRTEST, type_check) {
     static_assert(GetParameterType<const char*>::value == ParameterType::kParameterString);
     static_assert(GetParameterType<std::complex<float>>::value == ParameterType::kParameterComplex);
     static_assert(GetParameterType<std::vector<int>>::value == ParameterType::kParameterArrayInt);
-    static_assert(std::is_same_v<Parameter_<void*>::value_type, void*>);
+    static_assert(std::is_same_v<Parameter<void*>::value_type, void*>);
 }
 
 TEST(IRTEST, Parameter_Deprecated) {
@@ -106,7 +106,7 @@ TEST(IRTEST, Parameter_Deprecated) {
 
 TEST(IRTEST, new_parameter) {
     /// test bool type
-    Parameter_ p1(true);
+    Parameter p1(true);
     static_assert(std::is_same_v<decltype(p1)::value_type, bool>);
     EXPECT_EQ(p1.type(), ParameterType::kParameterBool);
     EXPECT_TRUE(p1.toValue());
@@ -116,14 +116,14 @@ TEST(IRTEST, new_parameter) {
 
     std::visit([](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
-        if constexpr (std::is_same_v<T, Parameter_<bool>>) {
+        if constexpr (std::is_same_v<T, Parameter<bool>>) {
             EXPECT_FALSE(arg.toValue());
             arg.SetValue(true);
         }
     }, ParameterVar(p1));
 
     /// test integer type
-    Parameter_ p2(10);
+    Parameter p2(10);
     static_assert(std::is_same_v<decltype(p2)::value_type, int>);
     EXPECT_EQ(p2.type(), ParameterType::kParameterInt);
     EXPECT_EQ(p2.toValue(), 10);
@@ -133,7 +133,7 @@ TEST(IRTEST, new_parameter) {
     EXPECT_EQ(p2.Encode2String(), "20");
 
     /// test float type
-    Parameter_ p3(2.5);
+    Parameter p3(2.5);
     static_assert(std::is_same_v<decltype(p3)::value_type, double>);
     EXPECT_EQ(p3.type(), ParameterType::kParameterFloat);
     EXPECT_EQ(p3.toValue(), 2.5);
@@ -143,7 +143,7 @@ TEST(IRTEST, new_parameter) {
     EXPECT_EQ(p3.Encode2String(), "3.141593e-01");
 
     /// test string type
-    Parameter_ p4("hello");
+    Parameter p4("hello");
     static_assert(std::is_same_v<decltype(p4)::value_type, std::string>);
     EXPECT_EQ(p4.type(), ParameterType::kParameterString);
     EXPECT_EQ(p4.toValue(), "hello");
@@ -152,17 +152,17 @@ TEST(IRTEST, new_parameter) {
     EXPECT_EQ(p4, make_parameter(std::string("world")));
 
     /// test complex type
-    Parameter_ p5(std::complex<float>(2, 3));
+    Parameter p5(std::complex<float>(2, 3));
     static_assert(std::is_same_v<decltype(p5)::value_type, std::complex<float>>);
     EXPECT_EQ(p5.type(), ParameterType::kParameterComplex);
     EXPECT_EQ(p5.toValue(), std::complex<float>(2, 3));
     p5.SetValue(std::complex<float>(3, 4));
     EXPECT_EQ(p5.toValue(), std::complex<float>(3, 4));
-    EXPECT_EQ(p5, Parameter_(std::complex<float>(3, 4)));
+    EXPECT_EQ(p5, Parameter(std::complex<float>(3, 4)));
     EXPECT_EQ(p5.Encode2String(), "3.000000e+00+4.000000e+00i");
 
     /// test vector<int> type
-    Parameter_ p6(std::vector<int>{1, 2, 3});
+    Parameter p6(std::vector<int>{1, 2, 3});
     static_assert(std::is_same_v<decltype(p6)::value_type, std::vector<int>>);
     EXPECT_EQ(p6.type(), ParameterType::kParameterArrayInt);
     EXPECT_EQ(p6.toValue(), (std::vector<int>{1, 2, 3}));
@@ -174,7 +174,7 @@ TEST(IRTEST, new_parameter) {
     EXPECT_EQ(p6.Encode2String(), "(4,5,6,7)");
 
     /// test vector<int> type
-    Parameter_ p7({1, 2, 3});
+    Parameter p7({1, 2, 3});
     static_assert(std::is_same_v<decltype(p7)::value_type, std::vector<int>>);
     EXPECT_EQ(p7.type(), ParameterType::kParameterArrayInt);
     EXPECT_EQ(p7.toValue(), (std::vector<int>{1, 2, 3}));
@@ -185,7 +185,7 @@ TEST(IRTEST, new_parameter) {
     EXPECT_EQ(p7.Encode2String(), "(4,5,6,7)");
 
     /// test vector<string> type
-    Parameter_ p8({"hello", "world"});
+    Parameter p8({"hello", "world"});
     static_assert(std::is_same_v<decltype(p8)::value_type, std::vector<std::string>>);
     EXPECT_EQ(p8.type(), ParameterType::kParameterArrayString);
     EXPECT_EQ(p8.toValue(), (std::vector<std::string>{"hello", "world"}));
@@ -265,9 +265,9 @@ TEST(IRTEST, create_pnnx_graph) {
     weight.contiguous();
 
     auto t2 = graph.CreateOperator("nn.Linear", "linear",
-                                   {{"bias", std::make_shared<ParameterVar>(Parameter_(true))},
-                                    {"in_features", std::make_shared<ParameterVar>(Parameter_(32))},
-                                    {"out_features", std::make_shared<ParameterVar>(Parameter_(128))}},
+                                   {{"bias", std::make_shared<ParameterVar>(Parameter(true))},
+                                    {"in_features", std::make_shared<ParameterVar>(Parameter(32))},
+                                    {"out_features", std::make_shared<ParameterVar>(Parameter(128))}},
                                    {{"bias", std::make_shared<Attribute>(std::vector<int>{128}, std::vector<float>(bias.data_ptr<float>(), bias.data_ptr<float>() + bias.numel()))},
                                     {"weight", std::make_shared<Attribute>(std::vector<int>{128, 32}, std::vector<float>(weight.data_ptr<float>(), weight.data_ptr<float>() + weight.numel()))}},
                                    {t1}, {},

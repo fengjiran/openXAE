@@ -31,7 +31,7 @@ public:
         for (size_t i = 0; i < shape_.size(); ++i) {
             if (DimVariableTag == shape_[i]) {
                 params_[std::string("__shape__") + std::to_string(i)] =
-                        std::make_shared<ParameterVar>(Parameter_("arg" + std::to_string(i)));
+                        std::make_shared<ParameterVar>(Parameter("arg" + std::to_string(i)));
             }
         }
     }
