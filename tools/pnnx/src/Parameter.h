@@ -354,7 +354,7 @@ auto make_parameter(Args&&... args) {
 }
 
 
-using VariantParamType = std::variant<
+using ParameterVar = std::variant<
         //        Parameter_<void*>,
         Parameter_<bool>,
         Parameter_<int>,
@@ -367,7 +367,7 @@ using VariantParamType = std::variant<
         Parameter_<std::vector<std::string>>>;
 
 
-VariantParamType CreateParameterFromString(const std::string& value) {
+ParameterVar CreateParameterFromString(const std::string& value) {
     // string type
     if (value.find('%') != std::string::npos) {
         Parameter_ p(value);
@@ -377,7 +377,6 @@ VariantParamType CreateParameterFromString(const std::string& value) {
     // null type
     if (value == "None" || value == "()" || value == "[]") {
         return {};
-        //        return Parameter_<void*>();
     }
 
     // bool type
@@ -426,7 +425,6 @@ VariantParamType CreateParameterFromString(const std::string& value) {
             return pArrayString;
         }
 
-        // return Parameter_<void*>();
         return {};
     }
 

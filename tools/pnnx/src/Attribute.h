@@ -71,7 +71,6 @@ private:
     DataType type_;
     std::vector<int> shape_;
     std::vector<char> data_;
-    //    std::map<std::string, Parameter> params;
 };
 
 bool operator==(const Attribute& lhs, const Attribute& rhs);

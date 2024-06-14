@@ -223,7 +223,7 @@ std::shared_ptr<Operand> Operator::GetNamedInput(const std::string& key) const {
 
 
 static void LoadParameter(const std::shared_ptr<Operator>& op, const std::string& key, const std::string& value) {
-    op->GetParameters()[key] = std::make_shared<VariantParamType>(CreateParameterFromString(value));
+    op->GetParameters()[key] = std::make_shared<ParameterVar>(CreateParameterFromString(value));
 }
 
 static void LoadInputName(const std::shared_ptr<Operator>& op, const std::string& key, const std::string& value) {
@@ -272,14 +272,14 @@ static void LoadOperand(const std::shared_ptr<Operator>& op, const std::string& 
         std::string elem;
         std::getline(lcss, elem, ',');
         if (elem == "?") {
-            operand->GetShape().push_back(-1);
+            operand->GetShape().push_back(DimUnknownTag);
         } else if (elem[0] == '%') {
             // this shape is a variable,
             // encode %abc as symbolic tag
-            operand->GetShape().push_back(-233);
+            operand->GetShape().push_back(DimVariableTag);
             size_t index = operand->GetShape().size() - 1;
             std::string s = elem.substr(1);
-            operand->GetParams()[std::string("__shape__") + std::to_string(index)] = Parameter(s);
+            operand->GetParams()[std::string("__shape__") + std::to_string(index)] = std::make_shared<ParameterVar>(Parameter_(s));
         } else {
             operand->GetShape().push_back(std::stoi(elem));
         }
@@ -371,10 +371,8 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
         // dump op param info
         for (const auto& it: op->GetParameters()) {
             std::string value;
-            std::visit([&value](const auto& arg) {
-                value = arg.Encode2String();
-            },
-                       *it.second);
+            auto visitor = [&value](const auto& arg) { value = arg.Encode2String(); };
+            std::visit(visitor, *it.second);
             paramFile << " " << it.first << "=" << value;
         }
 
@@ -411,8 +409,16 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
             paramFile << " #" << operand->name() << "=(";
             size_t size = operand->GetShape().size();
             for (const auto& x: operand->GetShape()) {
-                if (x == -1) {
+                if (x == DimUnknownTag) {
                     paramFile << (--size ? "?," : "?");
+                } else if (x == DimVariableTag) {
+                    // %abc, shape variable
+                    size_t idx = operand->GetShape().size() - size;
+                    std::string key = "__shape__" + std::to_string(idx);
+                    std::string value;
+                    auto visitor = [&value](const auto& arg) { value = arg.Encode2String(); };
+                    std::visit(visitor, *(operand->GetParams()[key]));
+                    paramFile << "%" << value << (--size ? "," : "");
                 } else {
                     paramFile << x << (--size ? "," : "");
                 }
@@ -430,8 +436,16 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
             paramFile << " #" << operand->name() << "=(";
             size_t size = operand->GetShape().size();
             for (const auto& x: operand->GetShape()) {
-                if (x == -1) {
+                if (x == DimUnknownTag) {
                     paramFile << (--size ? "?," : "?");
+                } else if (x == DimVariableTag) {
+                    // %abc, shape variable
+                    size_t idx = operand->GetShape().size() - size;
+                    std::string key = "__shape__" + std::to_string(idx);
+                    std::string value;
+                    auto visitor = [&value](const auto& arg) { value = arg.Encode2String(); };
+                    std::visit(visitor, *(operand->GetParams()[key]));
+                    paramFile << "%" << value << (--size ? "," : "");
                 } else {
                     paramFile << x << (--size ? "," : "");
                 }
@@ -535,7 +549,7 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
 }
 
 std::shared_ptr<Operand> Graph::CreateOperator(const std::string& type, const std::string& name,
-                                               const std::map<std::string, std::shared_ptr<VariantParamType>>& params,
+                                               const std::map<std::string, std::shared_ptr<ParameterVar>>& params,
                                                const std::map<std::string, std::shared_ptr<Attribute>>& attrs,
                                                const std::vector<std::shared_ptr<Operand>>& inputOperands,
                                                const std::vector<std::string>& inputOperandNames,

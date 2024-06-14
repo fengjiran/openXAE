@@ -39,6 +39,9 @@ class OnnxAttributeProxy;
 
 namespace pnnx {
 
+const int DimUnknownTag = -1;
+const int DimVariableTag = -2333;
+
 class Parameter {
 public:
     /**
@@ -460,7 +463,14 @@ public:
     explicit Operand(std::string name) : name_(std::move(name)), type_(DataType::kDataTypeUnknown) {}
 
     Operand(std::string name, DataType type, std::vector<int> shape)
-        : name_(std::move(name)), type_(type), shape_(std::move(shape)) {}
+        : name_(std::move(name)), type_(type), shape_(std::move(shape)) {
+        for (size_t i = 0; i < shape_.size(); ++i) {
+            if (DimVariableTag == shape_[i]) {
+                params_[std::string("__shape__") + std::to_string(i)] =
+                std::make_shared<ParameterVar>(Parameter_("arg" + std::to_string(i)));
+            }
+        }
+    }
 
 
     Operand(const Operand&) = delete;
@@ -488,11 +498,11 @@ public:
         return name_;
     }
 
-    std::map<std::string, Parameter>& GetParams() {
+    std::map<std::string, std::shared_ptr<ParameterVar>>& GetParams() {
         return params_;
     }
 
-    NODISCARD const std::map<std::string, Parameter>& GetParams() const {
+    NODISCARD const std::map<std::string, std::shared_ptr<ParameterVar>>& GetParams() const {
         return params_;
     }
 
@@ -515,24 +525,7 @@ public:
     void RemoveConsumer(const std::shared_ptr<Operator>& op);
 
 private:
-    /**
-     * @brief Runtime data type_.
-     *
-     * 0 = null \n
-     * 1 = float32 \n
-     * 2 = float64 \n
-     * 3 = float16 \n
-     * 4 = int32 \n
-     * 5 = int64 \n
-     * 6 = int16 \n
-     * 7 = int8 \n
-     * 8 = uint8 \n
-     * 9 = bool \n
-     * 10 = complex64 \n
-     * 11 = complex128 \n
-     * 12 = complex32 \n
-     * 13 = bf16
-     */
+
     DataType type_;
     std::vector<int> shape_;
     std::shared_ptr<Operator> producer_;
@@ -540,7 +533,7 @@ private:
 
     // keep std::string typed member the last for cross cxxabi compatibility
     std::string name_;
-    std::map<std::string, Parameter> params_;
+    std::map<std::string, std::shared_ptr<ParameterVar>> params_;
 };
 
 class Operator {
@@ -550,7 +543,7 @@ public:
     Operator(std::string name, std::string type) : name_(std::move(name)), type_(std::move(type)) {}
 
     Operator(std::string name, std::string type,
-             std::map<std::string, std::shared_ptr<VariantParamType>> params,
+             std::map<std::string, std::shared_ptr<ParameterVar>> params,
              std::map<std::string, std::shared_ptr<Attribute>> attrs,
              std::vector<std::shared_ptr<Operand>> inputOperands,
              std::vector<std::string> inputNames)
@@ -612,11 +605,11 @@ public:
         return attrs_;
     }
 
-    std::map<std::string, std::shared_ptr<VariantParamType>>& GetParameters() {
+    std::map<std::string, std::shared_ptr<ParameterVar>>& GetParameters() {
         return params_;
     }
 
-    NODISCARD const std::map<std::string, std::shared_ptr<VariantParamType>>& GetParameters() const {
+    NODISCARD const std::map<std::string, std::shared_ptr<ParameterVar>>& GetParameters() const {
         return params_;
     }
 
@@ -635,7 +628,7 @@ private:
     std::vector<std::shared_ptr<Operand>> outputOperands_;
 
     std::map<std::string, std::shared_ptr<Attribute>> attrs_;
-    std::map<std::string, std::shared_ptr<VariantParamType>> params_;
+    std::map<std::string, std::shared_ptr<ParameterVar>> params_;
 };
 
 class Graph {
@@ -664,7 +657,7 @@ public:
     std::shared_ptr<Operator> CreateOperator(const std::string& type, const std::string& name);
 
     std::shared_ptr<Operand> CreateOperator(const std::string& type, const std::string& name,
-                                            const std::map<std::string, std::shared_ptr<VariantParamType>>& params,
+                                            const std::map<std::string, std::shared_ptr<ParameterVar>>& params,
                                             const std::map<std::string, std::shared_ptr<Attribute>>& attrs,
                                             const std::vector<std::shared_ptr<Operand>>& inputOperands,
                                             const std::vector<std::string>& inputOperandNames,

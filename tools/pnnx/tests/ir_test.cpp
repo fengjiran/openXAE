@@ -120,7 +120,7 @@ TEST(IRTEST, new_parameter) {
             EXPECT_FALSE(arg.toValue());
             arg.SetValue(true);
         }
-    }, VariantParamType(p1));
+    }, ParameterVar(p1));
 
     /// test integer type
     Parameter_ p2(10);
@@ -242,6 +242,7 @@ TEST(IRTEST, Attribute) {
 }
 
 TEST(IRTEST, pnnx_graph_load) {
+//    GTEST_SKIP();
     std::string param_path = "test_linear.pnnx.param";
     std::string bin_path = "test_linear.pnnx.bin";
     Graph graph;
@@ -256,7 +257,7 @@ TEST(IRTEST, create_pnnx_graph) {
     Graph graph;
     auto t1 = graph.CreateOperator("pnnx.Input", "pnnx_input_0",
                                    {}, {}, {}, {},
-                                   "0", DataType::kDataTypeFloat32, {1, 32});
+                                   "0", DataType::kDataTypeFloat32, {1, DimVariableTag}); //{1,32}
 
     auto bias = torch::rand({128});
     auto weight = torch::rand({128, 32});
@@ -264,9 +265,9 @@ TEST(IRTEST, create_pnnx_graph) {
     weight.contiguous();
 
     auto t2 = graph.CreateOperator("nn.Linear", "linear",
-                                   {{"bias", std::make_shared<VariantParamType>(Parameter_(true))},
-                                    {"in_features", std::make_shared<VariantParamType>(Parameter_(32))},
-                                    {"out_features", std::make_shared<VariantParamType>(Parameter_(128))}},
+                                   {{"bias", std::make_shared<ParameterVar>(Parameter_(true))},
+                                    {"in_features", std::make_shared<ParameterVar>(Parameter_(32))},
+                                    {"out_features", std::make_shared<ParameterVar>(Parameter_(128))}},
                                    {{"bias", std::make_shared<Attribute>(std::vector<int>{128}, std::vector<float>(bias.data_ptr<float>(), bias.data_ptr<float>() + bias.numel()))},
                                     {"weight", std::make_shared<Attribute>(std::vector<int>{128, 32}, std::vector<float>(weight.data_ptr<float>(), weight.data_ptr<float>() + weight.numel()))}},
                                    {t1}, {},
@@ -279,7 +280,7 @@ TEST(IRTEST, create_pnnx_graph) {
     auto t4 = graph.CreateOperator("pnnx.Output", "pnnx_output_0",
                                    {}, {}, {t3}, {}, {}, {}, {});
     ASSERT_TRUE(!t4);
-    graph.save("linear.pnnx.param", "linea.pnnx.bin");
+    graph.save("linear.pnnx.param", "linear.pnnx.bin");
 }
 
 }// namespace pnnx

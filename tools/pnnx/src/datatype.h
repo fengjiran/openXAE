@@ -10,7 +10,7 @@ namespace pnnx {
 /**
  * @brief Runtime parameter type.
  *
- * Enumerates the parameter type_ supported for workload.
+ * Enumerates the parameter type supported for workload.
  */
 enum class ParameterType {
     kParameterUnknown = 0,
