@@ -7,14 +7,11 @@
 
 #include "utils.h"
 
-#include <vector>
-#include <variant>
 #include <complex>
+#include <variant>
+#include <vector>
 
 namespace pnnx {
-
-template<typename T>
-constexpr bool is_string_v = std::is_same_v<std::decay_t<T>, std::string> || std::is_convertible_v<T, std::string>;
 
 template<typename T>
 struct is_vector : std::false_type {
@@ -36,6 +33,11 @@ using is_std_vector =
         typename is_vector<std::remove_cv_t<std::remove_reference_t<T>>>::type;
 
 template<typename T>
+constexpr bool is_string_v =
+        std::is_same_v<std::decay_t<T>, std::string> || std::is_convertible_v<T, std::string>;
+
+
+template<typename T>
 constexpr bool is_std_vector_v = is_std_vector<T>::value;
 
 //
@@ -50,7 +52,6 @@ constexpr bool is_std_vector_string_v = is_std_vector_v<T> && is_string_v<typena
 
 template<typename T>
 constexpr bool is_std_vector_complex_v = is_std_vector_v<T> && std::is_same_v<std::decay_t<typename is_vector<T>::elem_type>, std::complex<float>>;
-
 
 using param_null_type = std::integral_constant<ParameterType, ParameterType::kParameterUnknown>;
 using param_bool_type = std::integral_constant<ParameterType, ParameterType::kParameterBool>;
