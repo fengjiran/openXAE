@@ -39,32 +39,32 @@ class OnnxAttributeProxy;
 namespace pnnx {
 
 /// @deprecated
-class Parameter {
+class Parameter_Deprecated {
 public:
     /**
      * @brief Default constructor.
      */
-    Parameter() : type_(ParameterType::kParameterUnknown) {}
+    Parameter_Deprecated() : type_(ParameterType::kParameterUnknown) {}
 
     /**
      * @brief Constructor for bool type parameter.
      * @param val bool type value.
      */
-    explicit Parameter(bool val)
+    explicit Parameter_Deprecated(bool val)
         : type_(ParameterType::kParameterBool), boolVal_(val) {}
 
     /**
      * @brief Constructor for int type parameter.
      * @param val int type value.
      */
-    explicit Parameter(int val)
+    explicit Parameter_Deprecated(int val)
         : type_(ParameterType::kParameterInt), intVal_(val) {}
 
     /**
      * @brief Constructor for long type parameter.
      * @param val long type value.
      */
-    explicit Parameter(long val) : type_(ParameterType::kParameterInt) {
+    explicit Parameter_Deprecated(long val) : type_(ParameterType::kParameterInt) {
         if (val == std::numeric_limits<long>::min()) {
             val = std::numeric_limits<int>::min();
         }
@@ -79,7 +79,7 @@ public:
      * @brief Constructor for long long type parameter.
      * @param val long long type value.
      */
-    explicit Parameter(long long val) : type_(ParameterType::kParameterInt) {
+    explicit Parameter_Deprecated(long long val) : type_(ParameterType::kParameterInt) {
         if (val == std::numeric_limits<long long>::min()) {
             val = std::numeric_limits<int>::min();
         }
@@ -94,42 +94,42 @@ public:
      * @brief Constructor for float type parameter.
      * @param val float type value.
      */
-    explicit Parameter(float val)
+    explicit Parameter_Deprecated(float val)
         : type_(ParameterType::kParameterFloat), floatVal_(val) {}
 
     /**
      * @brief Constructor for double type parameter.
      * @param val double type value.
      */
-    explicit Parameter(double val)
+    explicit Parameter_Deprecated(double val)
         : type_(ParameterType::kParameterFloat), floatVal_(static_cast<float>(val)) {}
 
     /**
      * @brief Constructor for string type parameter.
      * @param val string type value.
      */
-    explicit Parameter(const char* val)
+    explicit Parameter_Deprecated(const char* val)
         : type_(ParameterType::kParameterString), strVal_(val) {}
 
     /**
      * @brief Constructor for string type parameter.
      * @param val string type value.
      */
-    explicit Parameter(std::string val)
+    explicit Parameter_Deprecated(std::string val)
         : type_(ParameterType::kParameterString), strVal_(std::move(val)) {}
 
     /**
      * @brief Constructor for array int type parameter.
      * @param val init list of int type value.
      */
-    Parameter(const std::initializer_list<int>& val)
+    Parameter_Deprecated(const std::initializer_list<int>& val)
         : type_(ParameterType::kParameterArrayInt), arrayIntVal_(val) {}
 
     /**
      * @brief Constructor for array int type parameter.
      * @param val init list of int64 type value.
      */
-    Parameter(const std::initializer_list<int64_t>& val) : type_(ParameterType::kParameterArrayInt) {
+    Parameter_Deprecated(const std::initializer_list<int64_t>& val) : type_(ParameterType::kParameterArrayInt) {
         for (const auto& x: val) {
             int64_t l = x;
             if (l == std::numeric_limits<long>::min()) {
@@ -147,14 +147,14 @@ public:
      * @brief Constructor for array int type parameter.
      * @param val vector of int type value.
      */
-    explicit Parameter(const std::vector<int>& val)
+    explicit Parameter_Deprecated(const std::vector<int>& val)
         : type_(ParameterType::kParameterArrayInt), arrayIntVal_(val) {}
 
     /**
      * @brief Constructor for array int64 type parameter.
      * @param val vector of int64 type value.
      */
-    explicit Parameter(const std::vector<int64_t>& val) : type_(ParameterType::kParameterArrayInt) {
+    explicit Parameter_Deprecated(const std::vector<int64_t>& val) : type_(ParameterType::kParameterArrayInt) {
         for (const auto& x: val) {
             int64_t l = x;
             if (l == std::numeric_limits<long>::min()) {
@@ -172,14 +172,14 @@ public:
      * @brief Constructor for array float type parameter.
      * @param val init list of float type value.
      */
-    Parameter(const std::initializer_list<float>& val)
+    Parameter_Deprecated(const std::initializer_list<float>& val)
         : type_(ParameterType::kParameterArrayFloat), arrayFloatVal_(val) {}
 
     /**
      * @brief Constructor for array double type parameter.
      * @param val init list of double type value.
      */
-    Parameter(const std::initializer_list<double>& val)
+    Parameter_Deprecated(const std::initializer_list<double>& val)
         : type_(ParameterType::kParameterArrayFloat) {
         for (const auto& x: val) {
             arrayFloatVal_.push_back(static_cast<float>(x));
@@ -190,14 +190,14 @@ public:
      * @brief Constructor for array float type parameter.
      * @param val vector of float type value.
      */
-    explicit Parameter(const std::vector<float>& val)
+    explicit Parameter_Deprecated(const std::vector<float>& val)
         : type_(ParameterType::kParameterArrayFloat), arrayFloatVal_(val) {}
 
     /**
      * @brief Constructor for array float type parameter.
      * @param val vector of double type value.
      */
-    explicit Parameter(const std::vector<double>& val)
+    explicit Parameter_Deprecated(const std::vector<double>& val)
         : type_(ParameterType::kParameterArrayFloat) {
         for (const auto& x: val) {
             arrayFloatVal_.push_back(static_cast<float>(x));
@@ -208,7 +208,7 @@ public:
      * @brief Constructor for array string type parameter.
      * @param val init list of string type value.
      */
-    Parameter(const std::initializer_list<const char*>& val)
+    Parameter_Deprecated(const std::initializer_list<const char*>& val)
         : type_(ParameterType::kParameterArrayString) {
         for (const auto& x: val) {
             arrayStringVal_.emplace_back(x);
@@ -219,42 +219,42 @@ public:
      * @brief Constructor for array string type parameter.
      * @param val init list of string type value.
      */
-    Parameter(const std::initializer_list<std::string>& val)
+    Parameter_Deprecated(const std::initializer_list<std::string>& val)
         : type_(ParameterType::kParameterArrayString), arrayStringVal_(val) {}
 
     /**
      * @brief Constructor for array string type parameter.
      * @param val vector of string type value.
      */
-    explicit Parameter(const std::vector<std::string>& val)
+    explicit Parameter_Deprecated(const std::vector<std::string>& val)
         : type_(ParameterType::kParameterArrayString), arrayStringVal_(val) {}
 
     /**
      * @brief Constructor for complex type parameter.
      * @param val complex type value.
      */
-    explicit Parameter(const std::complex<float>& val)
+    explicit Parameter_Deprecated(const std::complex<float>& val)
         : type_(ParameterType::kParameterComplex), complexVal_(val) {}
 
     /**
      * @brief Constructor for complex type parameter.
      * @param val complex type value.
      */
-    explicit Parameter(const std::complex<double>& val)
+    explicit Parameter_Deprecated(const std::complex<double>& val)
         : type_(ParameterType::kParameterComplex), complexVal_(val) {}
 
     /**
      * @brief Constructor for array complex type parameter.
      * @param val init list of complex type value.
      */
-    Parameter(const std::initializer_list<std::complex<float>>& val)
+    Parameter_Deprecated(const std::initializer_list<std::complex<float>>& val)
         : type_(ParameterType::kParameterArrayComplex), arrayComplexVal_(val) {}
 
     /**
      * @brief Constructor for array complex type parameter.
      * @param val init list of complex type value.
      */
-    Parameter(const std::initializer_list<std::complex<double>>& val)
+    Parameter_Deprecated(const std::initializer_list<std::complex<double>>& val)
         : type_(ParameterType::kParameterArrayComplex) {
         for (const auto& x: val) {
             arrayComplexVal_.emplace_back(x);
@@ -265,14 +265,14 @@ public:
      * @brief Constructor for array complex type parameter.
      * @param val vector of complex type value.
      */
-    explicit Parameter(const std::vector<std::complex<float>>& val)
+    explicit Parameter_Deprecated(const std::vector<std::complex<float>>& val)
         : type_(ParameterType::kParameterArrayComplex), arrayComplexVal_(val) {}
 
     /**
      * @brief Constructor for array complex type parameter.
      * @param val vector of complex type value.
      */
-    explicit Parameter(const std::vector<std::complex<double>>& val)
+    explicit Parameter_Deprecated(const std::vector<std::complex<double>>& val)
         : type_(ParameterType::kParameterArrayComplex) {
         for (const auto& x: val) {
             arrayComplexVal_.emplace_back(x);
@@ -280,18 +280,18 @@ public:
     }
 
 #if BUILD_TORCH2PNNX
-    Parameter(const torch::jit::Node* value_node);
-    Parameter(const torch::jit::Value* value);
+    Parameter_Deprecated(const torch::jit::Node* value_node);
+    Parameter_Deprecated(const torch::jit::Value* value);
 #endif// BUILD_TORCH2PNNX
 #if BUILD_ONNX2PNNX
-    Parameter(const onnx::AttributeProto& attr);
-    Parameter(const onnx2pnnx::OnnxAttributeProxy& attr);
+    Parameter_Deprecated(const onnx::AttributeProto& attr);
+    Parameter_Deprecated(const onnx2pnnx::OnnxAttributeProxy& attr);
 #endif// BUILD_ONNX2PNNX
 
-    Parameter(const Parameter&) = default;
-    Parameter(Parameter&&) = default;
-    Parameter& operator=(const Parameter&) = default;
-    Parameter& operator=(Parameter&&) = default;
+    Parameter_Deprecated(const Parameter_Deprecated&) = default;
+    Parameter_Deprecated(Parameter_Deprecated&&) = default;
+    Parameter_Deprecated& operator=(const Parameter_Deprecated&) = default;
+    Parameter_Deprecated& operator=(Parameter_Deprecated&&) = default;
 
     NODISCARD const ParameterType& type() const {
         return type_;
@@ -415,13 +415,13 @@ public:
         arrayStringVal_.push_back(std::move(val));
     }
 
-    static std::string Encode2String(const Parameter& param);
+    static std::string Encode2String(const Parameter_Deprecated& param);
 
-    static Parameter ParseFromString(const std::string& value);
+    static Parameter_Deprecated ParseFromString(const std::string& value);
 
 private:
     /**
-     * @brief Parameter type
+     * @brief Parameter_Deprecated type
      *
      * 0 = null \n
      * 1 = bool \n
@@ -450,7 +450,7 @@ private:
     std::vector<std::string> arrayStringVal_;
 };
 
-bool operator==(const Parameter& lhs, const Parameter& rhs);
+bool operator==(const Parameter_Deprecated& lhs, const Parameter_Deprecated& rhs);
 
 }// namespace pnnx
 

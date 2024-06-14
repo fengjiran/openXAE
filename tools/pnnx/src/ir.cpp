@@ -10,7 +10,7 @@
 
 namespace pnnx {
 
-std::string Parameter::Encode2String(const Parameter& param) {
+std::string Parameter_Deprecated::Encode2String(const Parameter_Deprecated& param) {
     std::string code;
     switch (param.type()) {
         case ParameterType::kParameterUnknown: {
@@ -98,10 +98,10 @@ std::string Parameter::Encode2String(const Parameter& param) {
     return code;
 }
 
-Parameter Parameter::ParseFromString(const std::string& value) {
+Parameter_Deprecated Parameter_Deprecated::ParseFromString(const std::string& value) {
     // string type
     if (value.find('%') != std::string::npos) {
-        Parameter p(value);
+        Parameter_Deprecated p(value);
         return p;
     }
 
@@ -112,12 +112,12 @@ Parameter Parameter::ParseFromString(const std::string& value) {
 
     // bool type
     if (value == "True" || value == "False") {
-        return Parameter(value == "True");
+        return Parameter_Deprecated(value == "True");
     }
 
     // array
     if (value[0] == '(' || value[0] == '[') {
-        Parameter p;
+        Parameter_Deprecated p;
         std::string lc = value.substr(1, value.size() - 2);
         std::istringstream lcss(lc);
         while (!lcss.eof()) {
@@ -142,20 +142,20 @@ Parameter Parameter::ParseFromString(const std::string& value) {
 
     // string
     if ((value[0] != '-' && (value[0] < '0' || value[0] > '9')) || (value[0] == '-' && (value[1] < '0' || value[1] > '9'))) {
-        Parameter p(value);
+        Parameter_Deprecated p(value);
         return p;
     }
 
     // float
     if (value.find('.') != std::string::npos || value.find('e') != std::string::npos) {
-        return Parameter(std::stof(value));
+        return Parameter_Deprecated(std::stof(value));
     }
 
     // integer
-    return Parameter(std::stoi(value));
+    return Parameter_Deprecated(std::stoi(value));
 }
 
-bool operator==(const Parameter& lhs, const Parameter& rhs) {
+bool operator==(const Parameter_Deprecated& lhs, const Parameter_Deprecated& rhs) {
     if (lhs.type() != rhs.type()) {
         return false;
     }
