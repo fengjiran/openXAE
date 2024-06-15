@@ -19,7 +19,7 @@
 #define NODISCARD [[nodiscard]]
 
 #if BUILD_TORCH2PNNX
-#include <memory>
+//#include <memory>
 namespace torch {
 namespace jit {
 struct Graph;
