@@ -24,8 +24,13 @@ namespace torch {
 namespace jit {
 struct Graph;
 struct Node;
+struct Value;
 }// namespace jit
 }// namespace torch
+
+namespace at {
+class Tensor;
+}
 #endif
 
 namespace pnnx {
