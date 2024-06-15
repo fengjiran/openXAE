@@ -3,8 +3,8 @@
 //
 
 //#include "glog/logging.h"
-#include "pnnx/src/ir.h"
 #include "pnnx/src/Graph.h"
+#include "pnnx/src/ir.h"
 #include "torch/torch.h"
 #include "gtest/gtest.h"
 
@@ -29,18 +29,18 @@ TEST(IRTEST, type_check) {
     static_assert(is_std_vector_string_v<std::initializer_list<std::string>>);
     static_assert(is_std_vector_complex_v<std::initializer_list<std::complex<float>>>);
 
-    static_assert(GetParameterType<void*>::value == ParameterType::kParameterUnknown);
-    static_assert(GetParameterType<bool>::value == ParameterType::kParameterBool);
-    static_assert(GetParameterType<int>::value == ParameterType::kParameterInt);
-    static_assert(GetParameterType<long>::value == ParameterType::kParameterInt);
-    static_assert(GetParameterType<long long>::value == ParameterType::kParameterInt);
-    static_assert(GetParameterType<char>::value == ParameterType::kParameterInt);
-    static_assert(GetParameterType<float>::value == ParameterType::kParameterFloat);
-    static_assert(GetParameterType<double>::value == ParameterType::kParameterFloat);
-    static_assert(GetParameterType<std::string>::value == ParameterType::kParameterString);
-    static_assert(GetParameterType<const char*>::value == ParameterType::kParameterString);
-    static_assert(GetParameterType<std::complex<float>>::value == ParameterType::kParameterComplex);
-    static_assert(GetParameterType<std::vector<int>>::value == ParameterType::kParameterArrayInt);
+    static_assert(GetParameterType<void*>() == ParameterType::kParameterUnknown);
+    static_assert(GetParameterType<bool>() == ParameterType::kParameterBool);
+    static_assert(GetParameterType<int>() == ParameterType::kParameterInt);
+    static_assert(GetParameterType<long>() == ParameterType::kParameterInt);
+    static_assert(GetParameterType<long long>() == ParameterType::kParameterInt);
+    static_assert(GetParameterType<char>() == ParameterType::kParameterInt);
+    static_assert(GetParameterType<float>() == ParameterType::kParameterFloat);
+    static_assert(GetParameterType<double>() == ParameterType::kParameterFloat);
+    static_assert(GetParameterType<std::string>() == ParameterType::kParameterString);
+    static_assert(GetParameterType<const char*>() == ParameterType::kParameterString);
+    static_assert(GetParameterType<std::complex<float>>() == ParameterType::kParameterComplex);
+    static_assert(GetParameterType<std::vector<int>>() == ParameterType::kParameterArrayInt);
     static_assert(std::is_same_v<Parameter<void*>::value_type, void*>);
 }
 
@@ -120,7 +120,8 @@ TEST(IRTEST, new_parameter) {
             EXPECT_FALSE(arg.toValue());
             arg.SetValue(true);
         }
-    }, ParameterVar(p1));
+    },
+               ParameterVar(p1));
 
     /// test integer type
     Parameter p2(10);
@@ -198,7 +199,6 @@ TEST(IRTEST, new_parameter) {
 }
 
 TEST(IRTEST, variant_param) {
-
 }
 
 TEST(IRTEST, libtorch) {
@@ -242,7 +242,7 @@ TEST(IRTEST, Attribute) {
 }
 
 TEST(IRTEST, pnnx_graph_load) {
-//    GTEST_SKIP();
+    //    GTEST_SKIP();
     std::string param_path = "test_linear.pnnx.param";
     std::string bin_path = "test_linear.pnnx.bin";
     Graph graph;
@@ -257,7 +257,7 @@ TEST(IRTEST, create_pnnx_graph) {
     Graph graph;
     auto t1 = graph.CreateOperator("pnnx.Input", "pnnx_input_0",
                                    {}, {}, {}, {},
-                                   "0", DataType::kDataTypeFloat32, {1, DimVariableTag}); //{1,32}
+                                   "0", DataType::kDataTypeFloat32, {1, DimVariableTag});//{1,32}
 
     auto bias = torch::rand({128});
     auto weight = torch::rand({128, 32});

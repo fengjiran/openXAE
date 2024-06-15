@@ -99,10 +99,10 @@ class Parameter {
 public:
     using value_type = T;
 
-    Parameter() : type_(GetParameterType<T>::value) {}
+    Parameter() : type_(GetParameterType<T>()) {}
 
     explicit Parameter(T val)
-        : type_(GetParameterType<T>::value),
+        : type_(GetParameterType<T>()),
           value_(val) {}
 
     NODISCARD const ParameterType& type() const {
@@ -129,7 +129,7 @@ public:
      * @return
      */
     template<typename U = T,
-             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterUnknown>::type* = nullptr>
+             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterUnknown>::type* = nullptr>
     NODISCARD std::string Encode2String() const {
         return "None";
     }
@@ -140,7 +140,7 @@ public:
      * @return
      */
     template<typename U = T,
-             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterBool>::type* = nullptr>
+             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterBool>::type* = nullptr>
     NODISCARD std::string Encode2String() const {
         return toValue() ? "True" : "False";
     }
@@ -151,7 +151,7 @@ public:
      * @return
      */
     template<typename U = T,
-             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterInt>::type* = nullptr>
+             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterInt>::type* = nullptr>
     NODISCARD std::string Encode2String() const {
         return std::to_string(toValue());
     }
@@ -163,7 +163,7 @@ public:
      * @return
      */
     template<typename U = T,
-             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterFloat>::type* = nullptr>
+             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterFloat>::type* = nullptr>
     NODISCARD std::string Encode2String() const {
         char buf[64];
         snprintf(buf, sizeof(buf), "%e", toValue());
@@ -176,7 +176,7 @@ public:
      * @return
      */
     template<typename U = T,
-             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterString>::type* = nullptr>
+             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterString>::type* = nullptr>
     NODISCARD std::string Encode2String() const {
         return toValue();
     }
@@ -187,7 +187,7 @@ public:
      * @return
      */
     template<typename U = T,
-             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterComplex>::type* = nullptr>
+             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterComplex>::type* = nullptr>
     NODISCARD std::string Encode2String() const {
         char buf[128];
         snprintf(buf, sizeof(buf), "%e+%ei", toValue().real(), toValue().imag());
@@ -208,10 +208,10 @@ class Parameter<std::vector<T>> {
 public:
     using value_type = std::vector<T>;
 
-    Parameter() : type_(GetParameterType<std::vector<T>>::value) {}
+    Parameter() : type_(GetParameterType<std::vector<T>>()) {}
 
     explicit Parameter(const std::vector<T>& val)
-        : type_(GetParameterType<std::vector<T>>::value), value_(val) {}
+        : type_(GetParameterType<std::vector<T>>()), value_(val) {}
 
     NODISCARD const ParameterType& type() const {
         return type_;
@@ -241,7 +241,7 @@ public:
      * @return
      */
     template<typename U = std::vector<T>,
-             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterArrayInt>::type* = nullptr>
+             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterArrayInt>::type* = nullptr>
     NODISCARD std::string Encode2String() const {
         std::string code;
         code += "(";
@@ -259,7 +259,7 @@ public:
      * @return
      */
     template<typename U = std::vector<T>,
-             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterArrayFloat>::type* = nullptr>
+             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterArrayFloat>::type* = nullptr>
     NODISCARD std::string Encode2String() const {
         std::string code;
         code += "(";
@@ -279,7 +279,7 @@ public:
      * @return
      */
     template<typename U = std::vector<T>,
-             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterArrayString>::type* = nullptr>
+             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterArrayString>::type* = nullptr>
     NODISCARD std::string Encode2String() const {
         std::string code;
         code += "(";
@@ -297,7 +297,7 @@ public:
      * @return
      */
     template<typename U = std::vector<T>,
-             typename std::enable_if<GetParameterType<U>::value == ParameterType::kParameterArrayComplex>::type* = nullptr>
+             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterArrayComplex>::type* = nullptr>
     NODISCARD std::string Encode2String() const {
         std::string code;
         code += "(";
