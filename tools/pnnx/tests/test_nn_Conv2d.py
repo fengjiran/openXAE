@@ -40,8 +40,9 @@ def test():
     a = net(x)
 
     # export torchscript
-    mod = torch.jit.trace(net, x)
-    mod.save('test_nn_Conv2d.pt')
+    with torch.no_grad():
+        mod = torch.jit.trace(net, x)
+        mod.save('test_nn_Conv2d.pt')
 
 
 if __name__ == '__main__':
