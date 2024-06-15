@@ -53,55 +53,45 @@ constexpr bool is_std_vector_string_v = is_std_vector_v<T> && is_string_v<typena
 template<typename T>
 constexpr bool is_std_vector_complex_v = is_std_vector_v<T> && std::is_same_v<std::decay_t<typename is_vector<T>::elem_type>, std::complex<float>>;
 
-using param_null_type = std::integral_constant<ParameterType, ParameterType::kParameterUnknown>;
-using param_bool_type = std::integral_constant<ParameterType, ParameterType::kParameterBool>;
-using param_int_type = std::integral_constant<ParameterType, ParameterType::kParameterInt>;
-using param_float_type = std::integral_constant<ParameterType, ParameterType::kParameterFloat>;
-using param_complex_type = std::integral_constant<ParameterType, ParameterType::kParameterComplex>;
-using param_string_type = std::integral_constant<ParameterType, ParameterType::kParameterString>;
-using param_arrayint_type = std::integral_constant<ParameterType, ParameterType::kParameterArrayInt>;
-using param_arrayfloat_type = std::integral_constant<ParameterType, ParameterType::kParameterArrayFloat>;
-using param_arraycomplex_type = std::integral_constant<ParameterType, ParameterType::kParameterArrayComplex>;
-using param_arraystring_type = std::integral_constant<ParameterType, ParameterType::kParameterArrayString>;
-
 template<typename T, typename = void>
-struct GetParameterType : param_null_type {};
+struct GetParameterType
+    : std::integral_constant<ParameterType, ParameterType::kParameterUnknown> {};
 
 template<typename T>
 struct GetParameterType<T, typename std::enable_if_t<std::is_same_v<T, bool>>>
-    : param_bool_type {};
+    : std::integral_constant<ParameterType, ParameterType::kParameterBool> {};
 
 template<typename T>
 struct GetParameterType<T, typename std::enable_if_t<std::is_integral_v<T> && !std::is_same_v<T, bool>>>
-    : param_int_type {};
+    : std::integral_constant<ParameterType, ParameterType::kParameterInt> {};
 
 template<typename T>
 struct GetParameterType<T, typename std::enable_if_t<std::is_floating_point_v<T>>>
-    : param_float_type {};
+    : std::integral_constant<ParameterType, ParameterType::kParameterFloat> {};
 
 template<typename T>
 struct GetParameterType<T, typename std::enable_if_t<std::is_same_v<std::decay_t<T>, std::complex<float>>>>
-    : param_complex_type {};
+    : std::integral_constant<ParameterType, ParameterType::kParameterComplex> {};
 
 template<typename T>
 struct GetParameterType<T, typename std::enable_if_t<is_string_v<T>>>
-    : param_string_type {};
+    : std::integral_constant<ParameterType, ParameterType::kParameterString> {};
 
 template<typename T>
 struct GetParameterType<T, typename std::enable_if_t<is_std_vector_int_v<T>>>
-    : param_arrayint_type {};
+    : std::integral_constant<ParameterType, ParameterType::kParameterArrayInt> {};
 
 template<typename T>
 struct GetParameterType<T, typename std::enable_if_t<is_std_vector_float_v<T>>>
-    : param_arrayfloat_type {};
+    : std::integral_constant<ParameterType, ParameterType::kParameterArrayFloat> {};
 
 template<typename T>
 struct GetParameterType<T, typename std::enable_if_t<is_std_vector_string_v<T>>>
-    : param_arraystring_type {};
+    : std::integral_constant<ParameterType, ParameterType::kParameterArrayString> {};
 
 template<typename T>
 struct GetParameterType<T, typename std::enable_if_t<is_std_vector_complex_v<T>>>
-    : param_arraycomplex_type {};
+    : std::integral_constant<ParameterType, ParameterType::kParameterArrayComplex> {};
 
 
 template<typename T>
