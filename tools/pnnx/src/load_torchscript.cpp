@@ -31,9 +31,17 @@ static DataType GetATTensorType(const at::ScalarType& st) {
 }
 
 
-
 int load_torchscript(const std::string& ptpath,
-                     Graph& g) {
+                     Graph& g,
+                     const std::string& device) {
+    torch::jit::Module mod;
+    try {
+        mod = torch::jit::load(ptpath, (device == "gpu") ? c10::kCUDA : c10::kCPU);
+    } catch (const c10::Error& e) {
+        std::cerr << "Load torchscript failed: " << e.what() << std::endl;
+        std::cerr << "Please export model to torchscript as follows:\n";
+    }
+
     return 0;
 }
 

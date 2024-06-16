@@ -19,7 +19,7 @@
 #define NODISCARD [[nodiscard]]
 
 #if BUILD_TORCH2PNNX
-//#include <memory>
+#include <memory>
 namespace torch {
 namespace jit {
 struct Graph;
@@ -31,6 +31,12 @@ struct Value;
 namespace at {
 class Tensor;
 }
+#endif
+
+#ifdef PNNX_TORCHVISION
+namespace vision {
+int64_t cuda_version();
+} // namespace vision
 #endif
 
 namespace pnnx {

@@ -5,6 +5,7 @@
 //#include "glog/logging.h"
 #include "pnnx/src/Graph.h"
 #include "pnnx/src/ir.h"
+#include "pnnx/src/load_torchscript.h"
 #include "torch/torch.h"
 #include "gtest/gtest.h"
 
@@ -281,6 +282,12 @@ TEST(IRTEST, create_pnnx_graph) {
                                    {}, {}, {t3}, {}, {}, {}, {});
     ASSERT_TRUE(!t4);
     graph.save("linear.pnnx.param", "linear.pnnx.bin");
+}
+
+TEST(IRTEST, load_torchscript) {
+    std::string pt = "test_nn_Conv2d.pt";
+    Graph g;
+    load_torchscript(pt, g, "cpu");
 }
 
 }// namespace pnnx

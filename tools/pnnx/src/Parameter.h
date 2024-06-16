@@ -8,9 +8,9 @@
 #include "utils.h"
 
 #include <complex>
+#include <torch/script.h>
 #include <variant>
 #include <vector>
-#include <torch/script.h>
 
 namespace pnnx {
 
@@ -215,15 +215,84 @@ private:
 
 template<typename T>
 Parameter<T>::Parameter(const torch::jit::Node* value_node) {
-    DataType type = DataType::kDataTypeUnknown;
+    type_ = ParameterType::kParameterUnknown;
     if (value_node->kind() == c10::prim::Constant) {
+        if (value_node->output()->type()->kind() == c10::TypeKind::NoneType) {
+            type_ = ParameterType::kParameterUnknown;
+            return;
+        }
+
+        if (!value_node->hasAttribute(torch::jit::attr::value)) {
+            std::cerr << "No attribute value.\n";
+            value_node->dump();
+            return;
+        }
+
+        switch (value_node->output()->type()->kind()) {
+            case c10::TypeKind::NoneType: {
+                type_ = ParameterType::kParameterUnknown;
+                break;
+            }
+
+            case c10::TypeKind::BoolType: {
+                type_ = ParameterType::kParameterBool;
+                value_ = (bool) value_node->i(torch::jit::attr::value);
+                break;
+            }
+
+            case c10::TypeKind::IntType: {
+                type_ = ParameterType::kParameterInt;
+                int64_t i64 = value_node->i(torch::jit::attr::value);
+                if (i64 == std::numeric_limits<int64_t>::max()) {
+                    i64 = std::numeric_limits<int>::max();
+                }
+
+                if (i64 == std::numeric_limits<int64_t>::min()) {
+                    i64 = std::numeric_limits<int>::min();
+                }
+
+                value_ = (int) i64;
+                break;
+            }
+
+            case c10::TypeKind::FloatType: {
+                type_ = ParameterType::kParameterFloat;
+                value_ = (float) value_node->f(torch::jit::attr::value);
+                break;
+            }
+
+            case c10::TypeKind::StringType:
+            case c10::TypeKind::DeviceObjType: {
+                type_ = ParameterType::kParameterString;
+                value_ = std::string(value_node->s(torch::jit::attr::value));
+                break;
+            }
+
+#if Torch_VERSION_MAJOR >= 2 || (Torch_VERSION_MAJOR >= 1 && Torch_VERSION_MINOR >= 9)
+            case c10::TypeKind::ComplexType: {
+                type_ = ParameterType::kParameterComplex;
+                value_ = std::complex<float>(value_node->c(torch::jit::attr::value));
+                break;
+            }
+#endif
+
+            case c10::TypeKind::TensorType: {
+                at::Tensor t = value_node->t(torch::jit::attr::value);
+
+            }
+        }
+
+    } else if (value_node->kind() == c10::prim::ListConstruct) {
         //
     } else {
-        //
+        std::cerr << "Unknown Parameter value_node kind "
+                  << value_node->kind().toDisplayString();
     }
-
-
 }
+
+template<typename T>
+Parameter<T>::Parameter(const torch::jit::Value* value)
+    : Parameter(value->node()) {}
 
 template<typename T>
 class Parameter<std::vector<T>> {
