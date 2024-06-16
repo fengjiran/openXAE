@@ -10,6 +10,7 @@
 #include <complex>
 #include <variant>
 #include <vector>
+#include <torch/script.h>
 
 namespace pnnx {
 
@@ -103,6 +104,16 @@ public:
     explicit Parameter(T val)
         : type_(GetParameterType<T>()),
           value_(val) {}
+
+#if BUILD_TORCH2PNNX
+    Parameter(const torch::jit::Node* value_node);
+    Parameter(const torch::jit::Value* value);
+#endif// BUILD_TORCH2PNNX
+
+#if BUILD_ONNX2PNNX
+    Parameter(const onnx::AttributeProto& attr);
+    Parameter(const onnx2pnnx::OnnxAttributeProxy& attr);
+#endif// BUILD_ONNX2PNNX
 
     NODISCARD const ParameterType& type() const {
         return type_;
@@ -201,6 +212,18 @@ private:
 
     T value_{};
 };
+
+template<typename T>
+Parameter<T>::Parameter(const torch::jit::Node* value_node) {
+    DataType type = DataType::kDataTypeUnknown;
+    if (value_node->kind() == c10::prim::Constant) {
+        //
+    } else {
+        //
+    }
+
+
+}
 
 template<typename T>
 class Parameter<std::vector<T>> {
