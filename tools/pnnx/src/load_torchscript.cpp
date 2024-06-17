@@ -111,6 +111,7 @@ static ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_n
                     } else if (t.scalar_type() == c10::ScalarType::ComplexFloat) {
                         p = Parameter(std::complex<float>(t.item<c10::complex<float>>()));
                     } else {
+                        p = {};
                         std::cerr << "Unknown Parameter value kind " << value_node->kind().toDisplayString()
                                   << " of TensorType, t.dim = 0\n";
                     }
@@ -123,6 +124,12 @@ static ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_n
             }
 
             case c10::TypeKind::ListType: {
+                switch (value_node->output()->type()->containedTypes()[0]->kind()) {
+                    case c10::TypeKind::IntType: {
+                        std::vector<int64_t> i64s = value_node->ival(torch::jit::attr::value).toIntVector();
+//                        p = Parameter(i64s);
+                    }
+                }
             }
         }
 
