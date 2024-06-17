@@ -30,7 +30,6 @@ static DataType GetATTensorType(const at::ScalarType& st) {
     return DataType::kDataTypeUnknown;
 }
 
-
 int load_torchscript(const std::string& ptpath,
                      Graph& g,
                      const std::string& device) {
@@ -40,6 +39,17 @@ int load_torchscript(const std::string& ptpath,
     } catch (const c10::Error& e) {
         std::cerr << "Load torchscript failed: " << e.what() << std::endl;
         std::cerr << "Please export model to torchscript as follows:\n";
+        std::cerr << "------------------------------------------\n";
+        std::cerr << "import torch\n";
+        std::cerr << "import torchvision.models as models\n\n";
+        std::cerr << "net = models.resnet18(pretrained=True)\n";
+        std::cerr << "net = net.eval()\n\n";
+        std::cerr << "x = torch.rand(1, 3, 224, 224)\n";
+        std::cerr << "mod = torch.jit.trace(net, x)\n";
+        std::cerr << "mod.save(\"resnet18.pt\")\n";
+        std::cerr << "------------------------------------------\n";
+
+        return -1;
     }
 
     return 0;

@@ -106,8 +106,8 @@ public:
           value_(val) {}
 
 #if BUILD_TORCH2PNNX
-    Parameter(const torch::jit::Node* value_node);
-    Parameter(const torch::jit::Value* value);
+    explicit Parameter(const torch::jit::Node* value_node);
+    explicit Parameter(const torch::jit::Value* value);
 #endif// BUILD_TORCH2PNNX
 
 #if BUILD_ONNX2PNNX
@@ -213,6 +213,8 @@ private:
     T value_{};
 };
 
+#if BUILD_TORCH2PNNX
+
 template<typename T>
 Parameter<T>::Parameter(const torch::jit::Node* value_node) {
     type_ = ParameterType::kParameterUnknown;
@@ -278,7 +280,6 @@ Parameter<T>::Parameter(const torch::jit::Node* value_node) {
 
             case c10::TypeKind::TensorType: {
                 at::Tensor t = value_node->t(torch::jit::attr::value);
-
             }
         }
 
@@ -293,6 +294,9 @@ Parameter<T>::Parameter(const torch::jit::Node* value_node) {
 template<typename T>
 Parameter<T>::Parameter(const torch::jit::Value* value)
     : Parameter(value->node()) {}
+
+#endif
+
 
 template<typename T>
 class Parameter<std::vector<T>> {
