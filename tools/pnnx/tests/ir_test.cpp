@@ -106,6 +106,8 @@ TEST(IRTEST, Parameter_Deprecated) {
 }
 
 TEST(IRTEST, new_parameter) {
+    ParameterVar p;
+    std::visit([](const auto& arg) { std::cout << (int) arg.type() << std::endl; }, p);
     /// test bool type
     Parameter p1(true);
     static_assert(std::is_same_v<decltype(p1)::value_type, bool>);
@@ -197,9 +199,6 @@ TEST(IRTEST, new_parameter) {
     EXPECT_EQ(p8.toValue(), (std::vector<std::string>{"Effective", "Modern", "C++", "Scott Meyers"}));
     EXPECT_EQ(p8, make_parameter(std::vector<std::string>{"Effective", "Modern", "C++", "Scott Meyers"}));
     EXPECT_EQ(p8.Encode2String(), "(Effective,Modern,C++,Scott Meyers)");
-}
-
-TEST(IRTEST, variant_param) {
 }
 
 TEST(IRTEST, libtorch) {

@@ -319,7 +319,12 @@ Parameter<T>::Parameter(const torch::jit::Node* value_node) {
             }
 
             case c10::TypeKind::ListType: {
-
+                switch (value_node->output()->type()->containedTypes()[0]->kind()) {
+                    case c10::TypeKind::IntType: {
+                        //                        type_ = ParameterType::kParameterArrayInt;
+                        //                        std::vector<int64_t> i64s = value_node
+                    }
+                }
             }
         }
 
@@ -480,17 +485,16 @@ auto make_parameter(Args&&... args) {
 }
 
 
-using ParameterVar = std::variant<
-        //        Parameter<void*>,
-        Parameter<bool>,
-        Parameter<int>,
-        Parameter<float>,
-        Parameter<double>,
-        Parameter<std::string>,
-        Parameter<std::complex<float>>,
-        Parameter<std::vector<int>>,
-        Parameter<std::vector<float>>,
-        Parameter<std::vector<std::string>>>;
+using ParameterVar = std::variant<Parameter<void*>,
+                                  Parameter<bool>,
+                                  Parameter<int>,
+                                  Parameter<float>,
+                                  Parameter<double>,
+                                  Parameter<std::string>,
+                                  Parameter<std::complex<float>>,
+                                  Parameter<std::vector<int>>,
+                                  Parameter<std::vector<float>>,
+                                  Parameter<std::vector<std::string>>>;
 
 }// namespace pnnx
 

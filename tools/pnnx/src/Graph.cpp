@@ -12,7 +12,7 @@
 
 namespace pnnx {
 
-ParameterVar CreateParameterFromString(const std::string& value) {
+static ParameterVar CreateParameterFromString(const std::string& value) {
     // string type
     if (value.find('%') != std::string::npos) {
         Parameter p(value);
