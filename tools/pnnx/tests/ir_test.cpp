@@ -107,7 +107,7 @@ TEST(IRTEST, Parameter_Deprecated) {
 
 TEST(IRTEST, new_parameter) {
     ParameterVar p;
-    std::visit([](const auto& arg) { std::cout << (int) arg.type() << std::endl; }, p);
+    std::visit([](const auto& arg) { std::cout << arg.Encode2String() << std::endl; }, p);
     /// test bool type
     Parameter p1(true);
     static_assert(std::is_same_v<decltype(p1)::value_type, bool>);
