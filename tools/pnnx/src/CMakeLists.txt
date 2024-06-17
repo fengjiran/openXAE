@@ -10,7 +10,12 @@ set(torch2pnnx_src
 
 
 add_library(torch2pnnx OBJECT ${torch2pnnx_src})
-target_compile_definitions(torch2pnnx PRIVATE BUILD_TORCH2PNNX)
+target_compile_definitions(torch2pnnx PRIVATE
+        BUILD_TORCH2PNNX
+        Torch_VERSION_MAJOR=${Torch_VERSION_MAJOR}
+        Torch_VERSION_MINOR=${Torch_VERSION_MINOR}
+        Torch_VERSION_PATCH=${Torch_VERSION_PATCH}
+)
 target_compile_options(torch2pnnx PUBLIC "${TORCH_CXX_FLAGS}")
 
 if (TorchVision_FOUND)

@@ -21,6 +21,7 @@ enum class ParameterType {
     kParameterArrayInt = 5,
     kParameterArrayFloat = 6,
     kParameterArrayString = 7,
+    kParameterOther = 8,
     kParameterComplex = 10,
     kParameterArrayComplex = 11
 };

@@ -11,7 +11,7 @@ namespace pnnx {
 
 int load_torchscript(
         const std::string& ptpath,
-        Graph& g,
+        Graph& pnnx_graph,
         const std::string& device
         );
 

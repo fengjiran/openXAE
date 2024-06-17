@@ -31,7 +31,7 @@ static DataType GetATTensorType(const at::ScalarType& st) {
 }
 
 int load_torchscript(const std::string& ptpath,
-                     Graph& g,
+                     Graph& pnnx_graph,
                      const std::string& device) {
     torch::jit::Module mod;
     try {
@@ -51,6 +51,23 @@ int load_torchscript(const std::string& ptpath,
 
         return -1;
     }
+
+    mod.eval();
+
+    auto method = mod.find_method("forward");
+    if (!method) {
+        auto methods = mod.get_methods();
+        if (methods.empty()) {
+            std::cerr << "No method in torchscript.\n";
+            return -1;
+        }
+        method = methods[0];
+        std::cerr << "Use method " << method->name() << " as the entrypoint instead of forward.\n";
+    }
+
+    auto g = method->graph();
+
+    g->dump();
 
     return 0;
 }

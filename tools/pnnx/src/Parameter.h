@@ -214,7 +214,6 @@ private:
 };
 
 #if BUILD_TORCH2PNNX
-
 template<typename T>
 Parameter<T>::Parameter(const torch::jit::Node* value_node) {
     type_ = ParameterType::kParameterUnknown;
@@ -279,7 +278,48 @@ Parameter<T>::Parameter(const torch::jit::Node* value_node) {
 #endif
 
             case c10::TypeKind::TensorType: {
-                at::Tensor t = value_node->t(torch::jit::attr::value);
+                const at::Tensor& t = value_node->t(torch::jit::attr::value);
+                if (t.dim() == 0 && t.numel() == 1) {
+                    if (t.scalar_type() == c10::ScalarType::Long) {
+                        type_ = ParameterType::kParameterInt;
+                        int64_t i64 = value_node->i(torch::jit::attr::value);
+                        if (i64 == std::numeric_limits<int64_t>::max()) {
+                            i64 = std::numeric_limits<int>::max();
+                        }
+
+                        if (i64 == std::numeric_limits<int64_t>::min()) {
+                            i64 = std::numeric_limits<int>::min();
+                        }
+
+                        value_ = (int) i64;
+                    } else if (t.scalar_type() == c10::ScalarType::Int) {
+                        type_ = ParameterType::kParameterInt;
+                        value_ = t.item<int>();
+                    } else if (t.scalar_type() == c10::ScalarType::Double) {
+                        type_ = ParameterType::kParameterFloat;
+                        value_ = (float) t.item<double>();
+                    } else if (t.scalar_type() == c10::ScalarType::Float) {
+                        type_ = ParameterType::kParameterFloat;
+                        value_ = t.item<float>();
+                    } else if (t.scalar_type() == c10::ScalarType::ComplexDouble) {
+                        type_ = ParameterType::kParameterComplex;
+                        value_ = std::complex<float>(t.item<c10::complex<double>>());
+                    } else if (t.scalar_type() == c10::ScalarType::ComplexFloat) {
+                        type_ = ParameterType::kParameterComplex;
+                        value_ = std::complex<float>(t.item<c10::complex<float>>());
+                    } else {
+                        std::cerr << "Unknown Parameter value kind " << value_node->kind().toDisplayString()
+                                  << " of TensorType, t.dim = 0\n";
+                    }
+                } else {
+                    // constant tensor will become pnnx attribute node later.
+                    type_ = ParameterType::kParameterOther;
+                }
+                break;
+            }
+
+            case c10::TypeKind::ListType: {
+
             }
         }
 
