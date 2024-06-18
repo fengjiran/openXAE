@@ -9,6 +9,10 @@
 
 namespace pnnx {
 
+ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_node);
+
+ParameterVar CreateParameterFromTorchValue(const torch::jit::Value* value);
+
 int load_torchscript(
         const std::string& ptpath,
         Graph& pnnx_graph,

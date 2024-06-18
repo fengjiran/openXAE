@@ -30,7 +30,7 @@ static DataType GetATTensorType(const at::ScalarType& st) {
     return DataType::kDataTypeUnknown;
 }
 
-static ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_node) {
+ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_node) {
     ParameterVar p;
     if (value_node->kind() == c10::prim::Constant) {
         if (value_node->output()->type()->kind() == c10::TypeKind::NoneType) {
@@ -44,11 +44,6 @@ static ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_n
         }
 
         switch (value_node->output()->type()->kind()) {
-            case c10::TypeKind::NoneType: {
-                //                p = {};
-                break;
-            }
-
             case c10::TypeKind::BoolType: {
                 p = Parameter((bool) value_node->i(torch::jit::attr::value));
                 break;
@@ -248,7 +243,7 @@ static ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_n
     return p;
 }
 
-static ParameterVar CreateParameterFromTorchValue(const torch::jit::Value* value) {
+ParameterVar CreateParameterFromTorchValue(const torch::jit::Value* value) {
     return CreateParameterFromTorchNode(value->node());
 }
 

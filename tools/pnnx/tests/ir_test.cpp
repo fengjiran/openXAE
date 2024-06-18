@@ -6,6 +6,7 @@
 #include "pnnx/src/Graph.h"
 #include "pnnx/src/ir.h"
 #include "pnnx/src/load_torchscript.h"
+#include "torch/csrc/jit/frontend/tracer.h"
 #include "torch/torch.h"
 #include "gtest/gtest.h"
 
@@ -287,10 +288,55 @@ TEST(IRTEST, load_torchscript) {
     std::string pt = "test_nn_Conv2d.pt";
     Graph g;
     load_torchscript(pt, g, "cpu");
+}
 
-    auto g1 = torch::jit::Graph();
-    auto node = g1.create(c10::prim::Constant, 1);
-    auto k = node->output()->type()->kind();
+TEST(IRTEST, create_parameter_from_torch_node) {
+    auto g = torch::jit::Graph();
+    auto printer = [](const auto& arg) {
+        std::cout << arg.Encode2String() << std::endl;
+    };
+
+    auto node1 = g.createNone();
+    EXPECT_TRUE(node1->output()->type()->kind() == c10::TypeKind::NoneType);
+    auto p1 = CreateParameterFromTorchNode(node1);
+    std::visit(printer, p1);
+
+    auto node2 = g.create(c10::prim::Constant);
+    node2->output()->setType(c10::IntType::get());
+    EXPECT_TRUE(node2->output()->type()->kind() == c10::TypeKind::IntType);
+    node2->i_(torch::jit::attr::value, 10);
+    auto p2 = CreateParameterFromTorchNode(node2);
+    std::visit(printer, p2);
+
+    auto node3 = g.create(c10::prim::Constant);
+    node3->output()->setType(c10::BoolType::get());
+    EXPECT_TRUE(node3->output()->type()->kind() == c10::TypeKind::BoolType);
+    node3->i_(torch::jit::attr::value, false);
+    auto p3 = CreateParameterFromTorchNode(node3);
+    std::visit(printer, p3);
+
+    auto node4 = g.create(c10::prim::Constant);
+    node4->output()->setType(c10::FloatType::get());
+    EXPECT_TRUE(node4->output()->type()->kind() == c10::TypeKind::FloatType);
+    node4->f_(torch::jit::attr::value, 20);
+    auto p4 = CreateParameterFromTorchNode(node4);
+    std::visit(printer, p4);
+
+    auto node5 = g.create(c10::prim::Constant);
+    node5->output()->setType(c10::StringType::get());
+    EXPECT_TRUE(node5->output()->type()->kind() == c10::TypeKind::StringType);
+    node5->s_(torch::jit::attr::value, "hello, OpenXAE");
+    auto p5 = CreateParameterFromTorchNode(node5);
+    std::visit(printer, p5);
+
+    auto node6 = g.create(c10::prim::Constant);
+    node6->output()->setType(c10::ComplexType::get());
+    EXPECT_TRUE(node6->output()->type()->kind() == c10::TypeKind::ComplexType);
+    node6->c_(torch::jit::attr::value, c10::complex<float>(2,3));
+    auto p6 = CreateParameterFromTorchNode(node6);
+    std::visit(printer, p6);
+
+
 }
 
 }// namespace pnnx
