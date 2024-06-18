@@ -287,6 +287,10 @@ TEST(IRTEST, load_torchscript) {
     std::string pt = "test_nn_Conv2d.pt";
     Graph g;
     load_torchscript(pt, g, "cpu");
+
+    auto g1 = torch::jit::Graph();
+    auto node = g1.create(c10::prim::Constant, 1);
+    auto k = node->output()->type()->kind();
 }
 
 }// namespace pnnx
