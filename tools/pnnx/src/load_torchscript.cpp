@@ -107,7 +107,8 @@ ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_node) {
                         p = Parameter(std::complex<float>(t.item<c10::complex<float>>()));
                     } else {
                         //                        p = {};
-                        std::cerr << "Unknown Parameter value kind " << value_node->kind().toDisplayString()
+                        std::cerr << "Unknown Parameter value kind "
+                                  << value_node->kind().toDisplayString()
                                   << " of TensorType, t.dim = 0\n";
                     }
                 } else {
@@ -150,7 +151,6 @@ ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_node) {
                     }
 
                     default: {
-                        //                        p = {};
                         std::cerr << "Unknown Parameter value list element kind "
                                   << c10::typeKindToString(value_node->output()->type()->containedTypes()[0]->kind())
                                   << std::endl;
@@ -161,7 +161,6 @@ ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_node) {
             }
 
             default: {
-                //                p = {};
                 std::cerr << "Unknown Parameter value kind "
                           << c10::typeKindToString(value_node->output()->type()->kind())
                           << std::endl;

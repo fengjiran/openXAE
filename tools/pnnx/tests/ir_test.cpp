@@ -332,11 +332,22 @@ TEST(IRTEST, create_parameter_from_torch_node) {
     auto node6 = g.create(c10::prim::Constant);
     node6->output()->setType(c10::ComplexType::get());
     EXPECT_TRUE(node6->output()->type()->kind() == c10::TypeKind::ComplexType);
-    node6->c_(torch::jit::attr::value, c10::complex<float>(2,3));
+    node6->c_(torch::jit::attr::value, c10::complex<float>(2, 3));
     auto p6 = CreateParameterFromTorchNode(node6);
     std::visit(printer, p6);
 
+    auto node7 = g.create(c10::prim::Constant);
+    EXPECT_TRUE(node7->output()->type()->kind() == c10::TypeKind::TensorType);
+    node7->t_(torch::jit::attr::value, torch::rand({}));
+    auto p7 = CreateParameterFromTorchNode(node7);
+    std::visit(printer, p7);
 
+    auto node8 = g.create(c10::prim::Constant);
+    node8->output()->setType(c10::ListType::get("List<T>", c10::IntType::get()));
+    EXPECT_TRUE(node8->output()->type()->kind() == c10::TypeKind::ListType);
+    node8->ival_(torch::jit::attr::value, std::vector<long>({1, 2, 3}));
+    auto p8 = CreateParameterFromTorchNode(node8);
+    std::visit(printer, p8);
 }
 
 }// namespace pnnx
