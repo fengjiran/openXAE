@@ -345,9 +345,12 @@ TEST(IRTEST, create_parameter_from_torch_node) {
     auto node8 = g.create(c10::prim::Constant);
     node8->output()->setType(c10::ListType::get("List<T>", c10::IntType::get()));
     EXPECT_TRUE(node8->output()->type()->kind() == c10::TypeKind::ListType);
-    node8->ival_(torch::jit::attr::value, std::vector<long>({1, 2, 3}));
+    node8->ival_(torch::jit::attr::value, std::vector<int64_t>{1, 2, 3});
     auto p8 = CreateParameterFromTorchNode(node8);
     std::visit(printer, p8);
+
+    auto node9 = g.create(c10::prim::ListConstruct);
+
 }
 
 }// namespace pnnx
