@@ -34,18 +34,18 @@ static ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_n
     ParameterVar p;
     if (value_node->kind() == c10::prim::Constant) {
         if (value_node->output()->type()->kind() == c10::TypeKind::NoneType) {
-            return {};
+            return p;
         }
 
         if (!value_node->hasAttribute(torch::jit::attr::value)) {
             std::cerr << "No attribute value.\n";
             value_node->dump();
-            return {};
+            return p;
         }
 
         switch (value_node->output()->type()->kind()) {
             case c10::TypeKind::NoneType: {
-                p = {};
+                //                p = {};
                 break;
             }
 
@@ -111,13 +111,13 @@ static ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_n
                     } else if (t.scalar_type() == c10::ScalarType::ComplexFloat) {
                         p = Parameter(std::complex<float>(t.item<c10::complex<float>>()));
                     } else {
-                        p = {};
+                        //                        p = {};
                         std::cerr << "Unknown Parameter value kind " << value_node->kind().toDisplayString()
                                   << " of TensorType, t.dim = 0\n";
                     }
                 } else {
                     // constant tensor will become pnnx attribute node later.
-                    p = {};
+                    //                    p = {};
                     std::visit([](auto&& arg) { arg.SetType(ParameterType::kParameterOther); }, p);
                 }
                 break;
@@ -127,18 +127,125 @@ static ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_n
                 switch (value_node->output()->type()->containedTypes()[0]->kind()) {
                     case c10::TypeKind::IntType: {
                         std::vector<int64_t> i64s = value_node->ival(torch::jit::attr::value).toIntVector();
-//                        p = Parameter(i64s);
+                        std::vector<int> i32s;
+                        i32s.reserve(i64s.size());
+                        for (auto& i64: i64s) {
+                            if (i64 == std::numeric_limits<int64_t>::max()) {
+                                i64 = std::numeric_limits<int>::max();
+                            }
+
+                            if (i64 == std::numeric_limits<int64_t>::min()) {
+                                i64 = std::numeric_limits<int>::min();
+                            }
+                            i32s.push_back((int) i64);
+                        }
+                        p = Parameter(i32s);
+                        break;
+                    }
+
+                    case c10::TypeKind::FloatType: {
+                        std::vector<double> doubles = value_node->ival(torch::jit::attr::value).toDoubleVector();
+                        std::vector<float> floats;
+                        floats.reserve(doubles.size());
+                        for (const auto& t: doubles) {
+                            floats.push_back((float) t);
+                        }
+                        p = Parameter(floats);
+                        break;
+                    }
+
+                    default: {
+                        //                        p = {};
+                        std::cerr << "Unknown Parameter value list element kind "
+                                  << c10::typeKindToString(value_node->output()->type()->containedTypes()[0]->kind())
+                                  << std::endl;
+                        break;
                     }
                 }
+                break;
+            }
+
+            default: {
+                //                p = {};
+                std::cerr << "Unknown Parameter value kind "
+                          << c10::typeKindToString(value_node->output()->type()->kind())
+                          << std::endl;
             }
         }
-
     } else if (value_node->kind() == c10::prim::ListConstruct) {
-        //
+        switch (value_node->output()->type()->cast<c10::ListType>()->getElementType()->kind()) {
+            case c10::TypeKind::IntType: {
+                std::vector<int> ai;
+                for (const auto& x: value_node->inputs()) {
+                    if (!x->node()->hasAttribute(torch::jit::attr::value)) {
+                        std::cerr << "No attribute value in int list\n";
+                        ai.push_back(0);
+                        continue;
+                    }
+                    ai.push_back((int) x->node()->i(torch::jit::attr::value));
+                }
+                p = Parameter(ai);
+                break;
+            }
+
+            case c10::TypeKind::FloatType: {
+                std::vector<float> af;
+                for (const auto& x: value_node->inputs()) {
+                    if (!x->node()->hasAttribute(torch::jit::attr::value)) {
+                        std::cerr << "No attribute value in float list\n";
+                        af.push_back(0);
+                        continue;
+                    }
+                    af.push_back((float) x->node()->f(torch::jit::attr::value));
+                }
+                p = Parameter(af);
+                break;
+            }
+
+            case c10::TypeKind::StringType: {
+                std::vector<std::string> as;
+                for (const auto& x: value_node->inputs()) {
+                    if (!x->node()->hasAttribute(torch::jit::attr::value)) {
+                        std::cerr << "No attribute value in string list\n";
+                        as.emplace_back("");
+                        continue;
+                    }
+                    as.emplace_back(x->node()->s(torch::jit::attr::value));
+                }
+                p = Parameter(as);
+                break;
+            }
+#if Torch_VERSION_MAJOR >= 2 || (Torch_VERSION_MAJOR >= 1 && Torch_VERSION_MINOR >= 9)
+            case c10::TypeKind::ComplexType: {
+                std::vector<std::complex<float>> ac;
+                for (const auto& x: value_node->inputs()) {
+                    if (!x->node()->hasAttribute(torch::jit::attr::value)) {
+                        std::cerr << "No attribute value in complex list\n";
+                        ac.emplace_back(0, 0);
+                        continue;
+                    }
+                    ac.emplace_back(std::complex<float>(x->node()->c(torch::jit::attr::value)));
+                }
+                p = Parameter(ac);
+                break;
+            }
+#endif
+            default: {
+                //                p = {};
+                std::cerr << "Unknown Parameter value list element kind "
+                          << c10::typeKindToString(value_node->output()->type()->cast<c10::ListType>()->getElementType()->kind())
+                          << std::endl;
+                break;
+            }
+        }
     } else {
+        //        p = {};
         std::cerr << "Unknown Parameter value_node kind "
-                  << value_node->kind().toDisplayString();
+                  << value_node->kind().toDisplayString()
+                  << std::endl;
     }
+
+    return p;
 }
 
 static ParameterVar CreateParameterFromTorchValue(const torch::jit::Value* value) {

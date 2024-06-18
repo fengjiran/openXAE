@@ -492,9 +492,11 @@ using ParameterVar = std::variant<Parameter<void*>,
                                   Parameter<double>,
                                   Parameter<std::string>,
                                   Parameter<std::complex<float>>,
+
                                   Parameter<std::vector<int>>,
                                   Parameter<std::vector<float>>,
-                                  Parameter<std::vector<std::string>>>;
+                                  Parameter<std::vector<std::string>>,
+                                  Parameter<std::vector<std::complex<float>>>>;
 
 }// namespace pnnx
 
