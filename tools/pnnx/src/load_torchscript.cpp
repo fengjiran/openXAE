@@ -106,14 +106,12 @@ ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_node) {
                     } else if (t.scalar_type() == c10::ScalarType::ComplexFloat) {
                         p = Parameter(std::complex<float>(t.item<c10::complex<float>>()));
                     } else {
-                        //                        p = {};
                         std::cerr << "Unknown Parameter value kind "
                                   << value_node->kind().toDisplayString()
                                   << " of TensorType, t.dim = 0\n";
                     }
                 } else {
                     // constant tensor will become pnnx attribute node later.
-                    //                    p = {};
                     std::visit([](auto&& arg) { arg.SetType(ParameterType::kParameterOther); }, p);
                 }
                 break;
@@ -225,7 +223,6 @@ ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_node) {
             }
 #endif
             default: {
-                //                p = {};
                 std::cerr << "Unknown Parameter value list element kind "
                           << c10::typeKindToString(value_node->output()->type()->cast<c10::ListType>()->getElementType()->kind())
                           << std::endl;
@@ -233,7 +230,6 @@ ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_node) {
             }
         }
     } else {
-        //        p = {};
         std::cerr << "Unknown Parameter value_node kind "
                   << value_node->kind().toDisplayString()
                   << std::endl;
@@ -244,6 +240,60 @@ ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_node) {
 
 ParameterVar CreateParameterFromTorchValue(const torch::jit::Value* value) {
     return CreateParameterFromTorchNode(value->node());
+}
+
+std::shared_ptr<Operand> Graph::CreateOperand(const torch::jit::Value* value) {
+    auto r = CreateOperand(value->debugName());
+
+}
+
+Attribute::Attribute(const at::Tensor& t) {
+    type_ = GetATTensorType(t.scalar_type());
+    const int ndim = static_cast<int>(t.dim());
+    if (ndim == 0) {
+        shape_ = {1};
+        data_.resize(GetElemSize());
+        switch (t.scalar_type()) {
+            case c10::ScalarType::Int: {
+                int i = t.item<int>();
+                memcpy((void*) data_.data(), (const void*) &i, data_.size());
+                break;
+            }
+
+            case c10::ScalarType::Long: {
+                auto i = t.item<int64_t>();
+                memcpy((void*) data_.data(), (const void*) &i, data_.size());
+                break;
+            }
+
+            case c10::ScalarType::Float: {
+                auto f = t.item<float>();
+                memcpy((void*) data_.data(), (const void*) &f, data_.size());
+                break;
+            }
+
+            case c10::ScalarType::Double: {
+                auto f = t.item<double>();
+                memcpy((void*) data_.data(), (const void*) &f, data_.size());
+                break;
+            }
+
+            default: {
+                std::cerr << "Unknown Attribute tensor scalar type "
+                          << (int) type_ << std::endl;
+            }
+        }
+    } else {
+        shape_.resize(ndim);
+        for (int i = 0; i < ndim; ++i) {
+            shape_[i] = static_cast<int>(t.size(i));
+        }
+
+        if (!shape_.empty()) {
+            data_.resize(size() * GetElemSize());
+            memcpy((void*) data_.data(), (const void*) t.cpu().contiguous().data_ptr(), data_.size());
+        }
+    }
 }
 
 int load_torchscript(const std::string& ptpath,

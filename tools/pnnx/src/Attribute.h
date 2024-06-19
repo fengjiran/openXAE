@@ -20,8 +20,9 @@ public:
     Attribute(const std::vector<int>& shape, const std::vector<float>& t);
 
 #if BUILD_TORCH2PNNX
-    Attribute(const at::Tensor& t);
+    explicit Attribute(const at::Tensor& t);
 #endif
+
 #if BUILD_ONNX2PNNX
     Attribute(const onnx::TensorProto& t);
 #endif

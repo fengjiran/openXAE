@@ -53,7 +53,7 @@ public:
     std::shared_ptr<Operand> GetOperand(const std::string& name);
 
 #if BUILD_TORCH2PNNX
-    Operand* new_operand(const torch::jit::Value* v);
+    std::shared_ptr<Operand> CreateOperand(const torch::jit::Value* v);
 #endif
 
 #if BUILD_ONNX2PNNX
