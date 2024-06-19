@@ -344,7 +344,34 @@ const torch::jit::Node* FindNodeByKind(const std::shared_ptr<torch::jit::Graph>&
 
 int load_torchscript(const std::string& ptpath,
                      Graph& pnnx_graph,
-                     const std::string& device) {
+                     const std::string& device,
+                     const std::vector<std::vector<int64_t>>& input_shapes,
+                     const std::vector<std::string>& input_types,
+                     const std::vector<std::vector<int64_t>>& input_shapes2,
+                     const std::vector<std::string>& input_types2) {
+    std::vector<at::Tensor> input_tensors;
+    for (size_t i = 0; i < input_shapes.size(); ++i) {
+        const std::vector<int64_t>& shape = input_shapes[i];
+        const std::string& type = input_types[i];
+        at::Tensor t = torch::ones(shape, InputType2C10ScalarType(type));
+        if (device == "gpu") {
+            t = t.cuda();
+        }
+        input_tensors.push_back(t);
+    }
+
+    std::vector<at::Tensor> input_tensors2;
+    for (size_t i = 0; i < input_shapes2.size(); ++i) {
+        const std::vector<int64_t>& shape = input_shapes2[i];
+        const std::string& type = input_types2[i];
+        at::Tensor t = torch::ones(shape, InputType2C10ScalarType(type));
+        if (device == "gpu") {
+            t = t.cuda();
+        }
+        input_tensors2.push_back(t);
+    }
+
+
     torch::jit::Module mod;
     try {
         mod = torch::jit::load(ptpath, (device == "gpu") ? c10::kCUDA : c10::kCPU);
@@ -380,6 +407,9 @@ int load_torchscript(const std::string& ptpath,
     auto g = method->graph();
 
     g->dump();
+
+    std::cerr << "############# pass_level0\n";
+
 
     return 0;
 }

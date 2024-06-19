@@ -3,7 +3,13 @@
 # build torch2pnnx lib
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+set(pnnx_pass_level0_src
+        pass_level0/inline_block.cpp
+)
+
 set(torch2pnnx_src
+        pass_level0.cpp
+        ${pnnx_pass_level0_src}
         load_torchscript.cpp
 )
 #file(GLOB_RECURSE PNNX_SRC ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)

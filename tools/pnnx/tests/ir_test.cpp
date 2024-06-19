@@ -287,7 +287,7 @@ TEST(IRTEST, create_pnnx_graph) {
 TEST(IRTEST, load_torchscript) {
     std::string pt = "test_nn_Conv2d.pt";
     Graph g;
-    load_torchscript(pt, g, "cpu");
+    load_torchscript(pt, g, "cpu", {}, {}, {}, {});
 }
 
 TEST(IRTEST, create_parameter_from_torch_node) {
