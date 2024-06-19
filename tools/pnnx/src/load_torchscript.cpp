@@ -331,6 +331,17 @@ Attribute::Attribute(const at::Tensor& t) {
     }
 }
 
+const torch::jit::Node* FindNodeByKind(const std::shared_ptr<torch::jit::Graph>& graph,
+                                       const std::string& kind) {
+    for (const auto& n: graph->nodes()) {
+        if (n->kind().toDisplayString() == kind) {
+            return n;
+        }
+    }
+
+    return nullptr;
+}
+
 int load_torchscript(const std::string& ptpath,
                      Graph& pnnx_graph,
                      const std::string& device) {
