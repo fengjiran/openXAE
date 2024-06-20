@@ -7,7 +7,6 @@
 #include "pnnx/src/ir.h"
 #include "pnnx/src/load_torchscript.h"
 #include "torch/csrc/jit/frontend/tracer.h"
-#include "torch/torch.h"
 #include "gtest/gtest.h"
 
 namespace pnnx {

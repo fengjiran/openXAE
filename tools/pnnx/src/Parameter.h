@@ -98,7 +98,7 @@ class ParameterBase {
 public:
     virtual ~ParameterBase() = default;
     NODISCARD virtual const ParameterType& type() const = 0;
-    //    NODISCARD virtual auto toValue() const = 0;
+    NODISCARD virtual const void* value() const = 0;
 };
 
 template<typename T>
@@ -107,7 +107,7 @@ public:
     ParameterImpl() : type_(GetParameterType<std::decay_t<T>>()) {}
 
     template<typename U,
-            typename = typename std::enable_if_t<std::is_same_v<T, std::decay_t<U>>>>
+             typename = typename std::enable_if_t<std::is_same_v<T, std::decay_t<U>>>>
     explicit ParameterImpl(U&& val)
         : type_(GetParameterType<std::decay_t<U>>()), value_(std::forward<U>(val)) {}
 
@@ -117,6 +117,10 @@ public:
 
     NODISCARD T toValue() const {
         return value_;
+    }
+
+    NODISCARD const void* value() const override {
+        return &value_;
     }
 
 private:
