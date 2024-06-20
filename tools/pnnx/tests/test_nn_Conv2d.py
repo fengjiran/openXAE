@@ -43,6 +43,7 @@ def test():
     with torch.no_grad():
         mod = torch.jit.trace(net, x)
         mod.save('test_nn_Conv2d.pt')
+        print(mod)
 
 
 if __name__ == '__main__':

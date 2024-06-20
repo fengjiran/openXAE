@@ -4,6 +4,9 @@
 
 #include "inline_block.h"
 
+#include <torch/csrc/jit/passes/quantization/helper.h>
+#include <torch/csrc/api/include/torch/version.h>
+
 namespace pnnx {
 
 static void inlineCallTo(torch::jit::Node* to_replace, torch::jit::Function* callee) {
@@ -52,7 +55,18 @@ static void inlineCalls(torch::jit::Block* block,
             std::cerr << "inline function " << fun_type->function()->name() << std::endl;
             inlineCallTo(n, fun_type->function());
         } else if (n->kind() == c10::prim::CallMethod) {
-            //
+            auto class_type = n->input(0)->type()->cast<torch::jit::ClassType>();
+            if (!class_type) {
+                continue;
+            }
+            const std::string& function_name = n->s(torch::jit::attr::name);
+            torch::jit::Function& function = class_type->getMethod(function_name);
+            if (!function.isGraphFunction()) {
+                continue;
+            }
+
+            std::string class_type_str = torch::jit::removeTorchMangle(class_type->str());
+            std::string class_type_str_no_torch_prefix = class_type_str.substr(10);
         }
     }
 }

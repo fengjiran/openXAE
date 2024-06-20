@@ -94,6 +94,44 @@ struct GetParameterType<T, typename std::enable_if_t<is_std_vector_complex_v<T>>
     : std::integral_constant<ParameterType, ParameterType::kParameterArrayComplex> {};
 
 
+class ParameterBase {
+public:
+    virtual ~ParameterBase() = default;
+    NODISCARD virtual const ParameterType& type() const = 0;
+};
+
+template<typename T>
+class ParameterImpl : ParameterBase {
+public:
+    explicit ParameterImpl(T&& val)
+        : type_(GetParameterType<std::decay_t<T>>()), value_(std::forward<T>(val)) {}
+
+    NODISCARD const ParameterType& type() const override {
+        return type_;
+    }
+
+private:
+    /**
+     * @brief Parameter type
+     */
+    ParameterType type_;
+
+    /**
+     * @brief Parameter value
+     */
+    T value_{};
+};
+
+class Parameter_ {
+public:
+    template<typename T>
+    explicit Parameter_(T&& val)
+        : ptr_(std::make_unique<ParameterImpl<T>>(val)) {}
+
+private:
+    std::unique_ptr<ParameterBase> ptr_;
+};
+
 template<typename T>
 class Parameter {
 public:
