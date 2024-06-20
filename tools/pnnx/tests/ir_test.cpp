@@ -107,6 +107,7 @@ TEST(IRTEST, Parameter_Deprecated) {
 
     Parameter_ p0;
     ASSERT_EQ(p0.type(), ParameterType::kParameterUnknown);
+    Parameter_ p1(1);
 
 }
 
