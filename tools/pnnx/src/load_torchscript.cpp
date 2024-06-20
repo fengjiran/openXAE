@@ -5,7 +5,7 @@
 #include "load_torchscript.h"
 
 //#include <dlfcn.h>
-//#include <torch/csrc/api/include/torch/version.h>
+#include <torch/csrc/api/include/torch/version.h>
 #include <torch/script.h>
 
 namespace pnnx {
@@ -92,7 +92,7 @@ ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_node) {
                 break;
             }
 
-#if Torch_VERSION_MAJOR >= 2 || (Torch_VERSION_MAJOR >= 1 && Torch_VERSION_MINOR >= 9)
+#if TORCH_VERSION_MAJOR >= 2 || (TORCH_VERSION_MAJOR >= 1 && TORCH_VERSION_MINOR >= 9)
             case c10::TypeKind::ComplexType: {
                 p = Parameter(std::complex<float>(value_node->c(torch::jit::attr::value)));
                 break;
@@ -225,7 +225,7 @@ ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_node) {
                 p = Parameter(as);
                 break;
             }
-#if Torch_VERSION_MAJOR >= 2 || (Torch_VERSION_MAJOR >= 1 && Torch_VERSION_MINOR >= 9)
+#if TORCH_VERSION_MAJOR >= 2 || (TORCH_VERSION_MAJOR >= 1 && TORCH_VERSION_MINOR >= 9)
             case c10::TypeKind::ComplexType: {
                 std::vector<std::complex<float>> ac;
                 for (const auto& x: value_node->inputs()) {

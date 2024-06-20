@@ -104,6 +104,10 @@ TEST(IRTEST, Parameter_Deprecated) {
     Parameter_Deprecated p_c(std::complex<float>(2, 3));
     ASSERT_EQ(p_c.type(), ParameterType::kParameterComplex);
     ASSERT_EQ(Parameter_Deprecated::Encode2String(p_c), "2.000000e+00+3.000000e+00i");
+
+    Parameter_ p0;
+    ASSERT_EQ(p0.type(), ParameterType::kParameterUnknown);
+
 }
 
 TEST(IRTEST, new_parameter) {
@@ -285,8 +289,8 @@ TEST(IRTEST, create_pnnx_graph) {
 }
 
 TEST(IRTEST, load_torchscript) {
-//    std::string pt = "test_nn_Conv2d.pt";
-    std::string pt = "test_inline_block.pt";
+    std::string pt = "test_nn_Conv2d.pt";
+//    std::string pt = "test_inline_block.pt";
     Graph g;
     load_torchscript(pt, g, "cpu", {}, {}, {}, {});
 }

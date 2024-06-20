@@ -98,16 +98,23 @@ class ParameterBase {
 public:
     virtual ~ParameterBase() = default;
     NODISCARD virtual const ParameterType& type() const = 0;
+//    NODISCARD virtual auto toValue() const = 0;
 };
 
 template<typename T>
-class ParameterImpl : ParameterBase {
+class ParameterImpl : public ParameterBase {
 public:
+    ParameterImpl() : type_(GetParameterType<std::decay_t<T>>()) {}
+
     explicit ParameterImpl(T&& val)
         : type_(GetParameterType<std::decay_t<T>>()), value_(std::forward<T>(val)) {}
 
     NODISCARD const ParameterType& type() const override {
         return type_;
+    }
+
+    NODISCARD T toValue() const {
+        return value_;
     }
 
 private:
@@ -124,9 +131,29 @@ private:
 
 class Parameter_ {
 public:
-    template<typename T>
-    explicit Parameter_(T&& val)
-        : ptr_(std::make_unique<ParameterImpl<T>>(val)) {}
+    Parameter_() : ptr_(std::make_unique<ParameterImpl<void*>>()) {}
+
+    template<typename T,
+             typename = typename std::enable_if_t<std::is_same_v<Parameter_, std::decay_t<T>>>>
+    explicit Parameter_(T&& val) : ptr_(std::make_unique<ParameterImpl<T>>(std::forward<T>(val))) {}
+
+    Parameter_(const Parameter_&) = delete;
+    Parameter_& operator=(const Parameter_&) = delete;
+    Parameter_(Parameter_&& other) noexcept : ptr_(std::move(other.ptr_)) {}
+    Parameter_& operator=(Parameter_&& other) noexcept {
+        if (this != &other) {
+            ptr_ = std::move(other.ptr_);
+        }
+        return *this;
+    }
+
+    NODISCARD const ParameterType& type() const {
+        return ptr_->type();
+    }
+
+//    NODISCARD auto toValue() const {
+//        return ptr_->toValue();
+//    }
 
 private:
     std::unique_ptr<ParameterBase> ptr_;
