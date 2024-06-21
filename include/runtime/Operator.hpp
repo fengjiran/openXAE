@@ -5,6 +5,6 @@
 #ifndef OPENXAE_OPERATOR_HPP
 #define OPENXAE_OPERATOR_HPP
 
-#include "pnnx/src/ir.h"
+#include "pnnx/include/ir.h"
 
 #endif//OPENXAE_OPERATOR_HPP

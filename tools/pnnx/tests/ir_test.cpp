@@ -3,11 +3,12 @@
 //
 
 //#include "glog/logging.h"
-#include "pnnx/src/Graph.h"
-#include "pnnx/src/ir.h"
+#include "Graph.h"
+#include "ir.h"
 #include "pnnx/src/load_torchscript.h"
-#include "torch/csrc/jit/frontend/tracer.h"
 #include "gtest/gtest.h"
+
+#include <torch/csrc/jit/frontend/tracer.h>
 
 namespace pnnx {
 
@@ -107,7 +108,6 @@ TEST(IRTEST, Parameter_Deprecated) {
     Parameter_ p0;
     ASSERT_EQ(p0.type(), ParameterType::kParameterUnknown);
     Parameter_ p1(1);
-
 }
 
 TEST(IRTEST, new_parameter) {
@@ -289,7 +289,7 @@ TEST(IRTEST, create_pnnx_graph) {
 }
 
 TEST(IRTEST, load_torchscript) {
-//    std::string pt = "test_nn_Conv2d.pt";
+    //    std::string pt = "test_nn_Conv2d.pt";
     std::string pt = "test_inline_block.pt";
     Graph g;
     load_torchscript(pt, g, "cpu", {}, {}, {}, {});
@@ -355,7 +355,6 @@ TEST(IRTEST, create_parameter_from_torch_node) {
     std::visit(printer, p8);
 
     auto node9 = g.create(c10::prim::ListConstruct);
-
 }
 
 }// namespace pnnx
