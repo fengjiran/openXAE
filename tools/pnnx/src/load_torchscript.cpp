@@ -4,7 +4,7 @@
 
 #include "load_torchscript.h"
 
-//#include <dlfcn.h>
+#include <dlfcn.h>
 #include <torch/csrc/api/include/torch/version.h>
 #include <torch/script.h>
 

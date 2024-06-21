@@ -10,17 +10,12 @@ class Adder(nn.Module):
 class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
-        self.adder = Adder()
+        self.param = nn.Parameter(torch.rand(3, 4))
+        self.linear = nn.Linear(4, 5)
+        print(self.linear.weight.size())
 
     def forward(self, x):
-        x = x * 2
-        x = self.adder(x, 2)
-        x.add_(3)
-        x = x.view(-1)
-        if x[0] > 1:
-            return x[0]
-        else:
-            return x[-1]
+        return torch.topk(torch.sum(self.linear(x + self.linear.weight).relu(), dim=-1), 3)
 
 
 def test():
@@ -28,7 +23,7 @@ def test():
     net.eval()
 
     torch.manual_seed(0)
-    x = torch.rand(1, 12, 64, 64)
+    x = torch.rand(5, 4)
     a = net(x)
 
     # export torchscript

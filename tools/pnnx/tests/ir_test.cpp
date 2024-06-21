@@ -289,8 +289,8 @@ TEST(IRTEST, create_pnnx_graph) {
 }
 
 TEST(IRTEST, load_torchscript) {
-    std::string pt = "test_nn_Conv2d.pt";
-//    std::string pt = "test_inline_block.pt";
+//    std::string pt = "test_nn_Conv2d.pt";
+    std::string pt = "test_inline_block.pt";
     Graph g;
     load_torchscript(pt, g, "cpu", {}, {}, {}, {});
 }
