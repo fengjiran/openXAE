@@ -34,8 +34,7 @@ using is_std_vector =
         typename is_vector<std::remove_cv_t<std::remove_reference_t<T>>>::type;
 
 template<typename T>
-constexpr bool is_string_v =
-        std::is_same_v<std::decay_t<T>, std::string> || std::is_convertible_v<T, std::string>;
+constexpr bool is_string_v = std::is_convertible_v<T, std::string>;
 
 template<typename T>
 constexpr bool is_std_vector_v = is_std_vector<T>::value;
