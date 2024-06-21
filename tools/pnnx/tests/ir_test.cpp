@@ -6,8 +6,8 @@
 #include "Graph.h"
 #include "ir.h"
 #include "load_torchscript.h"
-#include "gtest/gtest.h"
 
+#include <gtest/gtest.h>
 #include <torch/csrc/jit/frontend/tracer.h>
 
 namespace pnnx {

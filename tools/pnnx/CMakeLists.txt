@@ -113,14 +113,11 @@ else ()
     set(onnxruntime_FOUND FALSE)
 endif ()
 
-#add_subdirectory(src)
 add_subdirectory(converter)
-
 enable_testing()
 add_subdirectory(tests)
 
 file(GLOB_RECURSE pnnx_src ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
-
 add_executable(${PROJECT_NAME} ${pnnx_src})
 set_property(SOURCE src/main.cpp APPEND PROPERTY COMPILE_DEFINITIONS BUILD_TORCH2PNNX)
 target_link_libraries(${PROJECT_NAME} PRIVATE
@@ -131,8 +128,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 )
 
 # build pnnx_lib for test
+# will remove in release
 add_library(${PROJECT_NAME}_lib STATIC ${pnnx_src})
-
 target_link_libraries(${PROJECT_NAME}_lib PRIVATE
         torch2pnnx
         ${TORCH_LIBRARIES}
