@@ -10,7 +10,7 @@ set(pnnx_pass_level0_src
 set(torch2pnnx_src
         pass_level0.cpp
         ${pnnx_pass_level0_src}
-        load_torchscript.cpp
+        ../converter/src/torch/load_torchscript.cpp
 )
 #file(GLOB_RECURSE PNNX_SRC ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
@@ -20,7 +20,7 @@ target_compile_definitions(torch2pnnx PRIVATE BUILD_TORCH2PNNX)
 target_compile_options(torch2pnnx PUBLIC "${TORCH_CXX_FLAGS}")
 
 if (TorchVision_FOUND)
-    set_property(SOURCE load_torchscript.cpp APPEND PROPERTY COMPILE_DEFINITIONS PNNX_TORCHVISION)
+    set_property(SOURCE ../converter/src/torch/load_torchscript.cpp APPEND PROPERTY COMPILE_DEFINITIONS PNNX_TORCHVISION)
 endif ()
 
 # build pnnx exe
