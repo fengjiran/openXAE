@@ -5,7 +5,7 @@
 //#include "glog/logging.h"
 #include "Graph.h"
 #include "ir.h"
-#include "pnnx/src/load_torchscript.h"
+#include "load_torchscript.h"
 #include "gtest/gtest.h"
 
 #include <torch/csrc/jit/frontend/tracer.h>

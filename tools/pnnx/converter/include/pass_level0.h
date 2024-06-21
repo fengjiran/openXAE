@@ -6,7 +6,7 @@
 #define OPENXAE_PASS_LEVEL0_H
 
 #include "Graph.h"
-#include "pass_level0/inline_block.h"
+#include "inline_block.h"
 
 #include <torch/script.h>
 

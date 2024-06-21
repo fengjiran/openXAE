@@ -21,6 +21,7 @@ endif ()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 message(STATUS "PNNX source dir = " ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/converter/include)
 include(PNNXPyTorch)
 
 # c++17 is required for using torch headers and
@@ -36,6 +37,7 @@ find_package(TorchVision QUIET)
 
 message(STATUS "Torch_DIR = ${Torch_DIR}")
 message(STATUS "Torch_LIB_DIR = ${TORCH_LIBRARY}")
+message(STATUS "Torch_INCLUDE_DIR = ${TORCH_INCLUDE_DIRS}")
 message(STATUS "TorchVision_DIR = ${TorchVision_DIR}")
 message(STATUS "Torch_VERSION = ${Torch_VERSION}")
 message(STATUS "Torch_VERSION_MAJOR = ${Torch_VERSION_MAJOR}")
@@ -111,8 +113,27 @@ else ()
     set(onnxruntime_FOUND FALSE)
 endif ()
 
-add_subdirectory(src)
+#add_subdirectory(src)
 add_subdirectory(converter)
 
 enable_testing()
 add_subdirectory(tests)
+
+file(GLOB_RECURSE pnnx_src ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+
+add_executable(${PROJECT_NAME} ${pnnx_src})
+set_property(SOURCE src/main.cpp APPEND PROPERTY COMPILE_DEFINITIONS BUILD_TORCH2PNNX)
+target_link_libraries(${PROJECT_NAME} PRIVATE
+        torch2pnnx
+        ${TORCH_LIBRARIES}
+        pthread
+        dl
+)
+
+# build pnnx_lib for test
+add_library(${PROJECT_NAME}_lib STATIC ${pnnx_src})
+
+target_link_libraries(${PROJECT_NAME}_lib PRIVATE
+        torch2pnnx
+        ${TORCH_LIBRARIES}
+)
