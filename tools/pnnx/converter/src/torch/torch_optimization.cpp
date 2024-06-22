@@ -7,12 +7,13 @@
 #include <dlfcn.h>
 #include <torch/csrc/jit/passes/freeze_module.h>
 #include <torch/csrc/jit/passes/inliner.h>
+#include <torch/csrc/jit/passes/normalize_ops.h>
 
 namespace pnnx {
 
 std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod) {
     mod.eval();
-    mod = torch::jit::freeze_module(mod);
+//    mod = torch::jit::freeze_module(mod);
     auto method = mod.find_method("forward");
     if (!method) {
         auto methods = mod.get_methods();
@@ -23,9 +24,13 @@ std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod) 
         method = methods[0];
         std::cerr << "Use method " << method->name() << " as the entrypoint instead of forward.\n";
     }
-    auto g = method->graph();
+    auto graph = method->graph();
+    auto inputs = graph->inputs();
+    std::cout << graph->inputs().size() << std::endl;
+//    torch::jit::Inline(*graph);
+//    torch::jit::NormalizeOps(graph);
 
-    return g;
+    return graph;
 }
 
 static DataType GetATTensorType(const at::ScalarType& st) {
