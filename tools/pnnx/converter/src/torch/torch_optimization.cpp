@@ -9,11 +9,15 @@
 #include <torch/csrc/jit/passes/inliner.h>
 #include <torch/csrc/jit/passes/normalize_ops.h>
 
+//#include <torch/csrc/jit/api/module.h>
+//#include <torch/csrc/jit/frontend/error_report.h>
+#include <torch/csrc/jit/jit_log.h>
+
 namespace pnnx {
 
 std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod) {
     mod.eval();
-//    mod = torch::jit::freeze_module(mod);
+    //    mod = torch::jit::freeze_module(mod);
     auto method = mod.find_method("forward");
     if (!method) {
         auto methods = mod.get_methods();
@@ -25,10 +29,14 @@ std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod) 
         std::cerr << "Use method " << method->name() << " as the entrypoint instead of forward.\n";
     }
     auto graph = method->graph();
-    auto inputs = graph->inputs();
-    std::cout << graph->inputs().size() << std::endl;
-//    torch::jit::Inline(*graph);
-//    torch::jit::NormalizeOps(graph);
+
+    std::cout << "Before Inline:\n";
+    graph->dump();
+    torch::jit::Inline(*graph);
+    //    inline_block(graph, {});
+    std::cout << "After Inline:\n";
+    graph->dump();
+    //    torch::jit::NormalizeOps(graph);
 
     return graph;
 }

@@ -77,16 +77,16 @@ static void inlineCalls(torch::jit::Block* block,
                     continue;
                 }
 
-                //                bool skip_inline = false;
-                //                for (const auto& ow: get_global_pnnx_fuse_module_passes()) {
-                //                    if (class_type_str == ow->match_type_str()) {
-                //                        skip_inline = true;
-                //                        break;
-                //                    }
-                //                }
-                //
-                //                if (skip_inline)
-                //                    continue;
+//                                bool skip_inline = false;
+//                                for (const auto& ow: get_global_pnnx_fuse_module_passes()) {
+//                                    if (class_type_str == ow->match_type_str()) {
+//                                        skip_inline = true;
+//                                        break;
+//                                    }
+//                                }
+//
+//                                if (skip_inline)
+//                                    continue;
             }
 
 #if TORCH_VERSION_MAJOR >= 2 || (TORCH_VERSION_MAJOR >= 1 && TORCH_VERSION_MINOR >= 11)
@@ -106,7 +106,17 @@ static void inlineCalls(torch::jit::Block* block,
 
 void inline_block(std::shared_ptr<torch::jit::Graph>& graph,
                   const std::vector<std::string>& module_operators) {
-    //
+    std::set<std::string> inlined_modules;
+
+    inlineCalls(graph->block(), module_operators, inlined_modules);
+
+    for (const auto& x : inlined_modules)
+    {
+        if (x == "torch.nn.modules.container.Sequential")
+            continue;
+
+        fprintf(stderr, "inline module = %s\n", x.c_str());
+    }
 }
 
 }// namespace pnnx
