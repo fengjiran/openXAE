@@ -5,7 +5,6 @@
 #ifndef OPENXAE_TORCH2PNNX_H
 #define OPENXAE_TORCH2PNNX_H
 
-#include "Graph.h"
 #include "torch_optimization.h"
 
 namespace pnnx {

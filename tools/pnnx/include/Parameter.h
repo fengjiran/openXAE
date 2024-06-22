@@ -98,7 +98,7 @@ class ParameterBase {
 public:
     virtual ~ParameterBase() = default;
     NODISCARD virtual const ParameterType& type() const = 0;
-    NODISCARD virtual const std::any& value() const = 0;
+    NODISCARD virtual std::any value() const = 0;
     NODISCARD virtual std::string Encode2String() const = 0;
 };
 
@@ -116,7 +116,7 @@ public:
         return type_;
     }
 
-    NODISCARD const std::any& value() const override {
+    NODISCARD std::any value() const override {
         return value_;
     }
 

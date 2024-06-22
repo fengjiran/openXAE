@@ -5,11 +5,28 @@
 #include "torch_optimization.h"
 
 #include <dlfcn.h>
-#include <torch/csrc/api/include/torch/version.h>
 #include <torch/csrc/jit/passes/freeze_module.h>
 #include <torch/csrc/jit/passes/inliner.h>
 
 namespace pnnx {
+
+std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod) {
+    mod.eval();
+    mod = torch::jit::freeze_module(mod);
+    auto method = mod.find_method("forward");
+    if (!method) {
+        auto methods = mod.get_methods();
+        if (methods.empty()) {
+            std::cerr << "No method in torchscript.\n";
+            return {};
+        }
+        method = methods[0];
+        std::cerr << "Use method " << method->name() << " as the entrypoint instead of forward.\n";
+    }
+    auto g = method->graph();
+
+    return g;
+}
 
 static DataType GetATTensorType(const at::ScalarType& st) {
     if (st == c10::ScalarType::Float) return DataType::kDataTypeFloat32;
@@ -261,28 +278,6 @@ ParameterVar CreateParameterFromTorchValue(const torch::jit::Value* value) {
     return CreateParameterFromTorchNode(value->node());
 }
 
-std::shared_ptr<Operand> Graph::CreateOperand(const torch::jit::Value* value) {
-    auto r = CreateOperand(value->debugName());
-    r->SetType(DataType::kDataTypeUnknown);
-    auto pt = value->type()->cast<c10::TensorType>();
-    if (pt) {
-        if (pt->scalarType().has_value() && pt->dim().has_value()) {
-            r->SetType(GetATTensorType(pt->scalarType().value()));
-            const int ndim = (int) pt->dim().value();
-            r->GetShape().resize(ndim);
-            for (int i = 0; i < ndim; ++i) {
-                if (pt->sizes()[i].has_value()) {
-                    r->GetShape()[i] = (int) pt->sizes()[i].value();
-                } else {
-                    r->GetShape()[i] = -1;
-                }
-            }
-        }
-    }
-
-    return r;
-}
-
 Attribute::Attribute(const at::Tensor& t) {
     type_ = GetATTensorType(t.scalar_type());
     const int ndim = static_cast<int>(t.dim());
@@ -332,6 +327,28 @@ Attribute::Attribute(const at::Tensor& t) {
     }
 }
 
+std::shared_ptr<Operand> Graph::CreateOperand(const torch::jit::Value* value) {
+    auto r = CreateOperand(value->debugName());
+    r->SetType(DataType::kDataTypeUnknown);
+    auto pt = value->type()->cast<c10::TensorType>();
+    if (pt) {
+        if (pt->scalarType().has_value() && pt->dim().has_value()) {
+            r->SetType(GetATTensorType(pt->scalarType().value()));
+            const int ndim = (int) pt->dim().value();
+            r->GetShape().resize(ndim);
+            for (int i = 0; i < ndim; ++i) {
+                if (pt->sizes()[i].has_value()) {
+                    r->GetShape()[i] = (int) pt->sizes()[i].value();
+                } else {
+                    r->GetShape()[i] = -1;
+                }
+            }
+        }
+    }
+
+    return r;
+}
+
 const torch::jit::Node* FindNodeByKind(const std::shared_ptr<torch::jit::Graph>& graph,
                                        const std::string& kind) {
     for (const auto& n: graph->nodes()) {
@@ -342,6 +359,7 @@ const torch::jit::Node* FindNodeByKind(const std::shared_ptr<torch::jit::Graph>&
 
     return nullptr;
 }
+
 
 int load_torchscript(const std::string& ptpath,
                      Graph& pnnx_graph,
@@ -415,24 +433,4 @@ int load_torchscript(const std::string& ptpath,
     return 0;
 }
 
-
-
-std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod) {
-    mod.eval();
-    mod = torch::jit::freeze_module(mod);
-    auto method = mod.find_method("forward");
-    if (!method) {
-        auto methods = mod.get_methods();
-        if (methods.empty()) {
-            std::cerr << "No method in torchscript.\n";
-            return {};
-        }
-        method = methods[0];
-        std::cerr << "Use method " << method->name() << " as the entrypoint instead of forward.\n";
-    }
-    auto g = method->graph();
-
-    return g;
-}
-
-}
+}// namespace pnnx
