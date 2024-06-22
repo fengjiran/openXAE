@@ -5,7 +5,7 @@
 //#include "glog/logging.h"
 #include "Graph.h"
 #include "ir.h"
-#include "load_torchscript.h"
+#include "torch2pnnx.h"
 
 #include <gtest/gtest.h>
 #include <torch/csrc/jit/frontend/tracer.h>
@@ -288,11 +288,12 @@ TEST(IRTEST, create_pnnx_graph) {
     graph.save("linear.pnnx.param", "linear.pnnx.bin");
 }
 
-TEST(IRTEST, load_torchscript) {
-    //    std::string pt = "test_nn_Conv2d.pt";
-    std::string pt = "test_inline_block.pt";
-    Graph g;
-    load_torchscript(pt, g, "cpu", {}, {}, {}, {});
+TEST(IRTEST, torch2pnnx) {
+    std::string pt = "test_nn_Conv2d.pt";
+    //    std::string pt = "test_inline_block.pt";
+    torch2pnnx(pt, "cpu");
+//    Graph g;
+//    load_torchscript(pt, g, "cpu", {}, {}, {}, {});
 }
 
 TEST(IRTEST, create_parameter_from_torch_node) {

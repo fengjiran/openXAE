@@ -2,7 +2,7 @@ file(GLOB_RECURSE torch2pnnx_src ${CMAKE_CURRENT_SOURCE_DIR}/src/torch/*.cpp)
 #message(STATUS "Converter_DIR = ${CMAKE_CURRENT_SOURCE_DIR}")
 
 if (TorchVision_FOUND)
-    set_property(SOURCE src/torch/load_torchscript.cpp APPEND PROPERTY COMPILE_DEFINITIONS PNNX_TORCHVISION)
+    set_property(SOURCE src/torch/torch_optimization.cpp APPEND PROPERTY COMPILE_DEFINITIONS PNNX_TORCHVISION)
 endif ()
 
 add_library(torch2pnnx OBJECT ${torch2pnnx_src})

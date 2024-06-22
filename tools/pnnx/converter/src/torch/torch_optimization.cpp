@@ -1,12 +1,13 @@
 //
-// Created by richard on 6/15/24.
+// Created by richard on 6/22/24.
 //
 
-#include "load_torchscript.h"
+#include "torch_optimization.h"
 
 #include <dlfcn.h>
 #include <torch/csrc/api/include/torch/version.h>
-#include <torch/script.h>
+#include <torch/csrc/jit/passes/freeze_module.h>
+#include <torch/csrc/jit/passes/inliner.h>
 
 namespace pnnx {
 
@@ -414,4 +415,24 @@ int load_torchscript(const std::string& ptpath,
     return 0;
 }
 
-}// namespace pnnx
+
+
+std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod) {
+    mod.eval();
+    mod = torch::jit::freeze_module(mod);
+    auto method = mod.find_method("forward");
+    if (!method) {
+        auto methods = mod.get_methods();
+        if (methods.empty()) {
+            std::cerr << "No method in torchscript.\n";
+            return {};
+        }
+        method = methods[0];
+        std::cerr << "Use method " << method->name() << " as the entrypoint instead of forward.\n";
+    }
+    auto g = method->graph();
+
+    return g;
+}
+
+}
