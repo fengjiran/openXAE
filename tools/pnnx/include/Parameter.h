@@ -7,6 +7,7 @@
 
 #include "utils.h"
 
+#include <any>
 #include <complex>
 #include <torch/script.h>
 #include <variant>
@@ -97,7 +98,8 @@ class ParameterBase {
 public:
     virtual ~ParameterBase() = default;
     NODISCARD virtual const ParameterType& type() const = 0;
-    NODISCARD virtual const void* value() const = 0;
+    NODISCARD virtual const std::any& value() const = 0;
+    NODISCARD virtual std::string Encode2String() const = 0;
 };
 
 template<typename T>
@@ -114,12 +116,12 @@ public:
         return type_;
     }
 
-    NODISCARD T toValue() const {
+    NODISCARD const std::any& value() const override {
         return value_;
     }
 
-    NODISCARD const void* value() const override {
-        return &value_;
+    NODISCARD std::string Encode2String() const override {
+        return "None";
     }
 
 private:
@@ -156,9 +158,9 @@ public:
         return ptr_->type();
     }
 
-    //    NODISCARD auto toValue() const {
-    //        return ptr_->toValue();
-    //    }
+    NODISCARD auto value() const {
+        return ptr_->value();
+    }
 
 private:
     std::unique_ptr<ParameterBase> ptr_;
