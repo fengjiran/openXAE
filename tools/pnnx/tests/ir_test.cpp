@@ -53,6 +53,10 @@ TEST(IRTEST, Parameter_Deprecated) {
     ASSERT_EQ(Parameter_Deprecated::Encode2String(p_null), "None");
     ASSERT_TRUE(Parameter_Deprecated::ParseFromString(Parameter_Deprecated::Encode2String(p_null)) == p_null);
 
+    Parameter_ p0;
+    EXPECT_EQ(p0.type(), ParameterType::kParameterUnknown);
+    EXPECT_EQ(p0.toString(), "None");
+
     // bool parameter
     Parameter_Deprecated p_bool1(true);
     Parameter_Deprecated p_bool2(false);
@@ -61,6 +65,10 @@ TEST(IRTEST, Parameter_Deprecated) {
     ASSERT_EQ(Parameter_Deprecated::Encode2String(p_bool2), "False");
     ASSERT_TRUE(Parameter_Deprecated::ParseFromString(Parameter_Deprecated::Encode2String(p_bool1)) == p_bool1);
     ASSERT_TRUE(Parameter_Deprecated::ParseFromString(Parameter_Deprecated::Encode2String(p_bool2)) == p_bool2);
+
+    Parameter_ p1(true);
+    EXPECT_EQ(p1.type(), ParameterType::kParameterBool);
+    EXPECT_EQ(p1.toString(), "True");
 
     // int parameter
     Parameter_Deprecated p_int1(-10ll);// 10, 10l
@@ -105,10 +113,6 @@ TEST(IRTEST, Parameter_Deprecated) {
     ASSERT_EQ(p_c.type(), ParameterType::kParameterComplex);
     ASSERT_EQ(Parameter_Deprecated::Encode2String(p_c), "2.000000e+00+3.000000e+00i");
 
-    Parameter_ p0;
-    ASSERT_EQ(p0.type(), ParameterType::kParameterUnknown);
-    ASSERT_EQ(p0.toString(), "None");
-    Parameter_ p1(1);
 }
 
 TEST(IRTEST, new_parameter) {

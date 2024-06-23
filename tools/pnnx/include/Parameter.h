@@ -99,6 +99,7 @@ public:
     virtual ~ParameterBase() = default;
     NODISCARD virtual const ParameterType& type() const = 0;
     NODISCARD virtual std::string toString() const = 0;
+//    virtual void SetValue() = 0;
 };
 
 template<typename T>
