@@ -98,8 +98,7 @@ class ParameterBase {
 public:
     virtual ~ParameterBase() = default;
     NODISCARD virtual const ParameterType& type() const = 0;
-    NODISCARD virtual std::any value() const = 0;
-    NODISCARD virtual std::string Encode2String() const = 0;
+    NODISCARD virtual std::string toString() const = 0;
 };
 
 template<typename T>
@@ -116,12 +115,79 @@ public:
         return type_;
     }
 
-    NODISCARD std::any value() const override {
+    /**
+     * @brief Encode unknown type parameter to string.
+     * @tparam U
+     * @return Parameter string.
+     */
+    template<typename U = T,
+             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterUnknown>::type* = nullptr>
+    NODISCARD std::string Encode2String() const {
+        return "None";
+    }
+
+    /**
+     * @brief Encode bool parameter to string.
+     * @tparam U
+     * @return
+     */
+    template<typename U = T,
+             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterBool>::type* = nullptr>
+    NODISCARD std::string Encode2String() const {
+        return value_ ? "True" : "False";
+    }
+
+    /**
+     * @brief Encode int parameter to string.
+     * @tparam U
+     * @return
+     */
+    template<typename U = T,
+             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterInt>::type* = nullptr>
+    NODISCARD std::string Encode2String() const {
+        return std::to_string(value_);
+    }
+
+    /**
+     * @brief Encode float parameter to string.
+     * @tparam U
+     * @param param
+     * @return
+     */
+    template<typename U = T,
+             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterFloat>::type* = nullptr>
+    NODISCARD std::string Encode2String() const {
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%e", value_);
+        return buf;
+    }
+
+    /**
+     * @brief Encode string parameter to string.
+     * @tparam U
+     * @return
+     */
+    template<typename U = T,
+             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterString>::type* = nullptr>
+    NODISCARD std::string Encode2String() const {
         return value_;
     }
 
-    NODISCARD std::string Encode2String() const override {
-        return "None";
+    /**
+     * @brief Encode complex parameter to string.
+     * @tparam U
+     * @return
+     */
+    template<typename U = T,
+             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterComplex>::type* = nullptr>
+    NODISCARD std::string Encode2String() const {
+        char buf[128];
+        snprintf(buf, sizeof(buf), "%e+%ei", value_.real(), value_.imag());
+        return buf;
+    }
+
+    NODISCARD std::string toString() const override {
+        return Encode2String();
     }
 
 private:
@@ -145,8 +211,8 @@ public:
     explicit Parameter_(T&& val) : ptr_(std::make_unique<ParameterImpl<std::decay_t<T>>>(std::forward<T>(val))) {}
 
     Parameter_(const Parameter_&) = delete;
-    Parameter_& operator=(const Parameter_&) = delete;
     Parameter_(Parameter_&& other) noexcept : ptr_(std::move(other.ptr_)) {}
+    Parameter_& operator=(const Parameter_&) = delete;
     Parameter_& operator=(Parameter_&& other) noexcept {
         if (this != &other) {
             ptr_ = std::move(other.ptr_);
@@ -158,8 +224,8 @@ public:
         return ptr_->type();
     }
 
-    NODISCARD auto value() const {
-        return ptr_->value();
+    NODISCARD std::string toString() const {
+        return ptr_->toString();
     }
 
 private:
