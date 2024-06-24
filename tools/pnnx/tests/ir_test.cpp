@@ -50,7 +50,6 @@ TEST(IRTEST, type_check) {
 TEST(IRTEST, Parameter_Deprecated) {
     // null parameter
     Parameter_ p0;
-    p0 = 5;
     EXPECT_FALSE(p0.has_value());
     EXPECT_FALSE(p0.toValue<int>().has_value());
     EXPECT_EQ(p0.type(), ParameterType::kParameterUnknown);
@@ -59,12 +58,18 @@ TEST(IRTEST, Parameter_Deprecated) {
     // bool parameter
     Parameter_ p1(true);
     EXPECT_EQ(p1.type(), ParameterType::kParameterBool);
+    EXPECT_EQ(p1.toValue<bool>(), true);
     EXPECT_EQ(p1.toString(), "True");
+    p1.SetValue(false);
+    EXPECT_EQ(p1.toValue<bool>(), false);
+    EXPECT_EQ(p1.toString(), "False");
 
     // int parameter
-    Parameter_ p2(-10l);
+    Parameter_ p2(-10);
     EXPECT_EQ(p2.type(), ParameterType::kParameterInt);
+    EXPECT_EQ(p2.toValue<int>(), -10);
     EXPECT_EQ(p2.toString(), "-10");
+
 
     // float parameter
     Parameter_ p3(0.3141592657);
