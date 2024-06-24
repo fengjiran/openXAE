@@ -58,15 +58,11 @@ TEST(IRTEST, Parameter_Deprecated) {
     Parameter_ p1(true);
     EXPECT_EQ(p1.type(), ParameterType::kParameterBool);
     EXPECT_EQ(p1.toString(), "True");
-    p1.SetValue(false);
-    EXPECT_EQ(p1.toString(), "False");
 
     // int parameter
     Parameter_ p2(-10l);
     EXPECT_EQ(p2.type(), ParameterType::kParameterInt);
     EXPECT_EQ(p2.toString(), "-10");
-//    p2.SetValue((int)20);
-//    EXPECT_EQ(p2.toString(), "20");
 
     // float parameter
     Parameter_ p3(0.3141592657);

@@ -97,7 +97,7 @@ struct GetParameterType<T, typename std::enable_if_t<is_std_vector_complex_v<T>>
 class ParameterBase {
 public:
     virtual ~ParameterBase() = default;
-    NODISCARD virtual const ParameterType& type() const = 0;
+    NODISCARD virtual ParameterType type() const = 0;
     NODISCARD virtual std::string toString() const = 0;
     virtual void SetValue(const std::any&) = 0;
 };
@@ -112,7 +112,7 @@ public:
     explicit ParameterImpl(U&& val)
         : type_(GetParameterType<std::decay_t<U>>()), value_(std::forward<U>(val)) {}
 
-    NODISCARD const ParameterType& type() const override {
+    NODISCARD ParameterType type() const override {
         return type_;
     }
 
@@ -169,11 +169,20 @@ public:
 
     template<typename T,
              typename = typename std::enable_if_t<!std::is_same_v<Parameter_, std::decay_t<T>>>>
-    explicit Parameter_(T&& val) : ptr_(std::make_shared<ParameterImpl<std::decay_t<T>>>(std::forward<T>(val))) {}
+    explicit Parameter_(T&& val)
+        : ptr_(std::make_shared<ParameterImpl<std::decay_t<T>>>(std::forward<T>(val))) {}
 
-    Parameter_(const Parameter_&) = delete;
+    Parameter_(const Parameter_&) = default;
+
     Parameter_(Parameter_&& other) noexcept : ptr_(std::move(other.ptr_)) {}
-    Parameter_& operator=(const Parameter_&) = delete;
+
+    Parameter_& operator=(const Parameter_& other) {
+        if (this != &other) {
+            ptr_ = other.ptr_;
+        }
+        return *this;
+    }
+
     Parameter_& operator=(Parameter_&& other) noexcept {
         if (this != &other) {
             ptr_ = std::move(other.ptr_);
@@ -195,12 +204,16 @@ public:
         return ParameterType::kParameterUnknown;
     }
 
-    NODISCARD std::string toString() const {
-        return ptr_->toString();
+    template<typename T>
+    std::optional<T> toValue() const {
+        if (has_value()) {
+            //
+        }
+        return {};
     }
 
-    void SetValue(const std::any& val) const {
-        ptr_->SetValue(val);
+    NODISCARD std::string toString() const {
+        return ptr_->toString();
     }
 
 private:
