@@ -50,9 +50,11 @@ TEST(IRTEST, type_check) {
 TEST(IRTEST, Parameter_Deprecated) {
     // null parameter
     Parameter_ p0;
+    p0 = 5;
     EXPECT_FALSE(p0.has_value());
-//    EXPECT_EQ(p0.type(), ParameterType::kParameterUnknown);
-//    EXPECT_EQ(p0.toString(), "None");
+    EXPECT_FALSE(p0.toValue<int>().has_value());
+    EXPECT_EQ(p0.type(), ParameterType::kParameterUnknown);
+    EXPECT_EQ(p0.toString(), "None");
 
     // bool parameter
     Parameter_ p1(true);

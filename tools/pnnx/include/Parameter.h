@@ -112,6 +112,10 @@ public:
     explicit ParameterImpl(U&& val)
         : type_(GetParameterType<std::decay_t<U>>()), value_(std::forward<U>(val)) {}
 
+    T toValue() const {
+        return value_;
+    }
+
     NODISCARD ParameterType type() const override {
         return type_;
     }
@@ -190,6 +194,17 @@ public:
         return *this;
     }
 
+    template<typename T>
+    Parameter_& operator=(T&& val) {
+        SetValue(std::forward<T>(val));
+        return *this;
+    }
+
+    template<typename T>
+    void SetValue(T&& val) {
+        ptr_ = std::make_shared<ParameterImpl<std::decay_t<T>>>(std::forward<T>(val));
+    }
+
     NODISCARD bool has_value() const {
         if (ptr_) {
             return true;
@@ -207,13 +222,21 @@ public:
     template<typename T>
     std::optional<T> toValue() const {
         if (has_value()) {
-            //
+            if (GetParameterType<T>() == type()) {
+                auto ptr = std::dynamic_pointer_cast<ParameterImpl<T>>(ptr_);
+                return ptr->toValue();
+            } else {
+                throw;
+            }
         }
         return {};
     }
 
     NODISCARD std::string toString() const {
-        return ptr_->toString();
+        if (has_value()) {
+            return ptr_->toString();
+        }
+        return "None";
     }
 
 private:
