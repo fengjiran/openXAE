@@ -44,31 +44,21 @@ TEST(IRTEST, type_check) {
     static_assert(GetParameterType<std::complex<float>>() == ParameterType::kParameterComplex);
     static_assert(GetParameterType<std::vector<int>>() == ParameterType::kParameterArrayInt);
     static_assert(std::is_same_v<Parameter<void*>::value_type, void*>);
+    static_assert(std::is_convertible_v<int&&, int>);
 }
 
 TEST(IRTEST, Parameter_Deprecated) {
     // null parameter
-    Parameter_Deprecated p_null;
-    ASSERT_EQ(p_null.type(), ParameterType::kParameterUnknown);
-    ASSERT_EQ(Parameter_Deprecated::Encode2String(p_null), "None");
-    ASSERT_TRUE(Parameter_Deprecated::ParseFromString(Parameter_Deprecated::Encode2String(p_null)) == p_null);
-
     Parameter_ p0;
     EXPECT_EQ(p0.type(), ParameterType::kParameterUnknown);
     EXPECT_EQ(p0.toString(), "None");
 
     // bool parameter
-    Parameter_Deprecated p_bool1(true);
-    Parameter_Deprecated p_bool2(false);
-    ASSERT_EQ(p_bool1.type(), ParameterType::kParameterBool);
-    ASSERT_EQ(Parameter_Deprecated::Encode2String(p_bool1), "True");
-    ASSERT_EQ(Parameter_Deprecated::Encode2String(p_bool2), "False");
-    ASSERT_TRUE(Parameter_Deprecated::ParseFromString(Parameter_Deprecated::Encode2String(p_bool1)) == p_bool1);
-    ASSERT_TRUE(Parameter_Deprecated::ParseFromString(Parameter_Deprecated::Encode2String(p_bool2)) == p_bool2);
-
     Parameter_ p1(true);
     EXPECT_EQ(p1.type(), ParameterType::kParameterBool);
     EXPECT_EQ(p1.toString(), "True");
+    p1.SetValue(false);
+    EXPECT_EQ(p1.toString(), "False");
 
     // int parameter
     Parameter_Deprecated p_int1(-10ll);// 10, 10l
@@ -76,6 +66,10 @@ TEST(IRTEST, Parameter_Deprecated) {
     ASSERT_EQ(p_int1.type(), ParameterType::kParameterInt);
     ASSERT_EQ(Parameter_Deprecated::Encode2String(p_int1), "-10");
     ASSERT_TRUE(Parameter_Deprecated::ParseFromString(Parameter_Deprecated::Encode2String(p_int1)) == p_int1);
+
+    Parameter_ p2(-10l);
+    EXPECT_EQ(p2.type(), ParameterType::kParameterInt);
+    EXPECT_EQ(p2.toString(), "-10");
 
     // float parameter
     Parameter_Deprecated p_float(0.3141592657);

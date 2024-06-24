@@ -203,13 +203,12 @@ public:
             snprintf(buf, sizeof(buf), "%e+%ei", value_.real(), value_.imag());
             return buf;
         }
+
         return "None";
-        //        return Encode2String();
     }
 
     void SetValue(const std::any& val) override {
-//        if constexpr (val.type() == typeid(bool)) {
-//        }
+        value_ = std::any_cast<T>(val);
     }
 
 private:
@@ -248,6 +247,10 @@ public:
 
     NODISCARD std::string toString() const {
         return ptr_->toString();
+    }
+
+    void SetValue(const std::any& val) const {
+        ptr_->SetValue(val);
     }
 
 private:
