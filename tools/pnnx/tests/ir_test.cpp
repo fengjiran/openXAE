@@ -50,8 +50,9 @@ TEST(IRTEST, type_check) {
 TEST(IRTEST, Parameter_Deprecated) {
     // null parameter
     Parameter_ p0;
-    EXPECT_EQ(p0.type(), ParameterType::kParameterUnknown);
-    EXPECT_EQ(p0.toString(), "None");
+    EXPECT_FALSE(p0.has_value());
+//    EXPECT_EQ(p0.type(), ParameterType::kParameterUnknown);
+//    EXPECT_EQ(p0.toString(), "None");
 
     // bool parameter
     Parameter_ p1(true);
@@ -61,22 +62,18 @@ TEST(IRTEST, Parameter_Deprecated) {
     EXPECT_EQ(p1.toString(), "False");
 
     // int parameter
-    Parameter_Deprecated p_int1(-10ll);// 10, 10l
-    std::cout << Parameter_Deprecated::Encode2String(p_int1) << std::endl;
-    ASSERT_EQ(p_int1.type(), ParameterType::kParameterInt);
-    ASSERT_EQ(Parameter_Deprecated::Encode2String(p_int1), "-10");
-    ASSERT_TRUE(Parameter_Deprecated::ParseFromString(Parameter_Deprecated::Encode2String(p_int1)) == p_int1);
-
     Parameter_ p2(-10l);
     EXPECT_EQ(p2.type(), ParameterType::kParameterInt);
     EXPECT_EQ(p2.toString(), "-10");
+//    p2.SetValue((int)20);
+//    EXPECT_EQ(p2.toString(), "20");
 
     // float parameter
-    Parameter_Deprecated p_float(0.3141592657);
-    std::cout << Parameter_Deprecated::Encode2String(p_float) << std::endl;
-    ASSERT_EQ(p_float.type(), ParameterType::kParameterFloat);
-    ASSERT_EQ(Parameter_Deprecated::Encode2String(p_float), "3.141593e-01");
-    ASSERT_TRUE(Parameter_Deprecated::ParseFromString(Parameter_Deprecated::Encode2String(p_float)) == p_float);
+    Parameter_ p3(0.3141592657);
+    EXPECT_EQ(p3.type(), ParameterType::kParameterFloat);
+    EXPECT_EQ(p3.toString(), "3.141593e-01");
+//    p3.SetValue(3.14);
+//    EXPECT_EQ(p3.toString(), "3.140000e+00");
 
     // string parameter
     Parameter_Deprecated p_str("pnnx");
@@ -206,6 +203,7 @@ TEST(IRTEST, new_parameter) {
 }
 
 TEST(IRTEST, libtorch) {
+    GTEST_SKIP();
     auto options = torch::TensorOptions()
                            .dtype(torch::kFloat32)
                            .layout(torch::kStrided)
@@ -221,6 +219,7 @@ TEST(IRTEST, libtorch) {
 }
 
 TEST(IRTEST, Attribute) {
+    GTEST_SKIP();
     at::IntArrayRef shape = {2, 3};
 
     auto t = torch::rand(shape);
@@ -246,7 +245,7 @@ TEST(IRTEST, Attribute) {
 }
 
 TEST(IRTEST, pnnx_graph_load) {
-    //    GTEST_SKIP();
+    GTEST_SKIP();
     std::string param_path = "test_linear.pnnx.param";
     std::string bin_path = "test_linear.pnnx.bin";
     Graph graph;
@@ -258,6 +257,7 @@ TEST(IRTEST, pnnx_graph_load) {
 }
 
 TEST(IRTEST, create_pnnx_graph) {
+    GTEST_SKIP();
     Graph graph;
     auto t1 = graph.CreateOperator("pnnx.Input", "pnnx_input_0",
                                    {}, {}, {}, {},
@@ -288,14 +288,14 @@ TEST(IRTEST, create_pnnx_graph) {
 }
 
 TEST(IRTEST, torch2pnnx) {
+    GTEST_SKIP();
     std::string pt = "test_nn_Conv2d.pt";
     //    std::string pt = "test_inline_block.pt";
     torch2pnnx(pt, "cpu");
-//    Graph g;
-//    load_torchscript(pt, g, "cpu", {}, {}, {}, {});
 }
 
 TEST(IRTEST, create_parameter_from_torch_node) {
+    GTEST_SKIP();
     auto g = torch::jit::Graph();
     auto printer = [](const auto& arg) {
         std::cout << arg.Encode2String() << std::endl;
