@@ -99,7 +99,7 @@ public:
     virtual ~ParameterBase() = default;
     NODISCARD virtual const ParameterType& type() const = 0;
     NODISCARD virtual std::string toString() const = 0;
-//    virtual void SetValue() = 0;
+    virtual void SetValue(const std::any&) = 0;
 };
 
 template<typename T>
@@ -188,7 +188,28 @@ public:
     }
 
     NODISCARD std::string toString() const override {
-        return Encode2String();
+        if constexpr (GetParameterType<T>() == ParameterType::kParameterBool) {
+            return value_ ? "True" : "False";
+        } else if constexpr (GetParameterType<T>() == ParameterType::kParameterInt) {
+            return std::to_string(value_);
+        } else if constexpr (GetParameterType<T>() == ParameterType::kParameterFloat) {
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%e", value_);
+            return buf;
+        } else if constexpr (GetParameterType<T>() == ParameterType::kParameterString) {
+            return value_;
+        } else if constexpr (GetParameterType<T>() == ParameterType::kParameterComplex) {
+            char buf[128];
+            snprintf(buf, sizeof(buf), "%e+%ei", value_.real(), value_.imag());
+            return buf;
+        }
+        return "None";
+        //        return Encode2String();
+    }
+
+    void SetValue(const std::any& val) override {
+//        if constexpr (val.type() == typeid(bool)) {
+//        }
     }
 
 private:
