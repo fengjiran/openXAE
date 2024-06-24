@@ -188,8 +188,11 @@ public:
         return false;
     }
 
-    NODISCARD const ParameterType& type() const {
-        return ptr_->type();
+    NODISCARD ParameterType type() const {
+        if (has_value()) {
+            return ptr_->type();
+        }
+        return ParameterType::kParameterUnknown;
     }
 
     NODISCARD std::string toString() const {
