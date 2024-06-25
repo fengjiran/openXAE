@@ -17,7 +17,7 @@ namespace pnnx {
 
 std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod) {
     mod.eval();
-    //    mod = torch::jit::freeze_module(mod);
+    mod = torch::jit::freeze_module(mod);
     auto method = mod.find_method("forward");
     if (!method) {
         auto methods = mod.get_methods();
@@ -32,8 +32,8 @@ std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod) 
 
     std::cout << "Before Inline:\n";
     graph->dump();
-//    torch::jit::Inline(*graph);
-        inline_block(graph, {});
+    //    torch::jit::Inline(*graph);
+    inline_block(graph, {});
     std::cout << "After Inline:\n";
     graph->dump();
     //    torch::jit::NormalizeOps(graph);
