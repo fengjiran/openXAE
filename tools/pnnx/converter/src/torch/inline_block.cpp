@@ -4,10 +4,21 @@
 
 #include "inline_block.h"
 
+#include <deque>
+#include <stack>
 #include <torch/csrc/api/include/torch/version.h>
 #include <torch/csrc/jit/passes/quantization/helper.h>
 
 namespace pnnx {
+
+struct BlockInfo {
+    explicit BlockInfo(torch::jit::Block* block) : block_(block) {}
+    BlockInfo(torch::jit::Block* block, bool childrenExpanded)
+        : block_(block), childrenExpanded_(childrenExpanded) {}
+
+    torch::jit::Block* block_{nullptr};
+    bool childrenExpanded_{false};
+};
 
 static void inlineCallTo(torch::jit::Node* to_replace, torch::jit::Function* callee) {
     torch::jit::WithInsertPoint guard(to_replace);
@@ -101,6 +112,15 @@ static void inlineCalls(torch::jit::Block* block,
                 inlineCalls(b, module_operators, inlined_modules, inside_module_op);
             }
         }
+    }
+}
+
+void InlineBlock(torch::jit::Block* block) {
+    std::stack<BlockInfo> stk;
+    stk.emplace(block);
+    while (!stk.empty()) {
+        BlockInfo* front = &stk.top();
+
     }
 }
 
