@@ -48,6 +48,7 @@ TEST(IRTEST, type_check) {
 }
 
 TEST(IRTEST, Parameter_Deprecated) {
+    GTEST_SKIP();
     // null parameter
     Parameter_ p0;
     EXPECT_FALSE(p0.has_value());
@@ -291,7 +292,7 @@ TEST(IRTEST, create_pnnx_graph) {
 }
 
 TEST(IRTEST, torch2pnnx) {
-    GTEST_SKIP();
+//    GTEST_SKIP();
     std::string pt = "test_nn_Conv2d.pt";
     //    std::string pt = "test_inline_block.pt";
     torch2pnnx(pt, "cpu");

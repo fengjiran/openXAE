@@ -37,8 +37,8 @@ static void inlineCalls(torch::jit::Block* block,
                         const std::vector<std::string>& module_operators,
                         std::set<std::string>& inlined_modules,
                         bool inside_module_op = false) {
-    for (auto it = block->nodes().begin(); it != block->nodes().end(); ++it) {
-        torch::jit::Node* n = *it;
+    for (auto it = block->nodes().begin(), end = block->nodes().end(); it != end;) {
+        torch::jit::Node* n = *it++;
         if (n->kind() == c10::prim::CallFunction) {
             auto function_constant = n->input(0)->node();
             auto fun_type = function_constant->output()->type()->expect<torch::jit::FunctionType>();
@@ -77,16 +77,16 @@ static void inlineCalls(torch::jit::Block* block,
                     continue;
                 }
 
-//                                bool skip_inline = false;
-//                                for (const auto& ow: get_global_pnnx_fuse_module_passes()) {
-//                                    if (class_type_str == ow->match_type_str()) {
-//                                        skip_inline = true;
-//                                        break;
-//                                    }
-//                                }
-//
-//                                if (skip_inline)
-//                                    continue;
+                //                                bool skip_inline = false;
+                //                                for (const auto& ow: get_global_pnnx_fuse_module_passes()) {
+                //                                    if (class_type_str == ow->match_type_str()) {
+                //                                        skip_inline = true;
+                //                                        break;
+                //                                    }
+                //                                }
+                //
+                //                                if (skip_inline)
+                //                                    continue;
             }
 
 #if TORCH_VERSION_MAJOR >= 2 || (TORCH_VERSION_MAJOR >= 1 && TORCH_VERSION_MINOR >= 11)
@@ -110,12 +110,13 @@ void inline_block(std::shared_ptr<torch::jit::Graph>& graph,
 
     inlineCalls(graph->block(), module_operators, inlined_modules);
 
-    for (const auto& x : inlined_modules)
-    {
+    std::cout << "inlined module num: " << inlined_modules.size() << std::endl;
+
+    for (const auto& x: inlined_modules) {
         if (x == "torch.nn.modules.container.Sequential")
             continue;
 
-        fprintf(stderr, "inline module = %s\n", x.c_str());
+        std::cerr << "inline module = " << x.c_str() << std::endl;
     }
 }
 
