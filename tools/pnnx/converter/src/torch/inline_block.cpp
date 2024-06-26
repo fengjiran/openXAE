@@ -115,12 +115,68 @@ static void inlineCalls(torch::jit::Block* block,
     }
 }
 
+static void ExpandBlock(torch::jit::Block* block, std::stack<BlockInfo>& stk) {
+    for (auto it = block->nodes().begin(), end = block->nodes().end(); it != end;) {
+        auto n = *it++;
+        if (n->kind() == c10::prim::CallFunction) {
+            auto function_constant = n->input(0)->node();
+            auto fun_type = function_constant->output()->type()->expect<torch::jit::FunctionType>();
+            if (!fun_type->function()->isGraphFunction()) {
+                continue;
+            }
+            stk.emplace(toGraphFunction(*(fun_type->function())).graph()->block());
+        } else if (n->kind() == c10::prim::CallMethod) {
+            auto class_type = n->input(0)->type()->cast<torch::jit::ClassType>();
+            if (!class_type) {
+                continue;
+            }
+            const std::string& function_name = n->s(torch::jit::attr::name);
+            torch::jit::Function& function = class_type->getMethod(function_name);
+            if (!function.isGraphFunction()) {
+                continue;
+            }
+
+            std::string class_type_str = torch::jit::removeTorchMangle(class_type->str());
+            std::string class_type_str_no_torch_prefix = class_type_str.substr(10);
+            stk.emplace(toGraphFunction(function).graph()->block());
+        } else {
+            for (auto b: n->blocks()) {
+                stk.emplace(b);
+            }
+        }
+    }
+}
+
+static void VisitLeafBlock(torch::jit::Block* block) {
+    for (auto it = block->nodes().begin(), end = block->nodes().end(); it != end;) {
+        auto n = *it++;
+        if (n->kind() == c10::prim::CallFunction) {
+            auto function_constant = n->input(0)->node();
+            auto fun_type = function_constant->output()->type()->expect<torch::jit::FunctionType>();
+            n->removeInput(0);
+            std::cerr << "inline function " << fun_type->function()->name() << std::endl;
+            inlineCallTo(n, fun_type->function());
+        } else if (n->kind() == c10::prim::CallMethod) {
+            auto class_type = n->input(0)->type()->cast<torch::jit::ClassType>();
+            const std::string& function_name = n->s(torch::jit::attr::name);
+            torch::jit::Function& function = class_type->getMethod(function_name);
+            inlineCallTo(n, &function);
+        }
+    }
+}
+
 void InlineBlock(torch::jit::Block* block) {
     std::stack<BlockInfo> stk;
     stk.emplace(block);
     while (!stk.empty()) {
         BlockInfo* front = &stk.top();
-
+        if (front->childrenExpanded_) {
+            VisitLeafBlock(front->block_);
+            stk.pop();
+        } else {
+            front->childrenExpanded_ = true;
+            ExpandBlock(front->block_, stk);
+        }
     }
 }
 
