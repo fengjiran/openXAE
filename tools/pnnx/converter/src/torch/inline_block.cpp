@@ -11,13 +11,33 @@
 
 namespace pnnx {
 
-struct BlockInfo {
+class BlockInfo {
+public:
     explicit BlockInfo(torch::jit::Block* block) : block_(block) {}
+
     BlockInfo(torch::jit::Block* block, bool childrenExpanded)
         : block_(block), childrenExpanded_(childrenExpanded) {}
 
+    torch::jit::Block* data() {
+        return block_;
+    }
+
+    C10_NODISCARD bool isInlined() const {
+        return childrenExpanded_;
+    }
+
+    void AddIllegalNode(torch::jit::Node* n) {
+        illegalNodes_.push_back(n);
+    }
+
+    const std::vector<torch::jit::Node*>& GetIllegalNodes() const {
+        return illegalNodes_;
+    }
+
+private:
     torch::jit::Block* block_{nullptr};
     bool childrenExpanded_{false};
+    std::vector<torch::jit::Node*> illegalNodes_;
 };
 
 static void inlineCallTo(torch::jit::Node* to_replace, torch::jit::Function* callee) {
@@ -147,8 +167,9 @@ static void ExpandBlock(torch::jit::Block* block, std::stack<BlockInfo>& stk) {
     }
 }
 
-static void VisitLeafBlock(torch::jit::Block* block) {
-    for (auto it = block->nodes().begin(), end = block->nodes().end(); it != end;) {
+static void VisitLeafBlock(const BlockInfo& block) {
+    auto blockPtr = block.block_;
+    for (auto it = block.nodes().begin(), end = block->nodes().end(); it != end;) {
         auto n = *it++;
         if (n->kind() == c10::prim::CallFunction) {
             auto function_constant = n->input(0)->node();
