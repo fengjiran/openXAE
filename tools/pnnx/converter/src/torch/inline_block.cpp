@@ -148,8 +148,7 @@ static void ExpandBlock(BlockInfo& block, std::stack<BlockInfo>& stk) {
             if (!fun_type->function()->isGraphFunction()) {
                 continue;
             }
-
-
+            block.AddIllegalNode(n);
             stk.emplace(toGraphFunction(*(fun_type->function())).graph()->block());
         } else if (n->kind() == c10::prim::CallMethod) {
             auto class_type = n->input(0)->type()->cast<torch::jit::ClassType>();
@@ -164,6 +163,8 @@ static void ExpandBlock(BlockInfo& block, std::stack<BlockInfo>& stk) {
 
             std::string class_type_str = torch::jit::removeTorchMangle(class_type->str());
             std::string class_type_str_no_torch_prefix = class_type_str.substr(10);
+
+            block.AddIllegalNode(n);
             stk.emplace(toGraphFunction(function).graph()->block());
         } else {
             for (auto b: n->blocks()) {
