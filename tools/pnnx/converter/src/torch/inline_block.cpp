@@ -4,7 +4,6 @@
 
 #include "inline_block.h"
 
-#include <deque>
 #include <stack>
 #include <torch/csrc/api/include/torch/version.h>
 #include <torch/csrc/jit/passes/quantization/helper.h>
@@ -30,18 +29,27 @@ public:
         allChildrenInlined_ = allChildrenInlined;
     }
 
-    void AddIllegalNode(torch::jit::Node* n) {
-        illegalNodes_.push_back(n);
+//    void AddIllegalNode(torch::jit::Node* n) {
+//        illegalNodes_.push_back(n);
+//    }
+
+//    const std::vector<torch::jit::Node*>& GetIllegalNodes() const {
+//        return illegalNodes_;
+//    }
+
+    void AddIllegalNodeAndFunc(std::pair<torch::jit::Node*, torch::jit::Function*> nf) {
+        illegalNodeAndFunc_.push_back(nf);
     }
 
-    const std::vector<torch::jit::Node*>& GetIllegalNodes() const {
-        return illegalNodes_;
+    const auto& GetIllegalNodeAndFunc() const {
+        return illegalNodeAndFunc_;
     }
 
 private:
     torch::jit::Block* block_{nullptr};
     bool allChildrenInlined_{false};
-    std::vector<torch::jit::Node*> illegalNodes_;
+//    std::vector<torch::jit::Node*> illegalNodes_;
+    std::vector<std::pair<torch::jit::Node*, torch::jit::Function*>> illegalNodeAndFunc_;
 };
 
 static void inlineCallTo(torch::jit::Node* to_replace, torch::jit::Function* callee) {
@@ -140,7 +148,8 @@ static void inlineCalls(torch::jit::Block* block,
 }
 
 static void ExpandBlock(BlockInfo& block, std::stack<BlockInfo>& stk) {
-    for (auto it = block.data()->nodes().begin(), end = block.data()->nodes().end(); it != end;) {
+    auto nodes = block.data()->nodes();
+    for (auto it = nodes.begin(), end = nodes.end(); it != end;) {
         auto n = *it++;
         if (n->kind() == c10::prim::CallFunction) {
             auto function_constant = n->input(0)->node();
@@ -148,7 +157,7 @@ static void ExpandBlock(BlockInfo& block, std::stack<BlockInfo>& stk) {
             if (!fun_type->function()->isGraphFunction()) {
                 continue;
             }
-            block.AddIllegalNode(n);
+            block.AddIllegalNodeAndFunc({n, fun_type->function()});
             stk.emplace(toGraphFunction(*(fun_type->function())).graph()->block());
         } else if (n->kind() == c10::prim::CallMethod) {
             auto class_type = n->input(0)->type()->cast<torch::jit::ClassType>();
@@ -161,10 +170,10 @@ static void ExpandBlock(BlockInfo& block, std::stack<BlockInfo>& stk) {
                 continue;
             }
 
-            std::string class_type_str = torch::jit::removeTorchMangle(class_type->str());
-            std::string class_type_str_no_torch_prefix = class_type_str.substr(10);
+//            std::string class_type_str = torch::jit::removeTorchMangle(class_type->str());
+//            std::string class_type_str_no_torch_prefix = class_type_str.substr(10);
 
-            block.AddIllegalNode(n);
+            block.AddIllegalNodeAndFunc({n, &function});
             stk.emplace(toGraphFunction(function).graph()->block());
         } else {
             for (auto b: n->blocks()) {
@@ -175,19 +184,21 @@ static void ExpandBlock(BlockInfo& block, std::stack<BlockInfo>& stk) {
 }
 
 static void VisitLeafBlock(const BlockInfo& block) {
-    for (auto it = block.GetIllegalNodes().begin(), end = block.GetIllegalNodes().end(); it != end;) {
-        auto n = *it++;
+    for (auto it = block.GetIllegalNodeAndFunc().begin(), end = block.GetIllegalNodeAndFunc().end(); it != end;) {
+        auto n = it->first;
+        auto f = it->second;
+        it++;
         if (n->kind() == c10::prim::CallFunction) {
-            auto function_constant = n->input(0)->node();
-            auto fun_type = function_constant->output()->type()->expect<torch::jit::FunctionType>();
+//            auto function_constant = n->input(0)->node();
+//            auto fun_type = function_constant->output()->type()->expect<torch::jit::FunctionType>();
             n->removeInput(0);
-            std::cerr << "inline function " << fun_type->function()->name() << std::endl;
-            inlineCallTo(n, fun_type->function());
+            std::cerr << "inline function " << f->name() << std::endl;
+            inlineCallTo(n, f);
         } else if (n->kind() == c10::prim::CallMethod) {
-            auto class_type = n->input(0)->type()->cast<torch::jit::ClassType>();
-            const std::string& function_name = n->s(torch::jit::attr::name);
-            torch::jit::Function& function = class_type->getMethod(function_name);
-            inlineCallTo(n, &function);
+//            auto class_type = n->input(0)->type()->cast<torch::jit::ClassType>();
+//            const std::string& function_name = n->s(torch::jit::attr::name);
+//            torch::jit::Function& function = class_type->getMethod(function_name);
+            inlineCallTo(n, f);
         }
     }
 }
@@ -202,7 +213,7 @@ void InlineBlock(torch::jit::Block* block) {
             stk.pop();
         } else {
             front.SetChildrenInlinedStatus(true);
-            ExpandBlock(front->block_, stk);
+            ExpandBlock(front, stk);
         }
     }
 }
