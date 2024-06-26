@@ -16,14 +16,18 @@ public:
     explicit BlockInfo(torch::jit::Block* block) : block_(block) {}
 
     BlockInfo(torch::jit::Block* block, bool childrenExpanded)
-        : block_(block), childrenExpanded_(childrenExpanded) {}
+        : block_(block), allChildrenInlined_(childrenExpanded) {}
 
     torch::jit::Block* data() {
         return block_;
     }
 
-    C10_NODISCARD bool isInlined() const {
-        return childrenExpanded_;
+    bool AllChildrenInlined() const {
+        return allChildrenInlined_;
+    }
+
+    void SetChildrenInlinedStatus(bool allChildrenInlined) {
+        allChildrenInlined_ = allChildrenInlined;
     }
 
     void AddIllegalNode(torch::jit::Node* n) {
@@ -36,7 +40,7 @@ public:
 
 private:
     torch::jit::Block* block_{nullptr};
-    bool childrenExpanded_{false};
+    bool allChildrenInlined_{false};
     std::vector<torch::jit::Node*> illegalNodes_;
 };
 
@@ -135,8 +139,8 @@ static void inlineCalls(torch::jit::Block* block,
     }
 }
 
-static void ExpandBlock(torch::jit::Block* block, std::stack<BlockInfo>& stk) {
-    for (auto it = block->nodes().begin(), end = block->nodes().end(); it != end;) {
+static void ExpandBlock(BlockInfo& block, std::stack<BlockInfo>& stk) {
+    for (auto it = block.data()->nodes().begin(), end = block.data()->nodes().end(); it != end;) {
         auto n = *it++;
         if (n->kind() == c10::prim::CallFunction) {
             auto function_constant = n->input(0)->node();
@@ -144,6 +148,8 @@ static void ExpandBlock(torch::jit::Block* block, std::stack<BlockInfo>& stk) {
             if (!fun_type->function()->isGraphFunction()) {
                 continue;
             }
+
+
             stk.emplace(toGraphFunction(*(fun_type->function())).graph()->block());
         } else if (n->kind() == c10::prim::CallMethod) {
             auto class_type = n->input(0)->type()->cast<torch::jit::ClassType>();
@@ -168,8 +174,7 @@ static void ExpandBlock(torch::jit::Block* block, std::stack<BlockInfo>& stk) {
 }
 
 static void VisitLeafBlock(const BlockInfo& block) {
-    auto blockPtr = block.block_;
-    for (auto it = block.nodes().begin(), end = block->nodes().end(); it != end;) {
+    for (auto it = block.GetIllegalNodes().begin(), end = block.GetIllegalNodes().end(); it != end;) {
         auto n = *it++;
         if (n->kind() == c10::prim::CallFunction) {
             auto function_constant = n->input(0)->node();
@@ -190,12 +195,12 @@ void InlineBlock(torch::jit::Block* block) {
     std::stack<BlockInfo> stk;
     stk.emplace(block);
     while (!stk.empty()) {
-        BlockInfo* front = &stk.top();
-        if (front->childrenExpanded_) {
-            VisitLeafBlock(front->block_);
+        BlockInfo& front = stk.top();
+        if (front.AllChildrenInlined()) {
+            VisitLeafBlock(front);
             stk.pop();
         } else {
-            front->childrenExpanded_ = true;
+            front.SetChildrenInlinedStatus(true);
             ExpandBlock(front->block_, stk);
         }
     }
