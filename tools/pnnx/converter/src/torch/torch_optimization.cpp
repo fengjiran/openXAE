@@ -34,7 +34,7 @@ std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod) 
     graph->dump();
 //        torch::jit::Inline(*graph);
 //    inline_block(graph, {});
-    InlineBlock(graph->block());
+    Inline(graph, {});
     std::cout << "After Inline:\n";
     graph->dump();
     //    torch::jit::NormalizeOps(graph);

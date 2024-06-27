@@ -76,8 +76,8 @@ TEST(IRTEST, Parameter_Deprecated) {
     Parameter_ p3(0.3141592657);
     EXPECT_EQ(p3.type(), ParameterType::kParameterFloat);
     EXPECT_EQ(p3.toString(), "3.141593e-01");
-//    p3.SetValue(3.14);
-//    EXPECT_EQ(p3.toString(), "3.140000e+00");
+    //    p3.SetValue(3.14);
+    //    EXPECT_EQ(p3.toString(), "3.140000e+00");
 
     // string parameter
     Parameter_Deprecated p_str("pnnx");
@@ -107,7 +107,6 @@ TEST(IRTEST, Parameter_Deprecated) {
     Parameter_Deprecated p_c(std::complex<float>(2, 3));
     ASSERT_EQ(p_c.type(), ParameterType::kParameterComplex);
     ASSERT_EQ(Parameter_Deprecated::Encode2String(p_c), "2.000000e+00+3.000000e+00i");
-
 }
 
 TEST(IRTEST, new_parameter) {
@@ -292,9 +291,9 @@ TEST(IRTEST, create_pnnx_graph) {
 }
 
 TEST(IRTEST, torch2pnnx) {
-//    GTEST_SKIP();
-    std::string pt = "test_nn_Conv2d.pt";
-    //    std::string pt = "test_inline_block.pt";
+    //    GTEST_SKIP();
+    //    std::string pt = "test_nn_Conv2d.pt";
+    std::string pt = "test_inline_block.pt";
     torch2pnnx(pt, "cpu");
 }
 
