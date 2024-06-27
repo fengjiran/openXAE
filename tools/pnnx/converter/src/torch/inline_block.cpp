@@ -26,18 +26,19 @@ public:
         allChildrenInlined_ = allChildrenInlined;
     }
 
-    void AddIllegalNodeAndFunc(std::pair<torch::jit::Node*, torch::jit::Function*> nf) {
-        illegalNodeAndFunc_.push_back(nf);
+    void AddCallableNode(const std::pair<torch::jit::Node*, std::shared_ptr<c10::NamedType>>& nf) {
+        callableNodes_.push_back(nf);
     }
 
-    const auto& GetIllegalNodeAndFunc() const {
-        return illegalNodeAndFunc_;
+    const auto& GetCallableNodes() const {
+        return callableNodes_;
     }
 
 private:
     torch::jit::Block* block_{nullptr};
     bool allChildrenInlined_{false};
-    std::vector<std::pair<torch::jit::Node*, torch::jit::Function*>> illegalNodeAndFunc_;
+//    std::vector<std::pair<torch::jit::Node*, torch::jit::Function*>> illegalNodeAndFunc_;
+    std::vector<std::pair<torch::jit::Node*, std::shared_ptr<c10::NamedType>>> callableNodes_;
 };
 
 static void inlineCallTo(torch::jit::Node* to_replace, torch::jit::Function* callee) {
@@ -143,7 +144,8 @@ static void ExpandBlock(BlockInfo& block, std::stack<BlockInfo>& stk) {
             if (!fun_type->function()->isGraphFunction()) {
                 continue;
             }
-            block.AddIllegalNodeAndFunc({n, fun_type->function()});
+
+            block.AddCallableNode({n, fun_type});
             stk.emplace(toGraphFunction(*(fun_type->function())).graph()->block());
         } else if (n->kind() == c10::prim::CallMethod) {
             auto class_type = n->input(0)->type()->cast<torch::jit::ClassType>();
@@ -156,10 +158,7 @@ static void ExpandBlock(BlockInfo& block, std::stack<BlockInfo>& stk) {
                 continue;
             }
 
-            //            std::string class_type_str = torch::jit::removeTorchMangle(class_type->str());
-            //            std::string class_type_str_no_torch_prefix = class_type_str.substr(10);
-
-            block.AddIllegalNodeAndFunc({n, &function});
+            block.AddCallableNode({n, class_type});
             stk.emplace(toGraphFunction(function).graph()->block());
         } else {
             for (auto b: n->blocks()) {
@@ -169,15 +168,24 @@ static void ExpandBlock(BlockInfo& block, std::stack<BlockInfo>& stk) {
     }
 }
 
-static void InlineLeafBlock(const BlockInfo& block) {
-    for (auto [node, function]: block.GetIllegalNodeAndFunc()) {
+static void InlineLeafBlock(const BlockInfo& block, std::set<std::string>& inlinedModules) {
+    for (auto [node, obj]: block.GetCallableNodes()) {
         if (node->kind() == c10::prim::CallFunction) {
+            auto func = std::dynamic_pointer_cast<c10::FunctionType>(obj);
             node->removeInput(0);
-            std::cerr << "inline function " << function->name() << std::endl;
-            inlineCallTo(node, function);
+            std::cerr << "inline function: " << func->function()->name() << std::endl;
+            inlineCallTo(node, func->function());
         } else if (node->kind() == c10::prim::CallMethod) {
-            std::cerr << "inline CallMethod " << function->name() << std::endl;
-            inlineCallTo(node, function);
+            auto cls = std::dynamic_pointer_cast<c10::ClassType>(obj);
+            const std::string& name = node->s(torch::jit::attr::name);
+            torch::jit::Function& method = cls->getMethod(name);
+
+            std::string classTypeStr = torch::jit::removeTorchMangle(cls->str());
+            std::string classTypeWithNoTorchPrefix = classTypeStr.substr(10);
+            inlinedModules.insert(classTypeWithNoTorchPrefix);
+
+            std::cerr << "inline CallMethod: " << classTypeWithNoTorchPrefix << std::endl;
+            inlineCallTo(node, &method);
         }
     }
 }
@@ -191,7 +199,7 @@ void InlineBlock(torch::jit::Block* block,
     while (!stk.empty()) {
         BlockInfo& top = stk.top();
         if (top.AllChildrenInlined()) {
-            InlineLeafBlock(top);
+            InlineLeafBlock(top, inlinedModules);
             stk.pop();
         } else {
             top.SetChildrenInlinedStatus(true);
