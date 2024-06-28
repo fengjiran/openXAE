@@ -6,6 +6,7 @@
 #define OPENXAE_TORCH_OPTIMIZATION_H
 
 #include "Graph.h"
+#include "constant_unpooling.h"
 #include "inline_block.h"
 
 #include <torch/script.h>

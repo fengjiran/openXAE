@@ -8,6 +8,7 @@
 #include <torch/csrc/jit/passes/freeze_module.h>
 #include <torch/csrc/jit/passes/inliner.h>
 #include <torch/csrc/jit/passes/normalize_ops.h>
+#include <torch/csrc/jit/passes/constant_pooling.h>
 
 //#include <torch/csrc/jit/api/module.h>
 //#include <torch/csrc/jit/frontend/error_report.h>
@@ -31,11 +32,26 @@ std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod) 
     auto graph = method->graph();
 
     std::cout << "Before Inline:\n";
+    int numNodes = 0;
+    for (auto it = graph->nodes().begin(); it != graph->nodes().end(); ++it) {
+        numNodes++;
+    }
+    std::cerr << "Num nodes before inline: " << numNodes << std::endl;
     graph->dump();
 //        torch::jit::Inline(*graph);
 //    inline_block(graph, {});
     Inline(graph, {});
+
+    torch::jit::ConstantPooling(graph);
+//    constant_unpooling(graph);
     std::cout << "After Inline:\n";
+
+    numNodes = 0;
+    for (auto it = graph->nodes().begin(); it != graph->nodes().end(); ++it) {
+        numNodes++;
+    }
+    std::cerr << "Num nodes after inline: " << numNodes << std::endl;
+
     graph->dump();
     //    torch::jit::NormalizeOps(graph);
 

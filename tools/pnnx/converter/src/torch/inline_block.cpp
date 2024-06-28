@@ -37,7 +37,6 @@ public:
 private:
     torch::jit::Block* block_{nullptr};
     bool allChildrenInlined_{false};
-//    std::vector<std::pair<torch::jit::Node*, torch::jit::Function*>> illegalNodeAndFunc_;
     std::vector<std::pair<torch::jit::Node*, std::shared_ptr<c10::NamedType>>> callableNodes_;
 };
 
