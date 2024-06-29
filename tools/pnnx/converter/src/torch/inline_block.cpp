@@ -10,36 +10,6 @@
 
 namespace pnnx {
 
-class BlockInfo {
-public:
-    explicit BlockInfo(torch::jit::Block* block) : block_(block) {}
-
-    torch::jit::Block* data() {
-        return block_;
-    }
-
-    bool AllChildrenInlined() const {
-        return allChildrenInlined_;
-    }
-
-    void SetChildrenInlinedStatus(bool allChildrenInlined) {
-        allChildrenInlined_ = allChildrenInlined;
-    }
-
-    void AddCallableNode(const std::pair<torch::jit::Node*, std::shared_ptr<c10::NamedType>>& nf) {
-        callableNodes_.push_back(nf);
-    }
-
-    const auto& GetCallableNodes() const {
-        return callableNodes_;
-    }
-
-private:
-    torch::jit::Block* block_{nullptr};
-    bool allChildrenInlined_{false};
-    std::vector<std::pair<torch::jit::Node*, std::shared_ptr<c10::NamedType>>> callableNodes_;
-};
-
 static void inlineCallTo(torch::jit::Node* to_replace, torch::jit::Function* callee) {
     torch::jit::WithInsertPoint guard(to_replace);
     std::unordered_map<torch::jit::Value*, torch::jit::Value*> value_map;
@@ -135,6 +105,52 @@ static void inlineCalls(torch::jit::Block* block,
     }
 }
 
+void inline_block(std::shared_ptr<torch::jit::Graph>& graph,
+                  const std::vector<std::string>& module_operators) {
+    std::set<std::string> inlined_modules;
+
+    inlineCalls(graph->block(), module_operators, inlined_modules);
+
+    std::cout << "inlined module num: " << inlined_modules.size() << std::endl;
+
+    for (const auto& x: inlined_modules) {
+        if (x == "torch.nn.modules.container.Sequential")
+            continue;
+
+        std::cerr << "inline module = " << x.c_str() << std::endl;
+    }
+}
+
+class BlockInfo {
+public:
+    explicit BlockInfo(torch::jit::Block* block) : block_(block) {}
+
+    torch::jit::Block* data() {
+        return block_;
+    }
+
+    bool AllChildrenInlined() const {
+        return allChildrenInlined_;
+    }
+
+    void SetChildrenInlinedStatus(bool allChildrenInlined) {
+        allChildrenInlined_ = allChildrenInlined;
+    }
+
+    void AddCallableNode(const std::pair<torch::jit::Node*, std::shared_ptr<c10::NamedType>>& nf) {
+        callableNodes_.push_back(nf);
+    }
+
+    const auto& GetCallableNodes() const {
+        return callableNodes_;
+    }
+
+private:
+    torch::jit::Block* block_{nullptr};
+    bool allChildrenInlined_{false};
+    std::vector<std::pair<torch::jit::Node*, std::shared_ptr<c10::NamedType>>> callableNodes_;
+};
+
 static void ExpandBlock(BlockInfo& block, std::stack<BlockInfo>& stk) {
     for (auto n: block.data()->nodes()) {
         if (n->kind() == c10::prim::CallFunction) {
@@ -216,22 +232,6 @@ void Inline(std::shared_ptr<torch::jit::Graph>& graph,
     std::cout << "inlined module num: " << inlinedModules.size() << std::endl;
 
     for (const auto& x: inlinedModules) {
-        if (x == "torch.nn.modules.container.Sequential")
-            continue;
-
-        std::cerr << "inline module = " << x.c_str() << std::endl;
-    }
-}
-
-void inline_block(std::shared_ptr<torch::jit::Graph>& graph,
-                  const std::vector<std::string>& module_operators) {
-    std::set<std::string> inlined_modules;
-
-    inlineCalls(graph->block(), module_operators, inlined_modules);
-
-    std::cout << "inlined module num: " << inlined_modules.size() << std::endl;
-
-    for (const auto& x: inlined_modules) {
         if (x == "torch.nn.modules.container.Sequential")
             continue;
 
