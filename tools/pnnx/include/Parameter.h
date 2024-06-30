@@ -96,9 +96,10 @@ struct GetParameterType<T, typename std::enable_if_t<is_std_vector_complex_v<T>>
 
 class ParameterBase {
 public:
-    virtual ~ParameterBase() = default;
     NODISCARD virtual ParameterType type() const = 0;
     NODISCARD virtual std::string toString() const = 0;
+
+    virtual ~ParameterBase() = default;
 };
 
 template<typename T>
@@ -203,18 +204,19 @@ public:
         return ParameterType::kParameterUnknown;
     }
 
-    template<typename T>
-    std::optional<T> toValue() const {
-        if (has_value()) {
-            if (GetParameterType<T>() == type()) {
-                auto ptr = std::dynamic_pointer_cast<ParameterImpl<T>>(ptr_);
-                return ptr->toValue();
-            } else {
-                throw;
-            }
-        }
-        return {};
-    }
+//    template<typename T>
+//    std::optional<T> toValue() const {
+//        using value_type = std::decay_t<T>;
+//        if (has_value()) {
+//            if (GetParameterType<value_type>() == type()) {
+//                auto ptr = std::dynamic_pointer_cast<ParameterImpl<T>>(ptr_);
+//                return ptr->toValue();
+//            } else {
+//                throw;
+//            }
+//        }
+//        return {};
+//    }
 
     NODISCARD std::string toString() const {
         if (has_value()) {
