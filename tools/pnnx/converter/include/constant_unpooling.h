@@ -9,7 +9,7 @@
 
 namespace pnnx {
 
-void constant_unpooling(std::shared_ptr<torch::jit::Graph>& graph);
+void ConstantUnpooling(std::shared_ptr<torch::jit::Graph>& graph);
 
 }
 

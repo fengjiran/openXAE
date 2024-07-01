@@ -24,11 +24,12 @@ void ConstantUnpooling(std::shared_ptr<torch::jit::Graph>& graph, torch::jit::Bl
             continue;
         }
 
-        for (int i = 0; i < (int) node->inputs().size(); i++) {
+        for (int i = 0; i < node->inputs().size(); ++i) {
             const auto& in = node->input(i);
 
-            if (in->node()->kind() != c10::prim::Constant)
+            if (in->node()->kind() != c10::prim::Constant) {
                 continue;
+            }
 
             // input constant node
             if (constants.find(in->node()) == constants.end()) {
@@ -53,7 +54,7 @@ void ConstantUnpooling(std::shared_ptr<torch::jit::Graph>& graph, torch::jit::Bl
     }
 }
 
-void constant_unpooling(std::shared_ptr<torch::jit::Graph>& graph) {
+void ConstantUnpooling(std::shared_ptr<torch::jit::Graph>& graph) {
     std::unordered_set<torch::jit::Node*> constants;
     ConstantUnpooling(graph, graph->block(), constants);
 }
