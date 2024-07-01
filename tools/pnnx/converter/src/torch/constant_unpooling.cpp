@@ -17,8 +17,8 @@ void ConstantUnpooling(std::shared_ptr<torch::jit::Graph>& graph, torch::jit::Bl
 
         if (!node->blocks().empty()) {
             // Traverse sub-blocks.
-            for (auto block: node->blocks()) {
-                ConstantUnpooling(graph, block, constants);
+            for (auto subBlock: node->blocks()) {
+                ConstantUnpooling(graph, subBlock, constants);
             }
 
             continue;
@@ -43,14 +43,9 @@ void ConstantUnpooling(std::shared_ptr<torch::jit::Graph>& graph, torch::jit::Bl
                 return value_map.at(v);
             };
 
-            //             graph->setInsertPoint(node);
-
             auto* new_constant_node = graph->insertNode(graph->createClone(in->node(), value_map_func, false));
 
-            fprintf(stderr, "new_constant_node %s\n", new_constant_node->outputs()[0]->debugName().c_str());
-//            std::cerr << "insert_before_: " << graph->insertPoint() << std::endl;
-//            std::cerr << "new constant node addr: " << new_constant_node << std::endl;
-//            std::cerr << "graph addr: " << &graph << std::endl;
+//            fprintf(stderr, "new_constant_node %s\n", new_constant_node->outputs()[0]->debugName().c_str());
 
             // create new constant node
             node->replaceInput(i, new_constant_node->outputs()[0]);

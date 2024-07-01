@@ -43,7 +43,7 @@ std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod) 
     Inline(graph, {});
 
     torch::jit::ConstantPooling(graph);
-//    constant_unpooling(graph);
+    constant_unpooling(graph);
     std::cout << "After Inline:\n";
 
     numNodes = 0;
