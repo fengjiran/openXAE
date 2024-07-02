@@ -15,7 +15,7 @@
 
 namespace pnnx {
 
-std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod);
+std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod, const std::string& device);
 
 ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_node);
 

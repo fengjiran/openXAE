@@ -27,8 +27,7 @@ int torch2pnnx(const std::string& ptPath,
         return -1;
     }
 
-    auto graph = OptimizeTorchScript(mod);
-//    graph->dump();
+    auto graph = OptimizeTorchScript(mod, device);
 
     return 0;
 }

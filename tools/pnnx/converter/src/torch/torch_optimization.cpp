@@ -16,7 +16,7 @@
 
 namespace pnnx {
 
-std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod) {
+std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod, const std::string& device) {
     mod.eval();
     //    mod = torch::jit::freeze_module(mod);
     auto method = mod.find_method("forward");
@@ -39,6 +39,7 @@ std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod) 
     ConstantUnpooling(graph);
     std::cout << "After Inline:\n";
     graph->dump();
+    ResetDevice(graph, device);
     //    torch::jit::NormalizeOps(graph);
 
     return graph;
