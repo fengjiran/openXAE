@@ -8,6 +8,7 @@
 #include "Graph.h"
 #include "constant_unpooling.h"
 #include "inline_block.h"
+#include "reset_device.h"
 
 #include <torch/script.h>
 #include <torch/csrc/api/include/torch/version.h>
