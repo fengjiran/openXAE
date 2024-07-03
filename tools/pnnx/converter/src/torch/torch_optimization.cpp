@@ -37,11 +37,12 @@ std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod, 
 
     //    torch::jit::ConstantPooling(graph);
     ConstantUnpooling(graph);
-    std::cout << "After Inline:\n";
-    graph->dump();
     ResetDevice(graph, device);
+    FlattenInput(graph);
     //    torch::jit::NormalizeOps(graph);
 
+    std::cerr << "After Optimization:\n";
+    graph->dump();
     return graph;
 }
 
