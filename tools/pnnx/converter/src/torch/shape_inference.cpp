@@ -8,26 +8,26 @@
 
 namespace pnnx {
 
-static bool IsInplaceOp(const std::string& opName) {
-    auto size = opName.size();
-    return size > 2 && opName[size - 2] != '_' && opName[size - 1] == '_';
+static bool IsInplaceOp(const std::string& opType) {
+    auto size = opType.size();
+    return size > 2 && opType[size - 2] != '_' && opType[size - 1] == '_';
 }
 
-static bool IsAliasOp(const std::string& opName) {
-    return opName == "aten::slice" || opName == "aten::select" || opName == "aten::view";
+static bool IsAliasOp(const std::string& opType) {
+    return opType == "aten::slice" || opType == "aten::select" || opType == "aten::view";
 }
 
-static bool IsStaticShapeFoldable(const std::string& opName) {
-    return opName == "aten::size" ||
-           opName == "aten::new_empty" ||
-           opName == "aten::new_full" ||
-           opName == "aten::new_ones" ||
-           opName == "aten::new_zeros" ||
-           opName == "aten::empty_like" ||
-           opName == "aten::full_like" ||
-           opName == "aten::ones_like" ||
-           opName == "aten::zeros_like" ||
-           opName == "aten::_shape_as_tensor";
+static bool IsStaticShapeFoldable(const std::string& opType) {
+    return opType == "aten::size" ||
+           opType == "aten::new_empty" ||
+           opType == "aten::new_full" ||
+           opType == "aten::new_ones" ||
+           opType == "aten::new_zeros" ||
+           opType == "aten::empty_like" ||
+           opType == "aten::full_like" ||
+           opType == "aten::ones_like" ||
+           opType == "aten::zeros_like" ||
+           opType == "aten::_shape_as_tensor";
 }
 
 static void BuildValueLinkInputMap(const torch::jit::Node* node,
@@ -86,6 +86,30 @@ static void BuildValueLinkInputMap(const torch::jit::Node* node,
             break;
         }
     }
+}
+
+static bool ValueLinkOutput(const torch::jit::Value* v, const std::vector<torch::jit::Value*>& outputs) {
+    for (auto x: outputs) {
+        if (v == x) {
+            return true;
+        }
+    }
+
+    for (auto it: v->uses()) {
+        auto node = it.user;
+        for (auto x: node->outputs()) {
+            bool link = ValueLinkOutput(x, outputs);
+            if (link) {
+                return true;
+            }
+        }
+
+        std::string opName = node->kind().toDisplayString();
+        if (IsInplaceOp(opName)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void ShapeInference(const torch::jit::Module& mod,
@@ -151,6 +175,74 @@ void ShapeInference(const torch::jit::Module& mod,
     inputs2.reserve(inputTensors2.size());
     for (const auto& it: inputTensors2) {
         inputs2.emplace_back(it);
+    }
+
+    // bookkeep foldable tensors
+    std::unordered_map<std::string, int> valueLinkInputMap;
+    {
+        // build value alias map for inplace op
+        std::unordered_map<std::string, torch::jit::Value*> valueAliasMap;
+        for (const auto& n: graph->block()->nodes()) {
+            if (n->kind() == c10::prim::GetAttr ||
+                n->kind() == c10::prim::Constant ||
+                n->kind() == c10::prim::CallMethod) {
+                continue;
+            }
+
+            std::string opType = n->kind().toDisplayString();
+            if ((!IsInplaceOp(opType) && !IsAliasOp(opType)) || n->inputs().empty() || n->outputs().empty()) {
+                continue;
+            }
+
+            std::string is = n->input(0)->debugName();
+            if (is.empty()) {
+                continue;
+            }
+
+            for (size_t i = 0; i < n->outputs().size(); ++i) {
+                auto out2 = n->output(i);
+                auto tensorType = out2->type()->cast<torch::jit::TensorType>();
+                if (!tensorType) {
+                    continue;
+                }
+
+                std::string os = out2->debugName();
+                if (os.empty()) {
+                    continue;
+                }
+
+                if (valueAliasMap.find(is) == valueAliasMap.end()) {
+                    valueAliasMap[os] = n->input(0);
+                } else {
+                    valueAliasMap[os] = valueAliasMap[is];
+                }
+            }
+        }
+
+        for (const auto& x: valueAliasMap) {
+            std::cerr << "alias " << x.first << " -> " << x.second->debugName() << std::endl;
+        }
+
+        bool ignoreAtenSize = inputTensors2.empty();
+        for (size_t i = 1; i < graph->inputs().size(); ++i) {
+            auto in0 = graph->inputs()[i];
+            for (auto it: in0->uses()) {
+                auto node = it.user;
+                BuildValueLinkInputMap(node, valueAliasMap, valueLinkInputMap, ignoreAtenSize);
+            }
+        }
+
+        for (const auto& x: valueLinkInputMap) {
+            std::cerr << "link_input " << x.first << " " << x.second << std::endl;
+        }
+    }
+
+    StoreZipWriter zip;
+    zip.open(foldableConstantsZippath);
+    for (size_t p = 0; p < moreValueNames.size(); ++p) {
+        std::unordered_set<std::string>& valueNames = moreValueNames[p];
+        std::vector<torch::jit::Value*>& values = moreValues[p];
+        
     }
 }
 
