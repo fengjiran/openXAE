@@ -7,7 +7,16 @@
 namespace pnnx {
 
 int torch2pnnx(const std::string& ptPath,
-               const std::string& device) {
+               Graph& g,
+               const std::string& device,
+               const std::vector<std::vector<int64_t>>& inputShapes,
+               const std::vector<std::string>& inputTypes,
+               const std::vector<std::vector<int64_t>>& inputShapes2,
+               const std::vector<std::string>& inputTypes2,
+               const std::vector<std::string>& customOpModules,
+               const std::vector<std::string>& moduleOperators,
+               const std::string& foldableConstantsZippath,
+               std::set<std::string>& foldableConstants) {
     torch::jit::Module mod;
     try {
         mod = torch::jit::load(ptPath, (device == "gpu") ? c10::kCUDA : c10::kCPU);
@@ -27,7 +36,17 @@ int torch2pnnx(const std::string& ptPath,
         return -1;
     }
 
-    auto graph = OptimizeTorchScript(mod, device);
+    std::vector<at::Tensor> inputTensors;
+    std::vector<at::Tensor> inputTensors2;
+
+    auto graph = OptimizeTorchScript(mod,
+                                     inputTensors,
+                                     inputTensors2,
+                                     moduleOperators,
+                                     ptPath,
+                                     device,
+                                     foldableConstants,
+                                     foldableConstantsZippath);
 
     return 0;
 }

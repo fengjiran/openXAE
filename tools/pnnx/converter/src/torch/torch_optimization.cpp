@@ -16,7 +16,14 @@
 
 namespace pnnx {
 
-std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod, const std::string& device) {
+std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod,
+                                                       const std::vector<at::Tensor>& inputTensors,
+                                                       const std::vector<at::Tensor>& inputTensors2,
+                                                       const std::vector<std::string>& moduleOperators,
+                                                       const std::string& ptPath,
+                                                       const std::string& device,
+                                                       std::set<std::string>& foldableConstants,
+                                                       const std::string& foldableConstantsZippath) {
     mod.eval();
     //    mod = torch::jit::freeze_module(mod);
     auto method = mod.find_method("forward");
@@ -39,6 +46,10 @@ std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod, 
     ConstantUnpooling(graph);
     ResetDevice(graph, device);
     FlattenInput(graph);
+    if (!inputTensors.empty()) {
+        ShapeInference(mod, graph, inputTensors, inputTensors2, moduleOperators, ptPath,
+                       device, foldableConstants, foldableConstantsZippath);
+    }
     //    torch::jit::NormalizeOps(graph);
 
     std::cerr << "After Optimization:\n";

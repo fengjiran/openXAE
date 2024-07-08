@@ -294,8 +294,10 @@ TEST(IRTEST, create_pnnx_graph) {
 TEST(IRTEST, torch2pnnx) {
     //    GTEST_SKIP();
     std::string pt = "test_nn_Conv2d.pt";
+    Graph g;
+    std::set<std::string> foldConstants;
     //    std::string pt = "test_inline_block.pt";
-    torch2pnnx(pt, "cpu");
+    torch2pnnx(pt, g, "cpu", {}, {}, {}, {}, {}, {}, "", foldConstants);
 }
 
 TEST(IRTEST, create_parameter_from_torch_node) {
