@@ -3,7 +3,11 @@
 //
 
 #include "shape_inference.h"
-
+#include "constant_unpooling.h"
+#include "convert_half_to_float.h"
+#include "flatten_input.h"
+#include "inline_block.h"
+#include "reset_device.h"
 #include "storezip.h"
 
 namespace pnnx {
@@ -242,7 +246,136 @@ void ShapeInference(const torch::jit::Module& mod,
     for (size_t p = 0; p < moreValueNames.size(); ++p) {
         std::unordered_set<std::string>& valueNames = moreValueNames[p];
         std::vector<torch::jit::Value*>& values = moreValues[p];
-        
+
+        torch::jit::Module mod2 = torch::jit::load(ptpath, (device == "gpu") ? c10::kCUDA : c10::kCPU);
+        mod2.eval();
+        ConvertHalf2Float(mod2);
+
+        auto method = mod2.find_method("forward");
+        if (!method) {
+            method = mod2.get_methods()[0];
+        }
+        auto graph2 = method->graph();
+        inline_block(graph2, moduleOperators);
+        ResetDevice(graph2, device);
+        FlattenInput(graph2);
+        ConstantUnpooling(graph2);
+
+        std::vector<torch::jit::Value*> values2;
+        for (auto n: graph2->nodes()) {
+            for (const auto& v: n->outputs()) {
+                auto tensorType = v->type()->cast<torch::jit::TensorType>();
+                if (!tensorType) {
+                    continue;
+                }
+
+                if (valueNames.find(v->debugName()) != valueNames.end()) {
+                    values2.push_back(v);
+                }
+            }
+        }
+        std::cerr << "\n----------------\n\n";
+
+        // set new graph output
+        torch::jit::Node* newRetNode = graph2->createTuple(at::ArrayRef<torch::jit::Value*>(values2));
+        graph2->appendNode(newRetNode);
+        graph2->eraseOutput(0);
+        graph2->registerOutput(newRetNode->outputs()[0]);
+
+        // construct schema for new inputs and outputs
+        {
+            auto oldfs = method->function().getSchema();
+            std::vector<c10::Argument> arguments;
+            std::vector<c10::Argument> returns;
+
+            for (size_t i = 0; i < graph2->inputs().size(); ++i) {
+                auto v = graph2->inputs()[i];
+                arguments.emplace_back(v->debugName(), v->type());
+            }
+
+            for (size_t i = 0; i < graph2->outputs().size(); ++i) {
+                auto v = graph2->outputs()[i];
+                returns.emplace_back(v->debugName(), v->type());
+            }
+
+            c10::FunctionSchema newfs(oldfs.name(), oldfs.overload_name(), arguments, returns);
+            method->function().setSchema(newfs);
+        }
+
+        // inference for all tensots
+        auto outputs = mod2.copy().get_method(method->name())(inputs).toTuple();
+        if (inputTensors2.empty()) {
+            // assign shape info
+            for (size_t i = 0; i < values2.size(); ++i) {
+                auto v = values[i];
+                auto t = outputs->elements()[i].toTensor();
+                v->setType(c10::TensorType::create(t));
+
+                // check if value that does not depend on inputs
+                if (valueLinkInputMap.find(v->debugName()) == valueLinkInputMap.end() && ValueLinkOutput(v, graphOutputs)) {
+                    foldableConstants.insert(v->debugName());
+                    at::Tensor t2 = t.cpu().contiguous();
+                    zip.write_file(v->debugName(), (const char*) t2.data_ptr(), t2.nbytes());
+                }
+            }
+        } else {
+            // assign dynamic shape info
+            auto outputs2 = mod2.copy().get_method(method->name())(inputs2).toTuple();
+            std::cerr << "assign dynamic shape info.\n";
+            for (size_t i = 0; i < values2.size(); ++i) {
+                auto v = values[i];
+                auto t = outputs->elements()[i].toTensor();
+                auto t2 = outputs2->elements()[i].toTensor();
+
+                auto type1 = c10::TensorType::create(t);
+                auto type2 = c10::TensorType::create(t2);
+
+                std::vector<c10::ShapeSymbol> sizes1 = type1->symbolic_sizes().sizes().value();
+                std::vector<c10::ShapeSymbol> sizes2 = type2->symbolic_sizes().sizes().value();
+
+                for (size_t j = 0; j < sizes1.size(); ++j) {
+                    if (sizes1[j] == sizes2[j]) {
+                        continue;
+                    }
+                    sizes1[j] = c10::ShapeSymbol::fromStaticSize(-1);
+                }
+
+                auto finaltype = type1->withSymbolicShapes(c10::SymbolicShape(sizes1));
+                v->setType(finaltype);
+
+                // check if value that does not depend on inputs
+                if (valueLinkInputMap.find(v->debugName()) == valueLinkInputMap.end() && ValueLinkOutput(v, graphOutputs)) {
+                    foldableConstants.insert(v->debugName());
+                    at::Tensor t21 = t.cpu().contiguous();
+                    zip.write_file(v->debugName(), (const char*) t21.data_ptr(), t21.nbytes());
+                }
+            }
+        }
+    }
+    zip.close();
+    if (inputTensors2.empty()) {
+        for (size_t i = 0; i < inputTensors2.size(); ++i) {
+            auto type = c10::TensorType::create(inputTensors[i]);
+            graph->inputs()[i + 1]->setType(type);
+        }
+    } else {
+        for (size_t i = 0; i < inputTensors.size(); ++i) {
+            auto type1 = c10::TensorType::create(inputTensors[i]);
+            auto type2 = c10::TensorType::create(inputTensors2[i]);
+
+            std::vector<c10::ShapeSymbol> sizes1 = type1->symbolic_sizes().sizes().value();
+            std::vector<c10::ShapeSymbol> sizes2 = type2->symbolic_sizes().sizes().value();
+
+            for (size_t j = 0; j < sizes1.size(); ++j) {
+                if (sizes1[j] == sizes2[j]) {
+                    continue;
+                }
+                sizes1[i] = c10::ShapeSymbol::fromStaticSize(-1);
+            }
+
+            auto finaltype = type1->withSymbolicShapes(c10::SymbolicShape(sizes1));
+            graph->outputs()[i + 1]->setType(finaltype);
+        }
     }
 }
 
