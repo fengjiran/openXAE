@@ -77,24 +77,6 @@ static DataType GetATTensorType(const at::ScalarType& st) {
     return DataType::kDataTypeUnknown;
 }
 
-static c10::ScalarType InputType2C10ScalarType(const std::string& t) {
-    if (t == "c64") return torch::kComplexFloat;
-    if (t == "c32") return torch::kComplexHalf;
-    if (t == "c128") return torch::kComplexDouble;
-    if (t == "bf16") return torch::kBFloat16;
-    if (t == "f32") return torch::kFloat32;
-    if (t == "f16") return torch::kFloat16;
-    if (t == "f64") return torch::kFloat64;
-    if (t == "i32") return torch::kInt32;
-    if (t == "i16") return torch::kInt16;
-    if (t == "i64") return torch::kInt64;
-    if (t == "i8") return torch::kInt8;
-    if (t == "u8") return torch::kUInt8;
-
-    std::cerr << "Unsupported type " << t << " fallback to float32.\n";
-    return torch::kFloat32;
-}
-
 ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_node) {
     ParameterVar p;
     if (value_node->kind() == c10::prim::Constant) {
@@ -387,79 +369,6 @@ const torch::jit::Node* FindNodeByKind(const std::shared_ptr<torch::jit::Graph>&
     }
 
     return nullptr;
-}
-
-
-int load_torchscript(const std::string& ptpath,
-                     Graph& pnnx_graph,
-                     const std::string& device,
-                     const std::vector<std::vector<int64_t>>& input_shapes,
-                     const std::vector<std::string>& input_types,
-                     const std::vector<std::vector<int64_t>>& input_shapes2,
-                     const std::vector<std::string>& input_types2) {
-    std::vector<at::Tensor> input_tensors;
-    for (size_t i = 0; i < input_shapes.size(); ++i) {
-        const std::vector<int64_t>& shape = input_shapes[i];
-        const std::string& type = input_types[i];
-        at::Tensor t = torch::ones(shape, InputType2C10ScalarType(type));
-        if (device == "gpu") {
-            t = t.cuda();
-        }
-        input_tensors.push_back(t);
-    }
-
-    std::vector<at::Tensor> input_tensors2;
-    for (size_t i = 0; i < input_shapes2.size(); ++i) {
-        const std::vector<int64_t>& shape = input_shapes2[i];
-        const std::string& type = input_types2[i];
-        at::Tensor t = torch::ones(shape, InputType2C10ScalarType(type));
-        if (device == "gpu") {
-            t = t.cuda();
-        }
-        input_tensors2.push_back(t);
-    }
-
-
-    torch::jit::Module mod;
-    try {
-        mod = torch::jit::load(ptpath, (device == "gpu") ? c10::kCUDA : c10::kCPU);
-    } catch (const c10::Error& e) {
-        std::cerr << "Load torchscript failed: " << e.what() << std::endl;
-        std::cerr << "Please export model to torchscript as follows:\n";
-        std::cerr << "------------------------------------------\n";
-        std::cerr << "import torch\n";
-        std::cerr << "import torchvision.models as models\n\n";
-        std::cerr << "net = models.resnet18(pretrained=True)\n";
-        std::cerr << "net = net.eval()\n\n";
-        std::cerr << "x = torch.rand(1, 3, 224, 224)\n";
-        std::cerr << "mod = torch.jit.trace(net, x)\n";
-        std::cerr << "mod.save(\"resnet18.pt\")\n";
-        std::cerr << "------------------------------------------\n";
-
-        return -1;
-    }
-
-    mod.eval();
-
-    auto method = mod.find_method("forward");
-    if (!method) {
-        auto methods = mod.get_methods();
-        if (methods.empty()) {
-            std::cerr << "No method in torchscript.\n";
-            return -1;
-        }
-        method = methods[0];
-        std::cerr << "Use method " << method->name() << " as the entrypoint instead of forward.\n";
-    }
-
-    auto g = method->graph();
-
-    g->dump();
-
-    std::cerr << "############# pass_level0\n";
-
-
-    return 0;
 }
 
 }// namespace pnnx

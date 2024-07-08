@@ -3,8 +3,27 @@
 //
 
 #include "torch2pnnx.h"
+#include <dlfcn.h>
 
 namespace pnnx {
+
+static c10::ScalarType InputType2C10ScalarType(const std::string& t) {
+    if (t == "c64") return torch::kComplexFloat;
+    if (t == "c32") return torch::kComplexHalf;
+    if (t == "c128") return torch::kComplexDouble;
+    if (t == "bf16") return torch::kBFloat16;
+    if (t == "f32") return torch::kFloat32;
+    if (t == "f16") return torch::kFloat16;
+    if (t == "f64") return torch::kFloat64;
+    if (t == "i32") return torch::kInt32;
+    if (t == "i16") return torch::kInt16;
+    if (t == "i64") return torch::kInt64;
+    if (t == "i8") return torch::kInt8;
+    if (t == "u8") return torch::kUInt8;
+
+    std::cerr << "Unsupported type " << t << " fallback to float32.\n";
+    return torch::kFloat32;
+}
 
 int torch2pnnx(const std::string& ptPath,
                Graph& g,
@@ -17,6 +36,36 @@ int torch2pnnx(const std::string& ptPath,
                const std::vector<std::string>& moduleOperators,
                const std::string& foldableConstantsZippath,
                std::set<std::string>& foldableConstants) {
+    for (auto& m: customOpModules) {
+        std::cerr << "load custom module: " << m << std::endl;
+        void* handle = dlopen(m.c_str(), RTLD_LAZY);
+        if (!handle) {
+            std::cerr << "dlopen " << m << " failed " << dlerror() << std::endl;
+        }
+    }
+
+    std::vector<at::Tensor> inputTensors;
+    for (size_t i = 0; i < inputShapes.size(); ++i) {
+        const std::vector<int64_t>& shape = inputShapes[i];
+        const std::string& type = inputTypes[i];
+        at::Tensor t = torch::ones(shape, InputType2C10ScalarType(type));
+        if (device == "gpu") {
+            t = t.cuda();
+        }
+        inputTensors.push_back(t);
+    }
+
+    std::vector<at::Tensor> inputTensors2;
+    for (size_t i = 0; i < inputShapes2.size(); ++i) {
+        const std::vector<int64_t>& shape = inputShapes2[i];
+        const std::string& type = inputTypes2[i];
+        at::Tensor t = torch::ones(shape, InputType2C10ScalarType(type));
+        if (device == "gpu") {
+            t = t.cuda();
+        }
+        inputTensors2.push_back(t);
+    }
+
     torch::jit::Module mod;
     try {
         mod = torch::jit::load(ptPath, (device == "gpu") ? c10::kCUDA : c10::kCPU);
@@ -35,9 +84,6 @@ int torch2pnnx(const std::string& ptPath,
 
         return -1;
     }
-
-    std::vector<at::Tensor> inputTensors;
-    std::vector<at::Tensor> inputTensors2;
 
     auto graph = OptimizeTorchScript(mod,
                                      inputTensors,
