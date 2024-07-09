@@ -76,9 +76,9 @@ TEST(IRTEST, Parameter) {
     EXPECT_EQ(p3.toString(), "3.140000e+00");
 
     // string parameter
-//    Parameter_ p4("pnnx");
-//    ASSERT_EQ(p4.type(), ParameterType::kParameterString);
-//    ASSERT_EQ(p4.toString(), "pnnx");
+    Parameter_ p4("pnnx");
+    ASSERT_EQ(p4.type(), ParameterType::kParameterString);
+    ASSERT_EQ(p4.toString(), "pnnx");
 
     // array int parameter
     Parameter_ p5(std::initializer_list<int>{1, 2, 3, 4, -5});

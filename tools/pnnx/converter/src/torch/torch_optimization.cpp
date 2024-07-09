@@ -285,6 +285,71 @@ Parameter_::Parameter_(const torch::jit::Node* node) {
 
 Parameter_::Parameter_(const torch::jit::Value* value) : Parameter_(value->node()) {}
 
+Parameter_ CreateParameterFromTorchNode_(const torch::jit::Node* node) {
+    Parameter_ p;
+    if (node->kind() == c10::prim::Constant) {
+        if (node->output()->type()->kind() == c10::TypeKind::NoneType) {
+            return p;
+        }
+
+        if (!node->hasAttribute(torch::jit::attr::value)) {
+            std::cerr << "No attribute value.\n";
+            node->dump();
+            return p;
+        }
+
+        switch (node->output()->type()->kind()) {
+            case c10::TypeKind::BoolType: {
+                p = static_cast<bool>(node->i(torch::jit::attr::value));
+                break;
+            }
+
+            case c10::TypeKind::IntType: {
+                int64_t i64 = node->i(torch::jit::attr::value);
+                if (i64 == std::numeric_limits<int64_t>::max()) {
+                    i64 = std::numeric_limits<int>::max();
+                }
+
+                if (i64 == std::numeric_limits<int64_t>::min()) {
+                    i64 = std::numeric_limits<int>::min();
+                }
+
+                p = static_cast<int>(i64);
+                break;
+            }
+
+            case c10::TypeKind::FloatType: {
+                p = static_cast<float>(node->f(torch::jit::attr::value));
+                break;
+            }
+
+            case c10::TypeKind::StringType:
+            case c10::TypeKind::DeviceObjType: {
+                p = node->s(torch::jit::attr::value);
+                break;
+            }
+
+            case c10::TypeKind::ComplexType: {
+                p = std::complex<float>(node->c(torch::jit::attr::value));
+                break;
+            }
+
+        }
+
+    } else if (node->kind() == c10::prim::ListConstruct) {
+        //
+    } else {
+        std::cerr << "Unknown Parameter value_node kind "
+                  << node->kind().toDisplayString()
+                  << std::endl;
+    }
+    return p;
+}
+
+Parameter_ CreateParameterFromTorchNode_(const torch::jit::Value* value) {
+    return CreateParameterFromTorchNode_(value->node());
+}
+
 ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_node) {
     ParameterVar p;
     if (value_node->kind() == c10::prim::Constant) {

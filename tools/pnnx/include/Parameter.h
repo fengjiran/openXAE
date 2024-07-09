@@ -197,8 +197,7 @@ public:
     Parameter_() = default;
 
     template<typename T,
-             typename = typename std::enable_if_t<
-                     !std::is_same_v<Parameter_, std::decay_t<T>> && !std::is_pointer_v<std::decay_t<T>>>>
+             typename = typename std::enable_if_t<!std::is_same_v<Parameter_, std::decay_t<T>>>>
     explicit Parameter_(T&& val)
         : ptr_(std::make_shared<ParameterImpl<std::decay_t<T>>>(std::forward<T>(val))) {}
 

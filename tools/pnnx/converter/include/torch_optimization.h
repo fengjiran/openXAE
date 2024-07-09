@@ -30,6 +30,10 @@ ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_node);
 
 ParameterVar CreateParameterFromTorchValue(const torch::jit::Value* value);
 
+Parameter_ CreateParameterFromTorchNode_(const torch::jit::Node* node);
+
+Parameter_ CreateParameterFromTorchNode_(const torch::jit::Value* value);
+
 }
 
 #endif//OPENXAE_TORCH_OPTIMIZATION_H
