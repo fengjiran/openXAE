@@ -52,23 +52,19 @@ TEST(IRTEST, Parameter_Deprecated) {
     // null parameter
     Parameter_ p0;
     EXPECT_FALSE(p0.has_value());
-    //    EXPECT_FALSE(p0.toValue<int>().has_value());
     EXPECT_EQ(p0.type(), ParameterType::kParameterUnknown);
     EXPECT_EQ(p0.toString(), "None");
 
     // bool parameter
     Parameter_ p1(true);
     EXPECT_EQ(p1.type(), ParameterType::kParameterBool);
-    //    EXPECT_EQ(p1.toValue<bool>(), true);
     EXPECT_EQ(p1.toString(), "True");
     p1.SetValue(false);
-    //    EXPECT_EQ(p1.toValue<bool>(), false);
     EXPECT_EQ(p1.toString(), "False");
 
     // int parameter
     Parameter_ p2(-10);
     EXPECT_EQ(p2.type(), ParameterType::kParameterInt);
-    //    EXPECT_EQ(p2.toValue<int>(), -10);
     EXPECT_EQ(p2.toString(), "-10");
 
     // float parameter
@@ -78,36 +74,30 @@ TEST(IRTEST, Parameter_Deprecated) {
     p3 = 3.14;
     EXPECT_EQ(p3.type(), ParameterType::kParameterFloat);
     EXPECT_EQ(p3.toString(), "3.140000e+00");
-    //    EXPECT_EQ(p3.toValue<float>(), 3.14);
 
     // string parameter
-    Parameter_Deprecated p_str("pnnx");
-    std::cout << Parameter_Deprecated::Encode2String(p_str) << std::endl;
-    ASSERT_EQ(p_str.type(), ParameterType::kParameterString);
-    ASSERT_EQ(Parameter_Deprecated::Encode2String(p_str), "pnnx");
-    ASSERT_TRUE(Parameter_Deprecated::ParseFromString(Parameter_Deprecated::Encode2String(p_str)) == p_str);
+    Parameter_ p4("pnnx");
+    ASSERT_EQ(p4.type(), ParameterType::kParameterString);
+    ASSERT_EQ(p4.toString(), "pnnx");
 
     // array int parameter
-    Parameter_Deprecated p_ai1 = {1, 2, 3, 4, -5};
-    ASSERT_EQ(p_ai1.type(), ParameterType::kParameterArrayInt);
-    ASSERT_EQ(Parameter_Deprecated::Encode2String(p_ai1), "(1,2,3,4,-5)");
-    ASSERT_TRUE(Parameter_Deprecated::ParseFromString(Parameter_Deprecated::Encode2String(p_ai1)) == p_ai1);
+    Parameter_ p5(std::initializer_list<int>{1, 2, 3, 4, -5});
+    ASSERT_EQ(p5.type(), ParameterType::kParameterArrayInt);
+    ASSERT_EQ(p5.toString(), "(1,2,3,4,-5)");
 
-    Parameter_Deprecated p_ai2(std::vector<int>({1, 2, 3, 4, 5}));
-    ASSERT_EQ(p_ai2.type(), ParameterType::kParameterArrayInt);
-    ASSERT_EQ(Parameter_Deprecated::Encode2String(p_ai2), "(1,2,3,4,5)");
-    ASSERT_TRUE(Parameter_Deprecated::ParseFromString(Parameter_Deprecated::Encode2String(p_ai2)) == p_ai2);
+    Parameter_ p6(std::vector<int>({1, 2, 3, 4, 5}));
+    ASSERT_EQ(p6.type(), ParameterType::kParameterArrayInt);
+    ASSERT_EQ(p6.toString(), "(1,2,3,4,5)");
 
     // array float parameter
-    Parameter_Deprecated p_af1 = {1.0, 0.112, -3.14};
-    ASSERT_EQ(p_af1.type(), ParameterType::kParameterArrayFloat);
-    ASSERT_EQ(Parameter_Deprecated::Encode2String(p_af1), "(1.000000e+00,1.120000e-01,-3.140000e+00)");
-    ASSERT_TRUE(Parameter_Deprecated::ParseFromString(Parameter_Deprecated::Encode2String(p_af1)) == p_af1);
+    Parameter_ p7 (std::initializer_list<float>{1.0, 0.112, -3.14});
+    ASSERT_EQ(p7.type(), ParameterType::kParameterArrayFloat);
+    ASSERT_EQ(p7.toString(), "(1.000000e+00,1.120000e-01,-3.140000e+00)");
 
     // complex parameter
-    Parameter_Deprecated p_c(std::complex<float>(2, 3));
-    ASSERT_EQ(p_c.type(), ParameterType::kParameterComplex);
-    ASSERT_EQ(Parameter_Deprecated::Encode2String(p_c), "2.000000e+00+3.000000e+00i");
+    Parameter_ p8(std::complex<float>(2, 3));
+    ASSERT_EQ(p8.type(), ParameterType::kParameterComplex);
+    ASSERT_EQ(p8.toString(), "2.000000e+00+3.000000e+00i");
 }
 
 TEST(IRTEST, new_parameter) {

@@ -38,6 +38,8 @@ std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod,
     }
     auto graph = method->graph();
     graph->dump();
+
+    std::cerr << "############# pass_level0\n";
     //    torch::jit::Inline(*graph);
     //    inline_block(graph, {});
     Inline(graph, {});
@@ -53,6 +55,8 @@ std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod,
     //    torch::jit::NormalizeOps(graph);
 
     std::cerr << "After Optimization:\n";
+
+    std::cerr << "############# pass_level1\n";
     graph->dump();
     return graph;
 }

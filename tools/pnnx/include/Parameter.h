@@ -135,6 +135,46 @@ public:
             char buf[128];
             snprintf(buf, sizeof(buf), "%e+%ei", value_.real(), value_.imag());
             return buf;
+        } else if constexpr (GetParameterType<T>() == ParameterType::kParameterArrayInt) {
+            std::string code;
+            code += "(";
+            size_t size = toValue().size();
+            for (const auto& ele: toValue()) {
+                code += (std::to_string(ele) + (--size ? "," : ""));
+            }
+            code += ")";
+            return code;
+        } else if constexpr (GetParameterType<T>() == ParameterType::kParameterArrayFloat) {
+            std::string code;
+            code += "(";
+            size_t size = toValue().size();
+            for (const auto& ele: toValue()) {
+                char buf[64];
+                snprintf(buf, sizeof(buf), "%e", ele);
+                code += (std::string(buf) + (--size ? "," : ""));
+            }
+            code += ")";
+            return code;
+        } else if constexpr (GetParameterType<T>() == ParameterType::kParameterArrayString) {
+            std::string code;
+            code += "(";
+            size_t size = toValue().size();
+            for (const auto& ele: toValue()) {
+                code += (ele + (--size ? "," : ""));
+            }
+            code += ")";
+            return code;
+        } else if constexpr (GetParameterType<T>() == ParameterType::kParameterArrayComplex) {
+            std::string code;
+            code += "(";
+            size_t size = toValue().size();
+            for (const auto& ele: toValue()) {
+                char buf[128];
+                snprintf(buf, sizeof(buf), "%e+%ei", ele.real(), ele.imag());
+                code += (std::string(buf) + (--size ? "," : ""));
+            }
+            code += ")";
+            return code;
         }
 
         return "None";
@@ -204,19 +244,19 @@ public:
         return ParameterType::kParameterUnknown;
     }
 
-//    template<typename T>
-//    std::optional<T> toValue() const {
-//        using value_type = std::decay_t<T>;
-//        if (has_value()) {
-//            if (GetParameterType<value_type>() == type()) {
-//                auto ptr = std::dynamic_pointer_cast<ParameterImpl<T>>(ptr_);
-//                return ptr->toValue();
-//            } else {
-//                throw;
-//            }
-//        }
-//        return {};
-//    }
+    //    template<typename T>
+    //    std::optional<T> toValue() const {
+    //        using value_type = std::decay_t<T>;
+    //        if (has_value()) {
+    //            if (GetParameterType<value_type>() == type()) {
+    //                auto ptr = std::dynamic_pointer_cast<ParameterImpl<T>>(ptr_);
+    //                return ptr->toValue();
+    //            } else {
+    //                throw;
+    //            }
+    //        }
+    //        return {};
+    //    }
 
     NODISCARD std::string toString() const {
         if (has_value()) {
