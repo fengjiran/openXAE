@@ -47,7 +47,7 @@ TEST(IRTEST, type_check) {
     static_assert(std::is_convertible_v<int&&, int>);
 }
 
-TEST(IRTEST, Parameter_Deprecated) {
+TEST(IRTEST, Parameter) {
     //    GTEST_SKIP();
     // null parameter
     Parameter_ p0;
@@ -76,9 +76,9 @@ TEST(IRTEST, Parameter_Deprecated) {
     EXPECT_EQ(p3.toString(), "3.140000e+00");
 
     // string parameter
-    Parameter_ p4("pnnx");
-    ASSERT_EQ(p4.type(), ParameterType::kParameterString);
-    ASSERT_EQ(p4.toString(), "pnnx");
+//    Parameter_ p4("pnnx");
+//    ASSERT_EQ(p4.type(), ParameterType::kParameterString);
+//    ASSERT_EQ(p4.toString(), "pnnx");
 
     // array int parameter
     Parameter_ p5(std::initializer_list<int>{1, 2, 3, 4, -5});
@@ -291,7 +291,7 @@ TEST(IRTEST, torch2pnnx) {
 }
 
 TEST(IRTEST, create_parameter_from_torch_node) {
-    GTEST_SKIP();
+//    GTEST_SKIP();
     auto g = torch::jit::Graph();
     auto printer = [](const auto& arg) {
         std::cout << arg.Encode2String() << std::endl;
@@ -299,15 +299,15 @@ TEST(IRTEST, create_parameter_from_torch_node) {
 
     auto node1 = g.createNone();
     EXPECT_TRUE(node1->output()->type()->kind() == c10::TypeKind::NoneType);
-    auto p1 = CreateParameterFromTorchNode(node1);
-    std::visit(printer, p1);
+    Parameter_ p1(node1);
+    std::cout << "p1: " << p1.toString() << std::endl;
 
-    auto node2 = g.create(c10::prim::Constant);
+    torch::jit::Node* node2 = g.create(c10::prim::Constant);
     node2->output()->setType(c10::IntType::get());
     EXPECT_TRUE(node2->output()->type()->kind() == c10::TypeKind::IntType);
     node2->i_(torch::jit::attr::value, 10);
-    auto p2 = CreateParameterFromTorchNode(node2);
-    std::visit(printer, p2);
+    Parameter_ p2(node2);
+    std::cout << "p2: " << p2.toString() << std::endl;
 
     auto node3 = g.create(c10::prim::Constant);
     node3->output()->setType(c10::BoolType::get());

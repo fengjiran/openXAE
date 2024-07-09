@@ -197,14 +197,15 @@ public:
     Parameter_() = default;
 
     template<typename T,
-             typename = typename std::enable_if_t<!std::is_same_v<Parameter_, std::decay_t<T>>>>
+             typename = typename std::enable_if_t<
+                     !std::is_same_v<Parameter_, std::decay_t<T>> && !std::is_pointer_v<std::decay_t<T>>>>
     explicit Parameter_(T&& val)
         : ptr_(std::make_shared<ParameterImpl<std::decay_t<T>>>(std::forward<T>(val))) {}
 
-#if BUILD_TORCH2PNNX
+    //#if BUILD_TORCH2PNNX
     explicit Parameter_(const torch::jit::Node* node);
     explicit Parameter_(const torch::jit::Value* value);
-#endif // BUILD_TORCH2PNNX
+    //#endif // BUILD_TORCH2PNNX
 
     Parameter_(const Parameter_&) = default;
 
@@ -274,17 +275,17 @@ private:
     std::shared_ptr<ParameterBase> ptr_;
 };
 
-bool operator==(const Parameter_& lhs, const Parameter_& rhs) {
-    if (lhs.type() != rhs.type()) {
-        return false;
-    }
-
-    if (lhs.type() == ParameterType::kParameterUnknown) {
-        return true;
-    }
-
-    return lhs.toString() == rhs.toString();
-}
+//bool operator==(const Parameter_& lhs, const Parameter_& rhs) {
+//    if (lhs.type() != rhs.type()) {
+//        return false;
+//    }
+//
+//    if (lhs.type() == ParameterType::kParameterUnknown) {
+//        return true;
+//    }
+//
+//    return lhs.toString() == rhs.toString();
+//}
 
 template<typename T>
 class Parameter {

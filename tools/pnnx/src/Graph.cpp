@@ -12,6 +12,21 @@
 
 namespace pnnx {
 
+static Parameter_ CreateParameterFromString_(const std::string& value) {
+    // string type
+    if (value.find('%') != std::string::npos) {
+        return Parameter_(value);
+    }
+
+    // null type
+    if (value == "None" || value == "()" || value == "[]") {
+        return {};
+    }
+
+    // integer
+    return Parameter_(std::stoi(value));
+}
+
 static ParameterVar CreateParameterFromString(const std::string& value) {
     // string type
     if (value.find('%') != std::string::npos) {
