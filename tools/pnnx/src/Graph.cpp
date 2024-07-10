@@ -12,7 +12,7 @@
 
 namespace pnnx {
 
-static Parameter CreateParameterFromString_(const std::string& value) {
+static Parameter CreateParameterFromString(const std::string& value) {
     // string type
     if (value.find('%') != std::string::npos) {
         return Parameter(value);
@@ -88,7 +88,7 @@ static Parameter CreateParameterFromString_(const std::string& value) {
 }
 
 static void LoadParameter(const std::shared_ptr<Operator>& op, const std::string& key, const std::string& value) {
-    op->GetParameters()[key] = std::make_shared<Parameter>(CreateParameterFromString_(value));
+    op->GetParameters()[key] = std::make_shared<Parameter>(CreateParameterFromString(value));
 }
 
 static void LoadInputName(const std::shared_ptr<Operator>& op, const std::string& key, const std::string& value) {

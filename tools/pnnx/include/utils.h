@@ -45,7 +45,7 @@ namespace pnnx {
 #define CONCAT_STR(A, B) CONCAT_STR_(A, B)
 
 #if BUILD_TORCH2PNNX
-const torch::jit::Node* find_node_by_kind(const std::shared_ptr<torch::jit::Graph>& graph, const std::string& kind);
+const torch::jit::Node* FindNodeByKind(const std::shared_ptr<torch::jit::Graph>& graph, const std::string& kind);
 #endif
 
 unsigned short float32_to_float16(float value);
