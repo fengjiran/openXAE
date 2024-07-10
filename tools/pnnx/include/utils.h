@@ -41,6 +41,9 @@ int64_t cuda_version();
 
 namespace pnnx {
 
+#define CONCAT_STR_(A, B) A##B
+#define CONCAT_STR(A, B) CONCAT_STR_(A, B)
+
 #if BUILD_TORCH2PNNX
 const torch::jit::Node* find_node_by_kind(const std::shared_ptr<torch::jit::Graph>& graph, const std::string& kind);
 #endif

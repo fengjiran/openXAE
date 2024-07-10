@@ -4,7 +4,6 @@
 
 #include "torch_optimization.h"
 
-#include <dlfcn.h>
 #include <torch/csrc/jit/passes/constant_pooling.h>
 #include <torch/csrc/jit/passes/freeze_module.h>
 #include <torch/csrc/jit/passes/inliner.h>
@@ -197,7 +196,7 @@ Parameter CreateParameterFromTorchNode(const torch::jit::Node* node) {
                     }
 
                     default: {
-                        std::cerr << "Unknown Parameter value list element kind "
+                        std::cerr << "Unknown value list element kind "
                                   << c10::typeKindToString(node->output()->type()->containedTypes()[0]->kind())
                                   << std::endl;
                         break;
@@ -207,7 +206,7 @@ Parameter CreateParameterFromTorchNode(const torch::jit::Node* node) {
             }
 
             default: {
-                std::cerr << "Unknown Parameter value kind "
+                std::cerr << "Unknown value kind "
                           << c10::typeKindToString(node->output()->type()->kind())
                           << std::endl;
             }
@@ -278,7 +277,7 @@ Parameter CreateParameterFromTorchNode(const torch::jit::Node* node) {
             }
         }
     } else {
-        std::cerr << "Unknown Parameter value_node kind "
+        std::cerr << "Unknown node kind "
                   << node->kind().toDisplayString()
                   << std::endl;
     }
