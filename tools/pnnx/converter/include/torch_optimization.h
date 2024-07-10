@@ -26,13 +26,9 @@ std::shared_ptr<torch::jit::Graph> OptimizeTorchScript(torch::jit::Module& mod,
                                                        std::set<std::string>& foldableConstants,
                                                        const std::string& foldableConstantsZippath);
 
-ParameterVar CreateParameterFromTorchNode(const torch::jit::Node* value_node);
+Parameter CreateParameterFromTorchNode(const torch::jit::Node* node);
 
-ParameterVar CreateParameterFromTorchValue(const torch::jit::Value* value);
-
-Parameter_ CreateParameterFromTorchNode_(const torch::jit::Node* node);
-
-Parameter_ CreateParameterFromTorchValue_(const torch::jit::Value* value);
+Parameter CreateParameterFromTorchValue(const torch::jit::Value* value);
 
 }
 

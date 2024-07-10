@@ -36,7 +36,7 @@ public:
     std::shared_ptr<Operator> CreateOperator(const std::string& type, const std::string& name);
 
     std::shared_ptr<Operand> CreateOperator(const std::string& type, const std::string& name,
-                                            const std::map<std::string, std::shared_ptr<ParameterVar>>& params,
+                                            const std::map<std::string, std::shared_ptr<Parameter>>& params,
                                             const std::map<std::string, std::shared_ptr<Attribute>>& attrs,
                                             const std::vector<std::shared_ptr<Operand>>& inputOperands,
                                             const std::vector<std::string>& inputOperandNames,

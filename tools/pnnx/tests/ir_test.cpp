@@ -4,7 +4,6 @@
 
 //#include "glog/logging.h"
 #include "Graph.h"
-#include "ir.h"
 #include "torch2pnnx.h"
 
 #include <gtest/gtest.h>
@@ -43,32 +42,31 @@ TEST(IRTEST, type_check) {
     static_assert(GetParameterType<const char*>() == ParameterType::kParameterString);
     static_assert(GetParameterType<std::complex<float>>() == ParameterType::kParameterComplex);
     static_assert(GetParameterType<std::vector<int>>() == ParameterType::kParameterArrayInt);
-    static_assert(std::is_same_v<Parameter<void*>::value_type, void*>);
     static_assert(std::is_convertible_v<int&&, int>);
 }
 
 TEST(IRTEST, Parameter) {
     //    GTEST_SKIP();
     // null parameter
-    Parameter_ p0;
+    Parameter p0;
     EXPECT_FALSE(p0.has_value());
     EXPECT_EQ(p0.type(), ParameterType::kParameterUnknown);
     EXPECT_EQ(p0.toString(), "None");
 
     // bool parameter
-    Parameter_ p1(true);
+    Parameter p1(true);
     EXPECT_EQ(p1.type(), ParameterType::kParameterBool);
     EXPECT_EQ(p1.toString(), "True");
     p1.SetValue(false);
     EXPECT_EQ(p1.toString(), "False");
 
     // int parameter
-    Parameter_ p2(-10);
+    Parameter p2(-10);
     EXPECT_EQ(p2.type(), ParameterType::kParameterInt);
     EXPECT_EQ(p2.toString(), "-10");
 
     // float parameter
-    Parameter_ p3(0.3141592657);
+    Parameter p3(0.3141592657);
     EXPECT_EQ(p3.type(), ParameterType::kParameterFloat);
     EXPECT_EQ(p3.toString(), "3.141593e-01");
     p3 = 3.14;
@@ -76,30 +74,31 @@ TEST(IRTEST, Parameter) {
     EXPECT_EQ(p3.toString(), "3.140000e+00");
 
     // string parameter
-    Parameter_ p4("pnnx");
+    Parameter p4("pnnx");
     ASSERT_EQ(p4.type(), ParameterType::kParameterString);
     ASSERT_EQ(p4.toString(), "pnnx");
 
     // array int parameter
-    Parameter_ p5(std::initializer_list<int>{1, 2, 3, 4, -5});
+    Parameter p5(std::initializer_list<int>{1, 2, 3, 4, -5});
     ASSERT_EQ(p5.type(), ParameterType::kParameterArrayInt);
     ASSERT_EQ(p5.toString(), "(1,2,3,4,-5)");
 
-    Parameter_ p6(std::vector<int>({1, 2, 3, 4, 5}));
+    Parameter p6(std::vector<int>({1, 2, 3, 4, 5}));
     ASSERT_EQ(p6.type(), ParameterType::kParameterArrayInt);
     ASSERT_EQ(p6.toString(), "(1,2,3,4,5)");
 
     // array float parameter
-    Parameter_ p7(std::initializer_list<float>{1.0, 0.112, -3.14});
+    Parameter p7(std::initializer_list<float>{1.0, 0.112, -3.14});
     ASSERT_EQ(p7.type(), ParameterType::kParameterArrayFloat);
     ASSERT_EQ(p7.toString(), "(1.000000e+00,1.120000e-01,-3.140000e+00)");
 
     // complex parameter
-    Parameter_ p8(std::complex<float>(2, 3));
+    Parameter p8(std::complex<float>(2, 3));
     ASSERT_EQ(p8.type(), ParameterType::kParameterComplex);
     ASSERT_EQ(p8.toString(), "2.000000e+00+3.000000e+00i");
 }
 
+/*
 TEST(IRTEST, new_parameter) {
     ParameterVar p;
     std::visit([](const auto& arg) { std::cout << arg.Encode2String() << std::endl; }, p);
@@ -195,6 +194,7 @@ TEST(IRTEST, new_parameter) {
     EXPECT_EQ(p8, make_parameter(std::vector<std::string>{"Effective", "Modern", "C++", "Scott Meyers"}));
     EXPECT_EQ(p8.Encode2String(), "(Effective,Modern,C++,Scott Meyers)");
 }
+*/
 
 TEST(IRTEST, libtorch) {
     GTEST_SKIP();
@@ -239,7 +239,7 @@ TEST(IRTEST, Attribute) {
 }
 
 TEST(IRTEST, pnnx_graph_load) {
-    GTEST_SKIP();
+//    GTEST_SKIP();
     std::string param_path = "test_linear.pnnx.param";
     std::string bin_path = "test_linear.pnnx.bin";
     Graph graph;
@@ -251,11 +251,11 @@ TEST(IRTEST, pnnx_graph_load) {
 }
 
 TEST(IRTEST, create_pnnx_graph) {
-    GTEST_SKIP();
+//    GTEST_SKIP();
     Graph graph;
     auto t1 = graph.CreateOperator("pnnx.Input", "pnnx_input_0",
                                    {}, {}, {}, {},
-                                   "0", DataType::kDataTypeFloat32, {1, DimVariableTag});//{1,32}
+                                   "0", DataType::kDataTypeFloat32, {1, 32});//{1,32}
 
     auto bias = torch::rand({128});
     auto weight = torch::rand({128, 32});
@@ -263,9 +263,9 @@ TEST(IRTEST, create_pnnx_graph) {
     weight.contiguous();
 
     auto t2 = graph.CreateOperator("nn.Linear", "linear",
-                                   {{"bias", std::make_shared<ParameterVar>(Parameter(true))},
-                                    {"in_features", std::make_shared<ParameterVar>(Parameter(32))},
-                                    {"out_features", std::make_shared<ParameterVar>(Parameter(128))}},
+                                   {{"bias", std::make_shared<Parameter>(true)},
+                                    {"in_features", std::make_shared<Parameter>(32)},
+                                    {"out_features", std::make_shared<Parameter>(128)}},
                                    {{"bias", std::make_shared<Attribute>(std::vector<int>{128}, std::vector<float>(bias.data_ptr<float>(), bias.data_ptr<float>() + bias.numel()))},
                                     {"weight", std::make_shared<Attribute>(std::vector<int>{128, 32}, std::vector<float>(weight.data_ptr<float>(), weight.data_ptr<float>() + weight.numel()))}},
                                    {t1}, {},
@@ -296,62 +296,62 @@ TEST(IRTEST, create_parameter_from_torch_node) {
 
     auto node1 = g.createNone();
     EXPECT_TRUE(node1->output()->type()->kind() == c10::TypeKind::NoneType);
-    Parameter_ p1 = CreateParameterFromTorchNode_(node1);
+    Parameter p1 = CreateParameterFromTorchNode(node1);
     std::cout << "p1: " << p1.toString() << std::endl;
 
     torch::jit::Node* node2 = g.create(c10::prim::Constant);
     node2->output()->setType(c10::IntType::get());
     EXPECT_TRUE(node2->output()->type()->kind() == c10::TypeKind::IntType);
     node2->i_(torch::jit::attr::value, 10);
-    Parameter_ p2 = CreateParameterFromTorchNode_(node2);
+    Parameter p2 = CreateParameterFromTorchNode(node2);
     std::cout << "p2: " << p2.toString() << std::endl;
 
     auto node3 = g.create(c10::prim::Constant);
     node3->output()->setType(c10::BoolType::get());
     EXPECT_TRUE(node3->output()->type()->kind() == c10::TypeKind::BoolType);
     node3->i_(torch::jit::attr::value, false);
-    auto p3 = CreateParameterFromTorchNode_(node3);
+    auto p3 = CreateParameterFromTorchNode(node3);
     std::cout << "p3: " << p3.toString() << std::endl;
 
     auto node4 = g.create(c10::prim::Constant);
     node4->output()->setType(c10::FloatType::get());
     EXPECT_TRUE(node4->output()->type()->kind() == c10::TypeKind::FloatType);
     node4->f_(torch::jit::attr::value, 20);
-    auto p4 = CreateParameterFromTorchNode_(node4);
+    auto p4 = CreateParameterFromTorchNode(node4);
     std::cout << "p4: " << p4.toString() << std::endl;
 
     auto node5 = g.create(c10::prim::Constant);
     node5->output()->setType(c10::StringType::get());
     EXPECT_TRUE(node5->output()->type()->kind() == c10::TypeKind::StringType);
     node5->s_(torch::jit::attr::value, "hello, OpenXAE");
-    auto p5 = CreateParameterFromTorchNode_(node5);
+    auto p5 = CreateParameterFromTorchNode(node5);
     std::cout << "p5: " << p5.toString() << std::endl;
 
     auto node6 = g.create(c10::prim::Constant);
     node6->output()->setType(c10::ComplexType::get());
     EXPECT_TRUE(node6->output()->type()->kind() == c10::TypeKind::ComplexType);
     node6->c_(torch::jit::attr::value, c10::complex<float>(2, 3));
-    auto p6 = CreateParameterFromTorchNode_(node6);
+    auto p6 = CreateParameterFromTorchNode(node6);
     std::cout << "p6: " << p6.toString() << std::endl;
 
     auto node7 = g.create(c10::prim::Constant);
     EXPECT_TRUE(node7->output()->type()->kind() == c10::TypeKind::TensorType);
     node7->t_(torch::jit::attr::value, torch::rand({2, 3}));
-    auto p7 = CreateParameterFromTorchNode_(node7);
+    auto p7 = CreateParameterFromTorchNode(node7);
     std::cout << "p7: " << p7.toString() << std::endl;
 
     auto node8 = g.create(c10::prim::Constant);
     node8->output()->setType(c10::ListType::get("List<T>", c10::IntType::get()));
     EXPECT_TRUE(node8->output()->type()->kind() == c10::TypeKind::ListType);
     node8->ival_(torch::jit::attr::value, std::vector<int64_t>{1, 2, 3});
-    auto p8 = CreateParameterFromTorchNode_(node8);
+    auto p8 = CreateParameterFromTorchNode(node8);
     std::cout << "p8: " << p8.toString() << std::endl;
 
     auto node9 = g.create(c10::prim::Constant);
     node9->output()->setType(c10::ListType::get("List<T>", c10::FloatType::get()));
     EXPECT_TRUE(node9->output()->type()->kind() == c10::TypeKind::ListType);
     node9->ival_(torch::jit::attr::value, std::vector<double>{1., 2., 3.});
-    auto p9 = CreateParameterFromTorchNode_(node9);
+    auto p9 = CreateParameterFromTorchNode(node9);
     std::cout << "p9: " << p9.toString() << std::endl;
 }
 

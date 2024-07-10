@@ -17,7 +17,7 @@ public:
     Operator(std::string name, std::string type) : name_(std::move(name)), type_(std::move(type)) {}
 
     Operator(std::string name, std::string type,
-             std::map<std::string, std::shared_ptr<ParameterVar>> params,
+             std::map<std::string, std::shared_ptr<Parameter>> params,
              std::map<std::string, std::shared_ptr<Attribute>> attrs,
              std::vector<std::shared_ptr<Operand>> inputOperands,
              std::vector<std::string> inputNames)
@@ -86,11 +86,11 @@ public:
         return attrs_;
     }
 
-    std::map<std::string, std::shared_ptr<ParameterVar>>& GetParameters() {
+    std::map<std::string, std::shared_ptr<Parameter>>& GetParameters() {
         return params_;
     }
 
-    NODISCARD const std::map<std::string, std::shared_ptr<ParameterVar>>& GetParameters() const {
+    NODISCARD const std::map<std::string, std::shared_ptr<Parameter>>& GetParameters() const {
         return params_;
     }
 
@@ -109,7 +109,7 @@ private:
     std::vector<std::shared_ptr<Operand>> outputOperands_;
 
     std::map<std::string, std::shared_ptr<Attribute>> attrs_;
-    std::map<std::string, std::shared_ptr<ParameterVar>> params_;
+    std::map<std::string, std::shared_ptr<Parameter>> params_;
 };
 
 }

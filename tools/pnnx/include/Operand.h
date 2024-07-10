@@ -30,11 +30,10 @@ public:
         for (size_t i = 0; i < shape_.size(); ++i) {
             if (DimVariableTag == shape_[i]) {
                 params_[std::string("__shape__") + std::to_string(i)] =
-                        std::make_shared<ParameterVar>(Parameter("arg" + std::to_string(i)));
+                        std::make_shared<Parameter>("arg" + std::to_string(i));
             }
         }
     }
-
 
     Operand(const Operand&) = delete;
     Operand(Operand&&) = delete;
@@ -61,11 +60,11 @@ public:
         return name_;
     }
 
-    std::map<std::string, std::shared_ptr<ParameterVar>>& GetParams() {
+    std::map<std::string, std::shared_ptr<Parameter>>& GetParams() {
         return params_;
     }
 
-    NODISCARD const std::map<std::string, std::shared_ptr<ParameterVar>>& GetParams() const {
+    NODISCARD const std::map<std::string, std::shared_ptr<Parameter>>& GetParams() const {
         return params_;
     }
 
@@ -100,7 +99,7 @@ private:
 
     // keep std::string typed member the last for cross cxxabi compatibility
     std::string name_;
-    std::map<std::string, std::shared_ptr<ParameterVar>> params_;
+    std::map<std::string, std::shared_ptr<Parameter>> params_;
 };
 
 }// namespace pnnx

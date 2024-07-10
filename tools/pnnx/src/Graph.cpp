@@ -12,26 +12,10 @@
 
 namespace pnnx {
 
-static Parameter_ CreateParameterFromString_(const std::string& value) {
+static Parameter CreateParameterFromString_(const std::string& value) {
     // string type
     if (value.find('%') != std::string::npos) {
-        return Parameter_(value);
-    }
-
-    // null type
-    if (value == "None" || value == "()" || value == "[]") {
-        return {};
-    }
-
-    // integer
-    return Parameter_(std::stoi(value));
-}
-
-static ParameterVar CreateParameterFromString(const std::string& value) {
-    // string type
-    if (value.find('%') != std::string::npos) {
-        Parameter p(value);
-        return p;
+        return Parameter(value);
     }
 
     // null type
@@ -50,9 +34,9 @@ static ParameterVar CreateParameterFromString(const std::string& value) {
         bool isArrayFloat = false;
         bool isArrayString = false;
 
-        Parameter<std::vector<int>> pArrayInt;
-        Parameter<std::vector<float>> pArrayFloat;
-        Parameter<std::vector<std::string>> pArrayString;
+        std::vector<int> pArrayInt;
+        std::vector<float> pArrayFloat;
+        std::vector<std::string> pArrayString;
 
         std::string lc = value.substr(1, value.size() - 2);
         std::istringstream lcss(lc);
@@ -62,27 +46,28 @@ static ParameterVar CreateParameterFromString(const std::string& value) {
             if ((elem[0] != '-' && (elem[0] < '0' || elem[0] > '9')) || (elem[0] == '-' && (elem[1] < '0' || elem[1] > '9'))) {
                 // array string
                 isArrayString = true;
-                pArrayString.AddElemToArray(elem);
+                pArrayString.push_back(elem);
             } else if (elem.find('.') != std::string::npos || elem.find('e') != std::string::npos) {
                 // array float
                 isArrayFloat = true;
-                pArrayFloat.AddElemToArray(std::stof(elem));
+                pArrayFloat.push_back(std::stof(elem));
             } else {
                 // array integer
                 isArrayInt = true;
-                pArrayInt.AddElemToArray(std::stoi(elem));
+                pArrayInt.push_back(std::stoi(elem));
             }
         }
+
         if (isArrayInt && !isArrayFloat && !isArrayString) {
-            return pArrayInt;
+            return Parameter(pArrayInt);
         }
 
         if (!isArrayInt && isArrayFloat && !isArrayString) {
-            return pArrayFloat;
+            return Parameter(pArrayFloat);
         }
 
         if (!isArrayInt && !isArrayFloat && isArrayString) {
-            return pArrayString;
+            return Parameter(pArrayString);
         }
 
         return {};
@@ -103,7 +88,7 @@ static ParameterVar CreateParameterFromString(const std::string& value) {
 }
 
 static void LoadParameter(const std::shared_ptr<Operator>& op, const std::string& key, const std::string& value) {
-    op->GetParameters()[key] = std::make_shared<ParameterVar>(CreateParameterFromString(value));
+    op->GetParameters()[key] = std::make_shared<Parameter>(CreateParameterFromString_(value));
 }
 
 static void LoadInputName(const std::shared_ptr<Operator>& op, const std::string& key, const std::string& value) {
@@ -159,7 +144,7 @@ static void LoadOperand(const std::shared_ptr<Operator>& op, const std::string& 
             operand->GetShape().push_back(DimVariableTag);
             size_t index = operand->GetShape().size() - 1;
             std::string s = elem.substr(1);
-            operand->GetParams()[std::string("__shape__") + std::to_string(index)] = std::make_shared<ParameterVar>(Parameter(s));
+            operand->GetParams()[std::string("__shape__") + std::to_string(index)] = std::make_shared<Parameter>(s);
         } else {
             operand->GetShape().push_back(std::stoi(elem));
         }
@@ -250,10 +235,7 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
 
         // dump op param info
         for (const auto& it: op->GetParameters()) {
-            std::string value;
-            auto visitor = [&value](const auto& arg) { value = arg.Encode2String(); };
-            std::visit(visitor, *it.second);
-            paramFile << " " << it.first << "=" << value;
+            paramFile << " " << it.first << "=" << it.second->toString();
         }
 
         // dump op attrs info
@@ -295,10 +277,7 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
                     // %abc, shape variable
                     size_t idx = operand->GetShape().size() - size;
                     std::string key = "__shape__" + std::to_string(idx);
-                    std::string value;
-                    auto visitor = [&value](const auto& arg) { value = arg.Encode2String(); };
-                    std::visit(visitor, *(operand->GetParams()[key]));
-                    paramFile << "%" << value << (--size ? "," : "");
+                    paramFile << "%" << operand->GetParams()[key]->toString() << (--size ? "," : "");
                 } else {
                     paramFile << x << (--size ? "," : "");
                 }
@@ -322,10 +301,7 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
                     // %abc, shape variable
                     size_t idx = operand->GetShape().size() - size;
                     std::string key = "__shape__" + std::to_string(idx);
-                    std::string value;
-                    auto visitor = [&value](const auto& arg) { value = arg.Encode2String(); };
-                    std::visit(visitor, *(operand->GetParams()[key]));
-                    paramFile << "%" << value << (--size ? "," : "");
+                    paramFile << "%" << operand->GetParams()[key]->toString() << (--size ? "," : "");
                 } else {
                     paramFile << x << (--size ? "," : "");
                 }
@@ -429,7 +405,7 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
 }
 
 std::shared_ptr<Operand> Graph::CreateOperator(const std::string& type, const std::string& name,
-                                               const std::map<std::string, std::shared_ptr<ParameterVar>>& params,
+                                               const std::map<std::string, std::shared_ptr<Parameter>>& params,
                                                const std::map<std::string, std::shared_ptr<Attribute>>& attrs,
                                                const std::vector<std::shared_ptr<Operand>>& inputOperands,
                                                const std::vector<std::string>& inputOperandNames,

@@ -192,27 +192,27 @@ private:
     T value_{};
 };
 
-class Parameter_ {
+class Parameter {
 public:
-    Parameter_() = default;
+    Parameter() = default;
 
     template<typename T,
-             typename = typename std::enable_if_t<!std::is_same_v<Parameter_, std::decay_t<T>>>>
-    explicit Parameter_(T&& val)
+             typename = typename std::enable_if_t<!std::is_same_v<Parameter, std::decay_t<T>>>>
+    explicit Parameter(T&& val)
         : ptr_(std::make_shared<ParameterImpl<std::decay_t<T>>>(std::forward<T>(val))) {}
 
-    Parameter_(const Parameter_&) = default;
+    Parameter(const Parameter&) = default;
 
-    Parameter_(Parameter_&& other) noexcept : ptr_(std::move(other.ptr_)) {}
+    Parameter(Parameter&& other) noexcept : ptr_(std::move(other.ptr_)) {}
 
-    Parameter_& operator=(const Parameter_& other) {
+    Parameter& operator=(const Parameter& other) {
         if (this != &other) {
             ptr_ = other.ptr_;
         }
         return *this;
     }
 
-    Parameter_& operator=(Parameter_&& other) noexcept {
+    Parameter& operator=(Parameter&& other) noexcept {
         if (this != &other) {
             ptr_ = std::move(other.ptr_);
         }
@@ -220,7 +220,7 @@ public:
     }
 
     template<typename T>
-    Parameter_& operator=(T&& val) {
+    Parameter& operator=(T&& val) {
         SetValue(std::forward<T>(val));
         return *this;
     }
@@ -269,26 +269,15 @@ private:
     std::shared_ptr<ParameterBase> ptr_;
 };
 
-//bool operator==(const Parameter_& lhs, const Parameter_& rhs) {
-//    if (lhs.type() != rhs.type()) {
-//        return false;
-//    }
-//
-//    if (lhs.type() == ParameterType::kParameterUnknown) {
-//        return true;
-//    }
-//
-//    return lhs.toString() == rhs.toString();
-//}
 
 template<typename T>
-class Parameter {
+class Parameter_Deprecated {
 public:
     using value_type = T;
 
-    Parameter() : type_(GetParameterType<T>()) {}
+    Parameter_Deprecated() : type_(GetParameterType<T>()) {}
 
-    explicit Parameter(T val)
+    explicit Parameter_Deprecated(T val)
         : type_(GetParameterType<T>()),
           value_(val) {}
 
@@ -396,13 +385,13 @@ private:
 };
 
 template<typename T>
-class Parameter<std::vector<T>> {
+class Parameter_Deprecated<std::vector<T>> {
 public:
     using value_type = std::vector<T>;
 
-    Parameter() : type_(GetParameterType<std::vector<T>>()) {}
+    Parameter_Deprecated() : type_(GetParameterType<std::vector<T>>()) {}
 
-    explicit Parameter(const std::vector<T>& val)
+    explicit Parameter_Deprecated(const std::vector<T>& val)
         : type_(GetParameterType<std::vector<T>>()), value_(val) {}
 
     NODISCARD const ParameterType& type() const {
@@ -509,17 +498,17 @@ private:
 };
 
 // CTAD Deduction Guides
-Parameter(const char*) -> Parameter<std::string>;
+Parameter_Deprecated(const char*) -> Parameter_Deprecated<std::string>;
 
-Parameter(std::initializer_list<const char*>) -> Parameter<std::vector<std::string>>;
+Parameter_Deprecated(std::initializer_list<const char*>) -> Parameter_Deprecated<std::vector<std::string>>;
 
-Parameter(std::vector<const char*>) -> Parameter<std::vector<std::string>>;
-
-template<typename T>
-Parameter(std::initializer_list<T>) -> Parameter<std::vector<T>>;
+Parameter_Deprecated(std::vector<const char*>) -> Parameter_Deprecated<std::vector<std::string>>;
 
 template<typename T>
-bool operator==(const Parameter<T>& lhs, const Parameter<T>& rhs) {
+Parameter_Deprecated(std::initializer_list<T>) -> Parameter_Deprecated<std::vector<T>>;
+
+template<typename T>
+bool operator==(const Parameter_Deprecated<T>& lhs, const Parameter_Deprecated<T>& rhs) {
     if (lhs.type() != rhs.type()) {
         return false;
     }
@@ -533,22 +522,22 @@ bool operator==(const Parameter<T>& lhs, const Parameter<T>& rhs) {
 
 template<typename... Args>
 auto make_parameter(Args&&... args) {
-    return Parameter<Args...>(std::forward<Args>(args)...);
+    return Parameter_Deprecated<Args...>(std::forward<Args>(args)...);
 }
 
 
-using ParameterVar = std::variant<Parameter<void*>,
-                                  Parameter<bool>,
-                                  Parameter<int>,
-                                  Parameter<float>,
-                                  Parameter<double>,
-                                  Parameter<std::string>,
-                                  Parameter<std::complex<float>>,
+using ParameterVar = std::variant<Parameter_Deprecated<void*>,
+                                  Parameter_Deprecated<bool>,
+                                  Parameter_Deprecated<int>,
+                                  Parameter_Deprecated<float>,
+                                  Parameter_Deprecated<double>,
+                                  Parameter_Deprecated<std::string>,
+                                  Parameter_Deprecated<std::complex<float>>,
 
-                                  Parameter<std::vector<int>>,
-                                  Parameter<std::vector<float>>,
-                                  Parameter<std::vector<std::string>>,
-                                  Parameter<std::vector<std::complex<float>>>>;
+                                  Parameter_Deprecated<std::vector<int>>,
+                                  Parameter_Deprecated<std::vector<float>>,
+                                  Parameter_Deprecated<std::vector<std::string>>,
+                                  Parameter_Deprecated<std::vector<std::complex<float>>>>;
 
 }// namespace pnnx
 
