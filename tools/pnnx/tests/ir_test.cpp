@@ -90,7 +90,7 @@ TEST(IRTEST, Parameter) {
     ASSERT_EQ(p6.toString(), "(1,2,3,4,5)");
 
     // array float parameter
-    Parameter_ p7 (std::initializer_list<float>{1.0, 0.112, -3.14});
+    Parameter_ p7(std::initializer_list<float>{1.0, 0.112, -3.14});
     ASSERT_EQ(p7.type(), ParameterType::kParameterArrayFloat);
     ASSERT_EQ(p7.toString(), "(1.000000e+00,1.120000e-01,-3.140000e+00)");
 
@@ -291,66 +291,68 @@ TEST(IRTEST, torch2pnnx) {
 }
 
 TEST(IRTEST, create_parameter_from_torch_node) {
-//    GTEST_SKIP();
+    //    GTEST_SKIP();
     auto g = torch::jit::Graph();
-    auto printer = [](const auto& arg) {
-        std::cout << arg.Encode2String() << std::endl;
-    };
 
     auto node1 = g.createNone();
     EXPECT_TRUE(node1->output()->type()->kind() == c10::TypeKind::NoneType);
-    Parameter_ p1(node1);
+    Parameter_ p1 = CreateParameterFromTorchNode_(node1);
     std::cout << "p1: " << p1.toString() << std::endl;
 
     torch::jit::Node* node2 = g.create(c10::prim::Constant);
     node2->output()->setType(c10::IntType::get());
     EXPECT_TRUE(node2->output()->type()->kind() == c10::TypeKind::IntType);
     node2->i_(torch::jit::attr::value, 10);
-    Parameter_ p2(node2);
+    Parameter_ p2 = CreateParameterFromTorchNode_(node2);
     std::cout << "p2: " << p2.toString() << std::endl;
 
     auto node3 = g.create(c10::prim::Constant);
     node3->output()->setType(c10::BoolType::get());
     EXPECT_TRUE(node3->output()->type()->kind() == c10::TypeKind::BoolType);
     node3->i_(torch::jit::attr::value, false);
-    auto p3 = CreateParameterFromTorchNode(node3);
-    std::visit(printer, p3);
+    auto p3 = CreateParameterFromTorchNode_(node3);
+    std::cout << "p3: " << p3.toString() << std::endl;
 
     auto node4 = g.create(c10::prim::Constant);
     node4->output()->setType(c10::FloatType::get());
     EXPECT_TRUE(node4->output()->type()->kind() == c10::TypeKind::FloatType);
     node4->f_(torch::jit::attr::value, 20);
-    auto p4 = CreateParameterFromTorchNode(node4);
-    std::visit(printer, p4);
+    auto p4 = CreateParameterFromTorchNode_(node4);
+    std::cout << "p4: " << p4.toString() << std::endl;
 
     auto node5 = g.create(c10::prim::Constant);
     node5->output()->setType(c10::StringType::get());
     EXPECT_TRUE(node5->output()->type()->kind() == c10::TypeKind::StringType);
     node5->s_(torch::jit::attr::value, "hello, OpenXAE");
-    auto p5 = CreateParameterFromTorchNode(node5);
-    std::visit(printer, p5);
+    auto p5 = CreateParameterFromTorchNode_(node5);
+    std::cout << "p5: " << p5.toString() << std::endl;
 
     auto node6 = g.create(c10::prim::Constant);
     node6->output()->setType(c10::ComplexType::get());
     EXPECT_TRUE(node6->output()->type()->kind() == c10::TypeKind::ComplexType);
     node6->c_(torch::jit::attr::value, c10::complex<float>(2, 3));
-    auto p6 = CreateParameterFromTorchNode(node6);
-    std::visit(printer, p6);
+    auto p6 = CreateParameterFromTorchNode_(node6);
+    std::cout << "p6: " << p6.toString() << std::endl;
 
     auto node7 = g.create(c10::prim::Constant);
     EXPECT_TRUE(node7->output()->type()->kind() == c10::TypeKind::TensorType);
-    node7->t_(torch::jit::attr::value, torch::rand({}));
-    auto p7 = CreateParameterFromTorchNode(node7);
-    std::visit(printer, p7);
+    node7->t_(torch::jit::attr::value, torch::rand({2, 3}));
+    auto p7 = CreateParameterFromTorchNode_(node7);
+    std::cout << "p7: " << p7.toString() << std::endl;
 
     auto node8 = g.create(c10::prim::Constant);
     node8->output()->setType(c10::ListType::get("List<T>", c10::IntType::get()));
     EXPECT_TRUE(node8->output()->type()->kind() == c10::TypeKind::ListType);
     node8->ival_(torch::jit::attr::value, std::vector<int64_t>{1, 2, 3});
-    auto p8 = CreateParameterFromTorchNode(node8);
-    std::visit(printer, p8);
+    auto p8 = CreateParameterFromTorchNode_(node8);
+    std::cout << "p8: " << p8.toString() << std::endl;
 
-    auto node9 = g.create(c10::prim::ListConstruct);
+    auto node9 = g.create(c10::prim::Constant);
+    node9->output()->setType(c10::ListType::get("List<T>", c10::FloatType::get()));
+    EXPECT_TRUE(node9->output()->type()->kind() == c10::TypeKind::ListType);
+    node9->ival_(torch::jit::attr::value, std::vector<double>{1., 2., 3.});
+    auto p9 = CreateParameterFromTorchNode_(node9);
+    std::cout << "p9: " << p9.toString() << std::endl;
 }
 
 }// namespace pnnx

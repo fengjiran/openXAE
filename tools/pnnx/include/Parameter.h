@@ -201,11 +201,6 @@ public:
     explicit Parameter_(T&& val)
         : ptr_(std::make_shared<ParameterImpl<std::decay_t<T>>>(std::forward<T>(val))) {}
 
-    //#if BUILD_TORCH2PNNX
-    explicit Parameter_(const torch::jit::Node* node);
-    explicit Parameter_(const torch::jit::Value* value);
-    //#endif // BUILD_TORCH2PNNX
-
     Parameter_(const Parameter_&) = default;
 
     Parameter_(Parameter_&& other) noexcept : ptr_(std::move(other.ptr_)) {}

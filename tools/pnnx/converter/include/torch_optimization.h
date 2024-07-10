@@ -32,7 +32,7 @@ ParameterVar CreateParameterFromTorchValue(const torch::jit::Value* value);
 
 Parameter_ CreateParameterFromTorchNode_(const torch::jit::Node* node);
 
-Parameter_ CreateParameterFromTorchNode_(const torch::jit::Value* value);
+Parameter_ CreateParameterFromTorchValue_(const torch::jit::Value* value);
 
 }
 
