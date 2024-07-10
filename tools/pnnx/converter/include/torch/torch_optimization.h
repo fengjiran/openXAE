@@ -6,11 +6,7 @@
 #define OPENXAE_TORCH_OPTIMIZATION_H
 
 #include "Graph.h"
-#include "constant_unpooling.h"
-#include "inline_block.h"
-#include "reset_device.h"
-#include "flatten_input.h"
-#include "shape_inference.h"
+#include "pass_level0.h"
 
 #include <torch/script.h>
 #include <torch/csrc/api/include/torch/version.h>

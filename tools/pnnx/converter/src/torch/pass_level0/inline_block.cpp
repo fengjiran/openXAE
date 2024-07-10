@@ -1,9 +1,7 @@
 //
 // Created by richard on 6/19/24.
 //
-
-#include "inline_block.h"
-
+#include "torch/pass_level0.h"
 #include <stack>
 #include <torch/csrc/api/include/torch/version.h>
 #include <torch/csrc/jit/passes/quantization/helper.h>

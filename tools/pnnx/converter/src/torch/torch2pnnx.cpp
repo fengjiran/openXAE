@@ -2,7 +2,7 @@
 // Created by richard on 6/22/24.
 //
 
-#include "torch2pnnx.h"
+#include "pnnx/converter/include/torch/torch2pnnx.h"
 #include <dlfcn.h>
 
 namespace pnnx {

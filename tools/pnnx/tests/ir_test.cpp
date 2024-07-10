@@ -4,7 +4,7 @@
 
 //#include "glog/logging.h"
 #include "Graph.h"
-#include "torch2pnnx.h"
+#include "pnnx/converter/include/torch/torch2pnnx.h"
 
 #include <gtest/gtest.h>
 #include <torch/csrc/jit/frontend/tracer.h>

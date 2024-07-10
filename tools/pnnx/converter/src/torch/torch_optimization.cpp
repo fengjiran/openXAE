@@ -2,7 +2,7 @@
 // Created by richard on 6/22/24.
 //
 
-#include "torch_optimization.h"
+#include "torch/torch_optimization.h"
 
 #include <torch/csrc/jit/passes/constant_pooling.h>
 #include <torch/csrc/jit/passes/freeze_module.h>

@@ -2,12 +2,7 @@
 // Created by richard on 7/3/24.
 //
 
-#include "shape_inference.h"
-#include "constant_unpooling.h"
-#include "convert_half_to_float.h"
-#include "flatten_input.h"
-#include "inline_block.h"
-#include "reset_device.h"
+#include "torch/pass_level0.h"
 #include "storezip.h"
 
 namespace pnnx {

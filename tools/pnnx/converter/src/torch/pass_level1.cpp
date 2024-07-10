@@ -2,7 +2,7 @@
 // Created by richard on 7/10/24.
 //
 
-#include "pass_level1.h"
+#include "torch/pass_level1.h"
 
 namespace pnnx {
 

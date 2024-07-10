@@ -2,7 +2,7 @@
 // Created by richard on 7/2/24.
 //
 
-#include "reset_device.h"
+#include "torch/pass_level0.h"
 
 namespace pnnx {
 
