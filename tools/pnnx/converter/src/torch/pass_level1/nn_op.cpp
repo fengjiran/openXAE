@@ -344,6 +344,25 @@ public:
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(CELU);
 
+class ChannelShuffle : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.channelshuffle.ChannelShuffle";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.ChannelShuffle";
+    }
+
+    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const auto* node = FindNodeByKind(graph, "aten::channel_shuffle");
+        auto p = CreateParameterFromTorchValue(node->namedInput("groups"));
+
+        op->GetParameters()["groups"] = std::make_shared<Parameter>(p);
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(ChannelShuffle);
+
 class ReLU : public FuseModulePass {
 public:
     std::string MatchTypeStr() const override {
