@@ -417,6 +417,32 @@ public:
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(ConstantPad2d);
 
+class ConstantPad3d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.padding.ConstantPad3d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.ConstantPad3d";
+    }
+
+    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* pad = FindNodeByKind(graph, "aten::pad");
+        const torch::jit::Node* constant_pad_nd = FindNodeByKind(graph, "aten::constant_pad_nd");
+
+        if (!pad) {
+            pad = constant_pad_nd;
+        }
+
+        auto p1 = CreateParameterFromTorchValue(pad->namedInput("pad"));
+        auto p2 = CreateParameterFromTorchValue(pad->namedInput("value"));
+
+        op->GetParameters()["padding"] = std::make_shared<Parameter>(p1);
+        op->GetParameters()["value"] = std::make_shared<Parameter>(p2);
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(ConstantPad3d);
 
 class ReLU : public FuseModulePass {
 public:
