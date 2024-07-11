@@ -304,7 +304,7 @@ public:
     }
 
     void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph, const torch::jit::Module& mod) const override {
-        const torch::jit::Node* bn = FindNodeByKind(graph, "aten::batch_norm");
+        const auto* bn = FindNodeByKind(graph, "aten::batch_norm");
 
         const auto& running_mean = mod.attr("running_mean").toTensor();
         const auto& running_var = mod.attr("running_var").toTensor();
@@ -324,6 +324,25 @@ public:
     }
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(BatchNorm3d);
+
+class CELU : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.activation.CELU";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.CELU";
+    }
+
+    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* celu = FindNodeByKind(graph, "aten::celu");
+        auto p = CreateParameterFromTorchValue(celu->namedInput("alpha"));
+
+        op->GetParameters()["alpha"] = std::make_shared<Parameter>(p);
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(CELU);
 
 class ReLU : public FuseModulePass {
 public:
