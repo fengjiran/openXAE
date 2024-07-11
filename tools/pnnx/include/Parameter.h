@@ -192,6 +192,9 @@ private:
     T value_{};
 };
 
+// CTAD
+ParameterImpl(const char*) -> ParameterImpl<std::string>;
+
 class Parameter {
 public:
     Parameter() = default;
@@ -200,6 +203,10 @@ public:
              typename = typename std::enable_if_t<!std::is_same_v<Parameter, std::decay_t<T>>>>
     explicit Parameter(T&& val)
         : ptr_(std::make_shared<ParameterImpl<std::decay_t<T>>>(std::forward<T>(val))) {}
+
+    template<>
+    explicit Parameter<const char*>(const char* val)
+            : ptr_(new ParameterImpl(val)) {}
 
     Parameter(const Parameter&) = default;
 
@@ -244,19 +251,19 @@ public:
         return ParameterType::kParameterUnknown;
     }
 
-    //    template<typename T>
-    //    std::optional<T> toValue() const {
-    //        using value_type = std::decay_t<T>;
-    //        if (has_value()) {
-    //            if (GetParameterType<value_type>() == type()) {
-    //                auto ptr = std::dynamic_pointer_cast<ParameterImpl<T>>(ptr_);
-    //                return ptr->toValue();
-    //            } else {
-    //                throw;
-    //            }
-    //        }
-    //        return {};
-    //    }
+    template<typename T>
+    T toValue() const {
+        if (!has_value()) {
+            throw std::bad_cast();
+        }
+
+        auto ptr = std::dynamic_pointer_cast<ParameterImpl<T>>(ptr_);
+        if (ptr) {
+            return ptr->toValue();
+        } else {
+            throw std::bad_cast();
+        }
+    }
 
     NODISCARD std::string toString() const {
         if (has_value()) {

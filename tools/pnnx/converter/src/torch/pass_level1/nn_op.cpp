@@ -444,6 +444,89 @@ public:
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(ConstantPad3d);
 
+class Conv1d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.conv.Conv1d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.Conv1d";
+    }
+
+    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph, const torch::jit::Module& mod) const override {
+        const auto* convolution = FindNodeByKind(graph, "aten::_convolution");
+        const auto* convolution_mode = FindNodeByKind(graph, "aten::_convolution_mode");
+        const auto* pad = FindNodeByKind(graph, "aten::pad");
+        const auto* reflection_pad1d = FindNodeByKind(graph, "aten::reflection_pad1d");
+        const auto* replication_pad1d = FindNodeByKind(graph, "aten::replication_pad1d");
+
+        if (convolution_mode) {
+            convolution = convolution_mode;
+        }
+
+        const auto& weight = mod.attr("weight").toTensor();
+        auto p1 = CreateParameterFromTorchValue(convolution->namedInput("groups"));
+
+//        op->GetParameters()["groups"] = std::make_shared<Parameter>(p1);
+//        op->GetParameters()["in_channels"] = weight.size(1) * op->params["groups"].i;
+//        op->GetParameters()["out_channels"] = weight.size(0);
+//        op->GetParameters()["kernel_size"] = Parameter{weight.size(2)};
+//        op->GetParameters()["stride"] = convolution->namedInput("stride");
+//        if (pad) {
+//            op->GetParameters()["padding_mode"] = pad->namedInput("mode");
+//            op->GetParameters()["padding"] = pad->namedInput("pad");
+//            std::vector<int>& padding = op->params["padding"].ai;
+//            if (padding.size() == 2) {
+//                // Conv1d only accepts tuple of one integer
+//                if (padding[0] == padding[1]) {
+//                    padding.resize(1);
+//                } else if (padding[0] != padding[1]) {
+//                    padding.resize(0);
+//                    op->params["padding"].s = "same";
+//                }
+//            }
+//        } else if (reflection_pad1d) {
+//            op->params["padding_mode"] = "reflect";
+//            op->params["padding"] = reflection_pad1d->namedInput("padding");
+//            std::vector<int>& padding = op->params["padding"].ai;
+//            if (padding.size() == 2) {
+//                // Conv1d only accepts tuple of one integer
+//                if (padding[0] == padding[1]) {
+//                    padding.resize(1);
+//                } else if (padding[0] != padding[1]) {
+//                    padding.resize(0);
+//                    op->params["padding"].s = "same";
+//                }
+//            }
+//        } else if (replication_pad1d) {
+//            op->params["padding_mode"] = "replicate";
+//            op->params["padding"] = replication_pad1d->namedInput("padding");
+//            std::vector<int>& padding = op->params["padding"].ai;
+//            if (padding.size() == 2) {
+//                // Conv1d only accepts tuple of one integer
+//                if (padding[0] == padding[1]) {
+//                    padding.resize(1);
+//                } else if (padding[0] != padding[1]) {
+//                    padding.resize(0);
+//                    op->params["padding"].s = "same";
+//                }
+//            }
+//        } else {
+//            op->params["padding_mode"] = "zeros";
+//            op->params["padding"] = convolution->namedInput("padding");
+//        }
+//        op->params["dilation"] = convolution->namedInput("dilation");
+//        op->params["bias"] = mod.hasattr("bias");
+//
+//        op->attrs["weight"] = weight;
+//        if (mod.hasattr("bias")) {
+//            op->attrs["bias"] = mod.attr("bias").toTensor();
+//        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Conv1d);
+
 class ReLU : public FuseModulePass {
 public:
     std::string MatchTypeStr() const override {

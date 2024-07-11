@@ -57,45 +57,51 @@ TEST(IRTEST, Parameter) {
     Parameter p1(true);
     EXPECT_EQ(p1.type(), ParameterType::kParameterBool);
     EXPECT_EQ(p1.toString(), "True");
-    p1.SetValue(false);
+    EXPECT_EQ(p1.toValue<bool>(), true);
+    p1 = false;
     EXPECT_EQ(p1.toString(), "False");
 
     // int parameter
     Parameter p2(-10);
     EXPECT_EQ(p2.type(), ParameterType::kParameterInt);
     EXPECT_EQ(p2.toString(), "-10");
+    EXPECT_EQ(p2.toValue<int>(), -10);
 
     // float parameter
     Parameter p3(0.3141592657);
     EXPECT_EQ(p3.type(), ParameterType::kParameterFloat);
     EXPECT_EQ(p3.toString(), "3.141593e-01");
+    EXPECT_DOUBLE_EQ(p3.toValue<double>(), 0.3141592657);
     p3 = 3.14;
     EXPECT_EQ(p3.type(), ParameterType::kParameterFloat);
     EXPECT_EQ(p3.toString(), "3.140000e+00");
+    EXPECT_DOUBLE_EQ(p3.toValue<double>(), 3.14);
 
     // string parameter
     Parameter p4("pnnx");
-    ASSERT_EQ(p4.type(), ParameterType::kParameterString);
-    ASSERT_EQ(p4.toString(), "pnnx");
+    EXPECT_EQ(p4.type(), ParameterType::kParameterString);
+    EXPECT_EQ(p4.toString(), "pnnx");
+//    EXPECT_EQ(p4.toValue<std::string>(), "pnnx");
+    std::cout << p4.toValue<std::string>() << std::endl;
 
     // array int parameter
     Parameter p5(std::initializer_list<int>{1, 2, 3, 4, -5});
-    ASSERT_EQ(p5.type(), ParameterType::kParameterArrayInt);
-    ASSERT_EQ(p5.toString(), "(1,2,3,4,-5)");
+    EXPECT_EQ(p5.type(), ParameterType::kParameterArrayInt);
+    EXPECT_EQ(p5.toString(), "(1,2,3,4,-5)");
 
     Parameter p6(std::vector<int>({1, 2, 3, 4, 5}));
-    ASSERT_EQ(p6.type(), ParameterType::kParameterArrayInt);
-    ASSERT_EQ(p6.toString(), "(1,2,3,4,5)");
+    EXPECT_EQ(p6.type(), ParameterType::kParameterArrayInt);
+    EXPECT_EQ(p6.toString(), "(1,2,3,4,5)");
 
     // array float parameter
     Parameter p7(std::initializer_list<float>{1.0, 0.112, -3.14});
-    ASSERT_EQ(p7.type(), ParameterType::kParameterArrayFloat);
-    ASSERT_EQ(p7.toString(), "(1.000000e+00,1.120000e-01,-3.140000e+00)");
+    EXPECT_EQ(p7.type(), ParameterType::kParameterArrayFloat);
+    EXPECT_EQ(p7.toString(), "(1.000000e+00,1.120000e-01,-3.140000e+00)");
 
     // complex parameter
     Parameter p8(std::complex<float>(2, 3));
-    ASSERT_EQ(p8.type(), ParameterType::kParameterComplex);
-    ASSERT_EQ(p8.toString(), "2.000000e+00+3.000000e+00i");
+    EXPECT_EQ(p8.type(), ParameterType::kParameterComplex);
+    EXPECT_EQ(p8.toString(), "2.000000e+00+3.000000e+00i");
 }
 
 TEST(IRTEST, libtorch) {
