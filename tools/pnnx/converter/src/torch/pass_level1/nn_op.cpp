@@ -229,6 +229,38 @@ public:
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(AvgPool3d);
 
+class BatchNorm1d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.batchnorm.BatchNorm1d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.BatchNorm1d";
+    }
+
+    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph, const torch::jit::Module& mod) const override {
+        const auto* bn = FindNodeByKind(graph, "aten::batch_norm");
+
+        const auto& running_mean = mod.attr("running_mean").toTensor();
+        const auto& running_var = mod.attr("running_var").toTensor();
+
+        auto eps = CreateParameterFromTorchValue(bn->namedInput("eps"));
+
+        op->GetParameters()["num_features"] = std::make_shared<Parameter>(running_mean.size(0));
+        op->GetParameters()["eps"] = std::make_shared<Parameter>(eps);
+        op->GetParameters()["affine"] = std::make_shared<Parameter>(mod.hasattr("weight") && mod.hasattr("bias"));
+
+        op->GetAttributes()["running_mean"] = std::make_shared<Attribute>(running_mean);
+        op->GetAttributes()["running_var"] = std::make_shared<Attribute>(running_var);
+        if (mod.hasattr("weight") && mod.hasattr("bias")) {
+            op->GetAttributes()["weight"] = std::make_shared<Attribute>(mod.attr("weight").toTensor());
+            op->GetAttributes()["bias"] = std::make_shared<Attribute>(mod.attr("bias").toTensor());
+        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(BatchNorm1d);
+
 class ReLU : public FuseModulePass {
 public:
     std::string MatchTypeStr() const override {
