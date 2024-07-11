@@ -24,7 +24,6 @@ public:
         op->GetParameters()["output_size"] = std::make_shared<Parameter>(p);
     }
 };
-
 REGISTER_PNNX_FUSE_MODULE_PASS(AdaptiveAvgPool1d);
 
 class AdaptiveAvgPool2d : public FuseModulePass {
@@ -44,7 +43,6 @@ public:
         op->GetParameters()["output_size"] = std::make_shared<Parameter>(p);
     }
 };
-
 REGISTER_PNNX_FUSE_MODULE_PASS(AdaptiveAvgPool2d);
 
 class AdaptiveAvgPool3d : public FuseModulePass {
@@ -64,7 +62,6 @@ public:
         op->GetParameters()["output_size"] = std::make_shared<Parameter>(p);
     }
 };
-
 REGISTER_PNNX_FUSE_MODULE_PASS(AdaptiveAvgPool3d);
 
 class AdaptiveMaxPool1d : public FuseModulePass {
@@ -87,7 +84,6 @@ public:
         op->GetParameters()["return_indices"] = std::make_shared<Parameter>(p2);
     }
 };
-
 REGISTER_PNNX_FUSE_MODULE_PASS(AdaptiveMaxPool1d);
 
 class AdaptiveMaxPool2d : public FuseModulePass {
@@ -110,7 +106,6 @@ public:
         op->GetParameters()["return_indices"] = std::make_shared<Parameter>(p2);
     }
 };
-
 REGISTER_PNNX_FUSE_MODULE_PASS(AdaptiveMaxPool2d);
 
 class AdaptiveMaxPool3d : public FuseModulePass {
@@ -133,7 +128,6 @@ public:
         op->GetParameters()["return_indices"] = std::make_shared<Parameter>(p2);
     }
 };
-
 REGISTER_PNNX_FUSE_MODULE_PASS(AdaptiveMaxPool3d);
 
 class AlphaDropout : public FuseModulePass {
@@ -146,7 +140,6 @@ public:
         return "nn.AlphaDropout";
     }
 };
-
 REGISTER_PNNX_FUSE_MODULE_PASS(AlphaDropout);
 
 class AvgPool1d : public FuseModulePass {
@@ -175,7 +168,6 @@ public:
         op->GetParameters()["count_include_pad"] = std::make_shared<Parameter>(p5);
     }
 };
-
 REGISTER_PNNX_FUSE_MODULE_PASS(AvgPool1d);
 
 class AvgPool2d : public FuseModulePass {
@@ -205,8 +197,37 @@ public:
         op->GetParameters()["divisor_override"] = std::make_shared<Parameter>(p6);
     }
 };
-
 REGISTER_PNNX_FUSE_MODULE_PASS(AvgPool2d);
+
+class AvgPool3d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.pooling.AvgPool3d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.AvgPool3d";
+    }
+
+    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const auto* node = FindNodeByKind(graph, "aten::avg_pool3d");
+
+        auto p1 = CreateParameterFromTorchValue(node->namedInput("kernel_size"));
+        auto p2 = CreateParameterFromTorchValue(node->namedInput("stride"));
+        auto p3 = CreateParameterFromTorchValue(node->namedInput("padding"));
+        auto p4 = CreateParameterFromTorchValue(node->namedInput("ceil_mode"));
+        auto p5 = CreateParameterFromTorchValue(node->namedInput("count_include_pad"));
+        auto p6 = CreateParameterFromTorchValue(node->namedInput("divisor_override"));
+
+        op->GetParameters()["kernel_size"] = std::make_shared<Parameter>(p1);
+        op->GetParameters()["stride"] = std::make_shared<Parameter>(p2);
+        op->GetParameters()["padding"] = std::make_shared<Parameter>(p3);
+        op->GetParameters()["ceil_mode"] = std::make_shared<Parameter>(p4);
+        op->GetParameters()["count_include_pad"] = std::make_shared<Parameter>(p5);
+        op->GetParameters()["divisor_override"] = std::make_shared<Parameter>(p6);
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(AvgPool3d);
 
 class ReLU : public FuseModulePass {
 public:
@@ -218,7 +239,6 @@ public:
         return "nn.ReLU";
     }
 };
-
 REGISTER_PNNX_FUSE_MODULE_PASS(ReLU);
 
 }// namespace pnnx
