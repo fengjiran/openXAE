@@ -49,59 +49,86 @@ TEST(IRTEST, type_check) {
 TEST(IRTEST, Parameter) {
     //    GTEST_SKIP();
     // null parameter
-    Parameter p0;
-    EXPECT_FALSE(p0.has_value());
-    EXPECT_EQ(p0.type(), ParameterType::kParameterUnknown);
-    EXPECT_EQ(p0.toString(), "None");
+    {
+        Parameter p0;
+        EXPECT_FALSE(p0.has_value());
+        EXPECT_EQ(p0.type(), ParameterType::kParameterUnknown);
+        EXPECT_EQ(p0.toString(), "None");
+    }
 
     // bool parameter
-    Parameter p1(true);
-    EXPECT_EQ(p1.type(), ParameterType::kParameterBool);
-    EXPECT_EQ(p1.toString(), "True");
-    EXPECT_EQ(p1.toValue<bool>(), true);
-    p1 = false;
-    EXPECT_EQ(p1.toString(), "False");
+    {
+        Parameter p1(true);
+        EXPECT_EQ(p1.type(), ParameterType::kParameterBool);
+        EXPECT_EQ(p1.toString(), "True");
+        EXPECT_EQ(p1.toValue<bool>(), true);
+        p1 = false;
+        EXPECT_EQ(p1.toString(), "False");
+    }
 
     // int parameter
-    Parameter p2(-10);
-    EXPECT_EQ(p2.type(), ParameterType::kParameterInt);
-    EXPECT_EQ(p2.toString(), "-10");
-    EXPECT_EQ(p2.toValue<int>(), -10);
+    {
+        Parameter p2(-10);
+        EXPECT_EQ(p2.type(), ParameterType::kParameterInt);
+        EXPECT_EQ(p2.toString(), "-10");
+        EXPECT_EQ(p2.toValue<int>(), -10);
+    }
 
     // float parameter
-    Parameter p3(0.3141592657);
-    EXPECT_EQ(p3.type(), ParameterType::kParameterFloat);
-    EXPECT_EQ(p3.toString(), "3.141593e-01");
-    EXPECT_DOUBLE_EQ(p3.toValue<double>(), 0.3141592657);
-    p3 = 3.14;
-    EXPECT_EQ(p3.type(), ParameterType::kParameterFloat);
-    EXPECT_EQ(p3.toString(), "3.140000e+00");
-    EXPECT_DOUBLE_EQ(p3.toValue<double>(), 3.14);
+    {
+        Parameter p3(0.3141592657);
+        EXPECT_EQ(p3.type(), ParameterType::kParameterFloat);
+        EXPECT_EQ(p3.toString(), "3.141593e-01");
+        EXPECT_DOUBLE_EQ(p3.toValue<double>(), 0.3141592657);
+        p3 = 3.14;
+        EXPECT_EQ(p3.type(), ParameterType::kParameterFloat);
+        EXPECT_EQ(p3.toString(), "3.140000e+00");
+        EXPECT_DOUBLE_EQ(p3.toValue<double>(), 3.14);
+    }
 
     // string parameter
-    Parameter p4("pnnx");
-    EXPECT_EQ(p4.type(), ParameterType::kParameterString);
-    EXPECT_EQ(p4.toString(), "pnnx");
-    EXPECT_EQ(p4.toValue<std::string>(), "pnnx");
+    {
+        Parameter p4("pnnx");
+        EXPECT_EQ(p4.type(), ParameterType::kParameterString);
+        EXPECT_EQ(p4.toString(), "pnnx");
+        EXPECT_EQ(p4.toValue<std::string>(), "pnnx");
+        p4 = "tvm";
+        EXPECT_EQ(p4.toValue<std::string>(), "tvm");
+    }
 
     // array int parameter
-    Parameter p5(std::initializer_list<int>{1, 2, 3, 4, -5});
-    EXPECT_EQ(p5.type(), ParameterType::kParameterArrayInt);
-    EXPECT_EQ(p5.toString(), "(1,2,3,4,-5)");
+    {
+        Parameter p5 = {1, 2, 3, 4, -5};
+        EXPECT_EQ(p5.type(), ParameterType::kParameterArrayInt);
+        EXPECT_EQ(p5.toString(), "(1,2,3,4,-5)");
+        for (auto item: p5.toValue<std::vector<int>>()) {
+            std::cout << item << std::endl;
+        }
+    }
 
-    Parameter p6(std::vector<int>({1, 2, 3, 4, 5}));
-    EXPECT_EQ(p6.type(), ParameterType::kParameterArrayInt);
-    EXPECT_EQ(p6.toString(), "(1,2,3,4,5)");
+    // array int parameter
+    {
+        Parameter p6(std::vector<int>({1, 2, 3, 4, 5}));
+        EXPECT_EQ(p6.type(), ParameterType::kParameterArrayInt);
+        EXPECT_EQ(p6.toString(), "(1,2,3,4,5)");
+        for (auto item: p6.toValue<std::vector<int>>()) {
+            std::cout << item << std::endl;
+        }
+    }
 
     // array float parameter
-    Parameter p7(std::initializer_list<float>{1.0, 0.112, -3.14});
-    EXPECT_EQ(p7.type(), ParameterType::kParameterArrayFloat);
-    EXPECT_EQ(p7.toString(), "(1.000000e+00,1.120000e-01,-3.140000e+00)");
+    {
+        Parameter p7 = {1.0, 0.112, -3.14};
+        EXPECT_EQ(p7.type(), ParameterType::kParameterArrayFloat);
+        EXPECT_EQ(p7.toString(), "(1.000000e+00,1.120000e-01,-3.140000e+00)");
+    }
 
     // complex parameter
-    Parameter p8(std::complex<float>(2, 3));
-    EXPECT_EQ(p8.type(), ParameterType::kParameterComplex);
-    EXPECT_EQ(p8.toString(), "2.000000e+00+3.000000e+00i");
+    {
+        Parameter p8(std::complex<float>(2, 3));
+        EXPECT_EQ(p8.type(), ParameterType::kParameterComplex);
+        EXPECT_EQ(p8.toString(), "2.000000e+00+3.000000e+00i");
+    }
 }
 
 TEST(IRTEST, libtorch) {
@@ -147,7 +174,7 @@ TEST(IRTEST, Attribute) {
 }
 
 TEST(IRTEST, pnnx_graph_load) {
-//    GTEST_SKIP();
+    //    GTEST_SKIP();
     std::string param_path = "test_linear.pnnx.param";
     std::string bin_path = "test_linear.pnnx.bin";
     Graph graph;
@@ -159,7 +186,7 @@ TEST(IRTEST, pnnx_graph_load) {
 }
 
 TEST(IRTEST, create_pnnx_graph) {
-//    GTEST_SKIP();
+    //    GTEST_SKIP();
     Graph graph;
     auto t1 = graph.CreateOperator("pnnx.Input", "pnnx_input_0",
                                    {}, {}, {}, {},

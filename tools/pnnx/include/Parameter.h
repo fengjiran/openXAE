@@ -192,9 +192,6 @@ private:
     T value_{};
 };
 
-// CTAD
-//ParameterImpl(const char*) -> ParameterImpl<std::string>;
-
 class Parameter {
 public:
     Parameter() = default;
@@ -202,11 +199,12 @@ public:
     template<typename T,
              typename = typename std::enable_if_t<!std::is_same_v<Parameter, std::decay_t<T>>>>
     explicit Parameter(T&& val) {
-        if constexpr (is_string_v<T>) {
-            ptr_ = std::make_shared<ParameterImpl<std::string>>(std::string(std::forward<T>(val)));
-        } else {
-            ptr_ = std::make_shared<ParameterImpl<std::decay_t<T>>>(std::forward<T>(val));
-        }
+        SetValue(std::forward<T>(val));
+    }
+
+    template<typename ElemType>
+    Parameter(std::initializer_list<ElemType> il) {
+        SetValue(il);
     }
 
     Parameter(const Parameter&) = default;
@@ -235,7 +233,14 @@ public:
 
     template<typename T>
     void SetValue(T&& val) {
-        ptr_ = std::make_shared<ParameterImpl<std::decay_t<T>>>(std::forward<T>(val));
+        if constexpr (is_string_v<T>) {
+            ptr_ = std::make_shared<ParameterImpl<std::string>>(std::string(std::forward<T>(val)));
+        } else if constexpr (is_std_vector_v<T>) {
+            using elem_type = typename is_vector<std::decay_t<T>>::elem_type;
+            ptr_ = std::make_shared<ParameterImpl<std::vector<elem_type>>>(std::vector<elem_type>(std::forward<T>(val)));
+        } else {
+            ptr_ = std::make_shared<ParameterImpl<std::decay_t<T>>>(std::forward<T>(val));
+        }
     }
 
     NODISCARD bool has_value() const {
