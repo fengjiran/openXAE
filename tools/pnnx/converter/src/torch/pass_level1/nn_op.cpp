@@ -468,9 +468,9 @@ public:
         const auto& weight = mod.attr("weight").toTensor();
         auto p1 = CreateParameterFromTorchValue(convolution->namedInput("groups"));
 
-//        op->GetParameters()["groups"] = std::make_shared<Parameter>(p1);
-//        op->GetParameters()["in_channels"] = weight.size(1) * op->params["groups"].i;
-//        op->GetParameters()["out_channels"] = weight.size(0);
+        op->GetParameters()["groups"] = std::make_shared<Parameter>(p1);
+        op->GetParameters()["in_channels"] = std::make_shared<Parameter>(weight.size(1) * p1.toValue<int>());
+        op->GetParameters()["out_channels"] = std::make_shared<Parameter>(weight.size(0));
 //        op->GetParameters()["kernel_size"] = Parameter{weight.size(2)};
 //        op->GetParameters()["stride"] = convolution->namedInput("stride");
 //        if (pad) {

@@ -233,13 +233,18 @@ public:
 
     template<typename T>
     void SetValue(T&& val) {
+        using U = std::decay_t<T>;
         if constexpr (is_string_v<T>) {
             ptr_ = std::make_shared<ParameterImpl<std::string>>(std::string(std::forward<T>(val)));
         } else if constexpr (is_std_vector_v<T>) {
-            using elem_type = typename is_vector<std::decay_t<T>>::elem_type;
+            using elem_type = typename is_vector<U>::elem_type;
             ptr_ = std::make_shared<ParameterImpl<std::vector<elem_type>>>(std::vector<elem_type>(std::forward<T>(val)));
+        } else if constexpr (std::is_integral_v<U> && !std::is_same_v<U, bool>) {
+            ptr_ = std::make_shared<ParameterImpl<int>>((int) std::forward<T>(val));
+        } else if constexpr (std::is_floating_point_v<U>) {
+            ptr_ = std::make_shared<ParameterImpl<float>>((float) std::forward<T>(val));
         } else {
-            ptr_ = std::make_shared<ParameterImpl<std::decay_t<T>>>(std::forward<T>(val));
+            ptr_ = std::make_shared<ParameterImpl<U>>(std::forward<T>(val));
         }
     }
 

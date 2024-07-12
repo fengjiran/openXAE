@@ -16,6 +16,7 @@ TEST(IRTEST, type_check) {
     static_assert(std::is_integral_v<uint8_t>);
     static_assert(std::is_integral_v<short>);
     static_assert(std::is_integral_v<long long>);
+    static_assert(std::is_integral_v<int64_t>);
     static_assert(std::is_integral_v<bool>);
     static_assert(std::is_floating_point_v<float>);
     static_assert(std::is_floating_point_v<double>);
@@ -72,6 +73,10 @@ TEST(IRTEST, Parameter) {
         EXPECT_EQ(p2.type(), ParameterType::kParameterInt);
         EXPECT_EQ(p2.toString(), "-10");
         EXPECT_EQ(p2.toValue<int>(), -10);
+
+        int64_t a = 20;
+        p2 = a;
+        EXPECT_EQ(p2.toValue<int>(), 20);
     }
 
     // float parameter
@@ -79,11 +84,11 @@ TEST(IRTEST, Parameter) {
         Parameter p3(0.3141592657);
         EXPECT_EQ(p3.type(), ParameterType::kParameterFloat);
         EXPECT_EQ(p3.toString(), "3.141593e-01");
-        EXPECT_DOUBLE_EQ(p3.toValue<double>(), 0.3141592657);
+        EXPECT_FLOAT_EQ(p3.toValue<float>(), 0.3141592657);
         p3 = 3.14;
         EXPECT_EQ(p3.type(), ParameterType::kParameterFloat);
         EXPECT_EQ(p3.toString(), "3.140000e+00");
-        EXPECT_DOUBLE_EQ(p3.toValue<double>(), 3.14);
+        EXPECT_FLOAT_EQ(p3.toValue<float>(), 3.14);
     }
 
     // string parameter
@@ -101,9 +106,7 @@ TEST(IRTEST, Parameter) {
         Parameter p5 = {1, 2, 3, 4, -5};
         EXPECT_EQ(p5.type(), ParameterType::kParameterArrayInt);
         EXPECT_EQ(p5.toString(), "(1,2,3,4,-5)");
-        for (auto item: p5.toValue<std::vector<int>>()) {
-            std::cout << item << std::endl;
-        }
+        EXPECT_EQ(p5.toValue<std::vector<int>>(), std::vector<int>({1, 2, 3, 4, -5}));
     }
 
     // array int parameter
@@ -111,9 +114,7 @@ TEST(IRTEST, Parameter) {
         Parameter p6(std::vector<int>({1, 2, 3, 4, 5}));
         EXPECT_EQ(p6.type(), ParameterType::kParameterArrayInt);
         EXPECT_EQ(p6.toString(), "(1,2,3,4,5)");
-        for (auto item: p6.toValue<std::vector<int>>()) {
-            std::cout << item << std::endl;
-        }
+        EXPECT_EQ(p6.toValue<std::vector<int>>(), std::vector<int>({1, 2, 3, 4, 5}));
     }
 
     // array float parameter
@@ -121,6 +122,7 @@ TEST(IRTEST, Parameter) {
         Parameter p7 = {1.0, 0.112, -3.14};
         EXPECT_EQ(p7.type(), ParameterType::kParameterArrayFloat);
         EXPECT_EQ(p7.toString(), "(1.000000e+00,1.120000e-01,-3.140000e+00)");
+        EXPECT_EQ(p7.toValue<std::vector<double>>(), std::vector<double>({1.0, 0.112, -3.14}));
     }
 
     // complex parameter
