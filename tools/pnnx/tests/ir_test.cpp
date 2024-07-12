@@ -115,6 +115,8 @@ TEST(IRTEST, Parameter) {
         EXPECT_EQ(p6.type(), ParameterType::kParameterArrayInt);
         EXPECT_EQ(p6.toString(), "(1,2,3,4,5)");
         EXPECT_EQ(p6.toValue<std::vector<int>>(), std::vector<int>({1, 2, 3, 4, 5}));
+        p6 = {1, 2, 3};
+        EXPECT_EQ(p6.toValue<std::vector<int>>(), std::vector<int>({1, 2, 3}));
     }
 
     // array float parameter
@@ -122,7 +124,17 @@ TEST(IRTEST, Parameter) {
         Parameter p7 = {1.0, 0.112, -3.14};
         EXPECT_EQ(p7.type(), ParameterType::kParameterArrayFloat);
         EXPECT_EQ(p7.toString(), "(1.000000e+00,1.120000e-01,-3.140000e+00)");
-        EXPECT_EQ(p7.toValue<std::vector<double>>(), std::vector<double>({1.0, 0.112, -3.14}));
+        EXPECT_EQ(p7.toValue<std::vector<float>>(), std::vector<float>({1.0, 0.112, -3.14}));
+        p7 = {1.0, 2.0, 3.0};
+        EXPECT_EQ(p7.toValue<std::vector<float>>(), std::vector<float>({1.0, 2.0, 3.0}));
+    }
+
+    // array string parameter
+    {
+        Parameter p = {"open", "XAE"};
+        EXPECT_EQ(p.type(), ParameterType::kParameterArrayString);
+        EXPECT_EQ(p.toString(), "(open,XAE)");
+        EXPECT_EQ(p.toValue<std::vector<std::string>>(), std::vector<std::string>({"open", "XAE"}));
     }
 
     // complex parameter
