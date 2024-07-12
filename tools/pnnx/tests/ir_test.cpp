@@ -19,7 +19,8 @@ TEST(IRTEST, type_check) {
     static_assert(std::is_integral_v<bool>);
     static_assert(std::is_floating_point_v<float>);
     static_assert(std::is_floating_point_v<double>);
-    static_assert(std::is_same_v<std::decay_t<const char*>, std::string> || std::is_convertible_v<const char*, std::string>);
+    static_assert(!std::is_same_v<std::decay_t<const char*>, std::string>);
+    static_assert(std::is_convertible_v<const char*, std::string>);
 
     static_assert(is_std_vector_int_v<std::vector<int>>);
     static_assert(is_std_vector_float_v<std::vector<float>>);
@@ -81,8 +82,7 @@ TEST(IRTEST, Parameter) {
     Parameter p4("pnnx");
     EXPECT_EQ(p4.type(), ParameterType::kParameterString);
     EXPECT_EQ(p4.toString(), "pnnx");
-//    EXPECT_EQ(p4.toValue<std::string>(), "pnnx");
-    std::cout << p4.toValue<std::string>() << std::endl;
+    EXPECT_EQ(p4.toValue<std::string>(), "pnnx");
 
     // array int parameter
     Parameter p5(std::initializer_list<int>{1, 2, 3, 4, -5});

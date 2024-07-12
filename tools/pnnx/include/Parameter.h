@@ -112,7 +112,7 @@ public:
     explicit ParameterImpl(U&& val)
         : type_(GetParameterType<std::decay_t<U>>()), value_(std::forward<U>(val)) {}
 
-    T toValue() const {
+    NODISCARD T toValue() const {
         return value_;
     }
 
@@ -193,7 +193,7 @@ private:
 };
 
 // CTAD
-ParameterImpl(const char*) -> ParameterImpl<std::string>;
+//ParameterImpl(const char*) -> ParameterImpl<std::string>;
 
 class Parameter {
 public:
@@ -201,12 +201,13 @@ public:
 
     template<typename T,
              typename = typename std::enable_if_t<!std::is_same_v<Parameter, std::decay_t<T>>>>
-    explicit Parameter(T&& val)
-        : ptr_(std::make_shared<ParameterImpl<std::decay_t<T>>>(std::forward<T>(val))) {}
-
-    template<>
-    explicit Parameter<const char*>(const char* val)
-            : ptr_(new ParameterImpl(val)) {}
+    explicit Parameter(T&& val) {
+        if constexpr (is_string_v<T>) {
+            ptr_ = std::make_shared<ParameterImpl<std::string>>(std::string(std::forward<T>(val)));
+        } else {
+            ptr_ = std::make_shared<ParameterImpl<std::decay_t<T>>>(std::forward<T>(val));
+        }
+    }
 
     Parameter(const Parameter&) = default;
 
