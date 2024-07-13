@@ -112,7 +112,11 @@ public:
     explicit ParameterImpl(U&& val)
         : type_(GetParameterType<std::decay_t<U>>()), value_(std::forward<U>(val)) {}
 
-    NODISCARD T toValue() const {
+    NODISCARD const T& toValue() const {
+        return value_;
+    }
+
+    NODISCARD T& toValue() {
         return value_;
     }
 
@@ -269,7 +273,21 @@ public:
     }
 
     template<typename T>
-    T toValue() const {
+    const T& toValue() const {
+        if (!has_value()) {
+            throw std::bad_cast();
+        }
+
+        auto ptr = std::dynamic_pointer_cast<ParameterImpl<T>>(ptr_);
+        if (ptr) {
+            return ptr->toValue();
+        } else {
+            throw std::bad_cast();
+        }
+    }
+
+    template<typename T>
+    T& toValue() {
         if (!has_value()) {
             throw std::bad_cast();
         }

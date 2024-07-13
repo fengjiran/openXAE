@@ -74,9 +74,11 @@ TEST(IRTEST, Parameter) {
         EXPECT_EQ(p2.toString(), "-10");
         EXPECT_EQ(p2.toValue<int>(), -10);
 
-        int64_t a = 20;
-        p2 = a;
+        p2 = (int64_t) 20;
         EXPECT_EQ(p2.toValue<int>(), 20);
+
+        p2.toValue<int>() = 10;
+        EXPECT_EQ(p2.toValue<int>(), 10);
     }
 
     // float parameter
