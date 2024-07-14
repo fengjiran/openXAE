@@ -920,6 +920,26 @@ public:
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(Dropout3d);
 
+class ELU : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.activation.ELU";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.ELU";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const auto* elu = FindNodeByKind(graph, "aten::elu");
+
+        op->GetParameters()["alpha"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(elu->namedInput("alpha")));
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(ELU);
+
 class ReLU : public FuseModulePass {
 public:
     std::string MatchTypeStr() const override {
