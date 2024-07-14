@@ -884,6 +884,20 @@ public:
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(ConvTranspose3d);
 
+class Dropout : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.dropout.Dropout";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.Dropout";
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Dropout);
+
+
+
 class ReLU : public FuseModulePass {
 public:
     std::string MatchTypeStr() const override {
