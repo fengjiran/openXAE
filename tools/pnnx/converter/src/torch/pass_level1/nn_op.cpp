@@ -896,7 +896,29 @@ public:
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(Dropout);
 
+class Dropout2d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.dropout.Dropout2d";
+    }
 
+    std::string TypeStr() const override {
+        return "nn.Dropout2d";
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Dropout2d);
+
+class Dropout3d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.dropout.Dropout3d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.Dropout3d";
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Dropout3d);
 
 class ReLU : public FuseModulePass {
 public:
