@@ -619,6 +619,97 @@ public:
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(Conv2d);
 
+class Conv3d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.conv.Conv3d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.Conv3d";
+    }
+
+    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph, const torch::jit::Module& mod) const override {
+        const auto* convolution = FindNodeByKind(graph, "aten::_convolution");
+        const auto* convolution_mode = FindNodeByKind(graph, "aten::_convolution_mode");
+        const auto* pad = FindNodeByKind(graph, "aten::pad");
+        const auto* reflection_pad3d = FindNodeByKind(graph, "aten::reflection_pad3d");
+        const auto* replication_pad3d = FindNodeByKind(graph, "aten::replication_pad3d");
+
+        if (convolution_mode) {
+            convolution = convolution_mode;
+        }
+
+        const auto& weight = mod.attr("weight").toTensor();
+
+        op->GetParameters()["groups"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(convolution->namedInput("groups")));
+        const auto& groups = op->GetParameters()["groups"]->toValue<int>();
+        op->GetParameters()["in_channels"] = std::make_shared<Parameter>(weight.size(1) * groups);
+        op->GetParameters()["out_channels"] = std::make_shared<Parameter>(weight.size(0));
+        op->GetParameters()["kernel_size"] = std::make_shared<Parameter>(Parameter({weight.size(2), weight.size(3), weight.size(4)}));
+        op->GetParameters()["stride"] = std::make_shared<Parameter>(CreateParameterFromTorchValue(convolution->namedInput("stride")));
+        if (pad) {
+            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(pad->namedInput("mode")));
+            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(pad->namedInput("pad")));
+            auto& padding = op->GetParameters()["padding"]->toValue<std::vector<int>>();
+            if (padding.size() == 6) {
+                // Conv3d only accepts tuple of three integers
+                if (padding[0] == padding[1] && padding[1] == padding[2] && padding[2] == padding[3] && padding[3] == padding[4] && padding[4] == padding[5]) {
+                    padding.resize(3);
+                } else if (padding[0] == padding[3] && padding[1] == padding[4] && padding[2] == padding[5] && padding[0] != padding[1] && padding[1] != padding[2]) {
+                    padding.resize(0);
+                    op->GetParameters()["padding"] = std::make_shared<Parameter>("same");
+                }
+            }
+        } else if (reflection_pad3d) {
+            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>("reflect");
+            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(reflection_pad3d->namedInput("padding")));
+            auto& padding = op->GetParameters()["padding"]->toValue<std::vector<int>>();
+            if (padding.size() == 6) {
+                // Conv3d only accepts tuple of three integers
+                if (padding[0] == padding[1] && padding[1] == padding[2] && padding[2] == padding[3] && padding[3] == padding[4] && padding[4] == padding[5]) {
+                    padding.resize(3);
+                } else if (padding[0] == padding[3] && padding[1] == padding[4] && padding[2] == padding[5] && padding[0] != padding[1] && padding[1] != padding[2]) {
+                    padding.resize(0);
+                    op->GetParameters()["padding"] = std::make_shared<Parameter>("same");
+                }
+            }
+        } else if (replication_pad3d) {
+            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>("replicate");
+            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(replication_pad3d->namedInput("padding")));
+            auto& padding = op->GetParameters()["padding"]->toValue<std::vector<int>>();
+            if (padding.size() == 6) {
+                // Conv3d only accepts tuple of three integers
+                if (padding[0] == padding[1] && padding[1] == padding[2] && padding[2] == padding[3] && padding[3] == padding[4] && padding[4] == padding[5]) {
+                    padding.resize(3);
+                } else if (padding[0] == padding[3] && padding[1] == padding[4] && padding[2] == padding[5] && padding[0] != padding[1] && padding[1] != padding[2]) {
+                    padding.resize(0);
+                    op->GetParameters()["padding"] = std::make_shared<Parameter>("same");
+                }
+            }
+        } else {
+            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>("zeros");
+            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(convolution->namedInput("padding")));
+        }
+        op->GetParameters()["dilation"] = std::make_shared<Parameter>(CreateParameterFromTorchValue(convolution->namedInput("dilation")));
+        op->GetParameters()["bias"] = std::make_shared<Parameter>(mod.hasattr("bias"));
+
+        op->GetAttributes()["weight"] = std::make_shared<Attribute>(mod.attr("weight").toTensor());
+        if (mod.hasattr("bias")) {
+            op->GetAttributes()["bias"] = std::make_shared<Attribute>(mod.attr("bias").toTensor());
+        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Conv3d);
+
+
+
 class ReLU : public FuseModulePass {
 public:
     std::string MatchTypeStr() const override {
