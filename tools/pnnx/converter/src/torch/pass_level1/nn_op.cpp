@@ -456,66 +456,71 @@ public:
         }
 
         const auto& weight = mod.attr("weight").toTensor();
-        auto p1 = CreateParameterFromTorchValue(convolution->namedInput("groups"));
 
-        op->GetParameters()["groups"] = std::make_shared<Parameter>(p1);
-        op->GetParameters()["in_channels"] = std::make_shared<Parameter>(weight.size(1) * p1.toValue<int>());
+        op->GetParameters()["groups"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(convolution->namedInput("groups")));
+        const auto& groups = op->GetParameters()["groups"]->toValue<int>();
+        op->GetParameters()["in_channels"] = std::make_shared<Parameter>(weight.size(1) * groups);
         op->GetParameters()["out_channels"] = std::make_shared<Parameter>(weight.size(0));
         op->GetParameters()["kernel_size"] = std::make_shared<Parameter>(weight.size(2));
         op->GetParameters()["stride"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(convolution->namedInput("stride")));
-        //        if (pad) {
-        //            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>(
-        //                    CreateParameterFromTorchValue(pad->namedInput("mode")));
-        //            op->GetParameters()["padding"] = std::make_shared<Parameter>(
-        //                    CreateParameterFromTorchValue(pad->namedInput("pad")));
-        //            auto& padding = op->GetParameters()["padding"]->toValue<std::vector<int>>();
-        //            if (padding.size() == 2) {
-        //                // Conv1d only accepts tuple of one integer
-        //                if (padding[0] == padding[1]) {
-        //                    padding.resize(1);
-        //                } else if (padding[0] != padding[1]) {
-        //                    padding.resize(0);
-        //                    op->GetParameters()["padding"] = std::make_shared<Parameter>("same");
-        //                }
-        //            }
-        //        } else if (reflection_pad1d) {
-        //            op->params["padding_mode"] = "reflect";
-        //            op->params["padding"] = reflection_pad1d->namedInput("padding");
-        //            std::vector<int>& padding = op->params["padding"].ai;
-        //            if (padding.size() == 2) {
-        //                // Conv1d only accepts tuple of one integer
-        //                if (padding[0] == padding[1]) {
-        //                    padding.resize(1);
-        //                } else if (padding[0] != padding[1]) {
-        //                    padding.resize(0);
-        //                    op->params["padding"].s = "same";
-        //                }
-        //            }
-        //        } else if (replication_pad1d) {
-        //            op->params["padding_mode"] = "replicate";
-        //            op->params["padding"] = replication_pad1d->namedInput("padding");
-        //            std::vector<int>& padding = op->params["padding"].ai;
-        //            if (padding.size() == 2) {
-        //                // Conv1d only accepts tuple of one integer
-        //                if (padding[0] == padding[1]) {
-        //                    padding.resize(1);
-        //                } else if (padding[0] != padding[1]) {
-        //                    padding.resize(0);
-        //                    op->params["padding"].s = "same";
-        //                }
-        //            }
-        //        } else {
-        //            op->params["padding_mode"] = "zeros";
-        //            op->params["padding"] = convolution->namedInput("padding");
-        //        }
-        //        op->params["dilation"] = convolution->namedInput("dilation");
-        //        op->params["bias"] = mod.hasattr("bias");
-        //
-        //        op->attrs["weight"] = weight;
-        //        if (mod.hasattr("bias")) {
-        //            op->attrs["bias"] = mod.attr("bias").toTensor();
-        //        }
+        if (pad) {
+            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(pad->namedInput("mode")));
+            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(pad->namedInput("pad")));
+            auto& padding = op->GetParameters()["padding"]->toValue<std::vector<int>>();
+            if (padding.size() == 2) {
+                // Conv1d only accepts tuple of one integer
+                if (padding[0] == padding[1]) {
+                    padding.resize(1);
+                } else if (padding[0] != padding[1]) {
+                    padding.resize(0);
+                    op->GetParameters()["padding"] = std::make_shared<Parameter>("same");
+                }
+            }
+        } else if (reflection_pad1d) {
+            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>("reflect");
+            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(reflection_pad1d->namedInput("padding")));
+            auto& padding = op->GetParameters()["padding"]->toValue<std::vector<int>>();
+            if (padding.size() == 2) {
+                // Conv1d only accepts tuple of one integer
+                if (padding[0] == padding[1]) {
+                    padding.resize(1);
+                } else if (padding[0] != padding[1]) {
+                    padding.resize(0);
+                    op->GetParameters()["padding"] = std::make_shared<Parameter>("same");
+                }
+            }
+        } else if (replication_pad1d) {
+            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>("replicate");
+            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(replication_pad1d->namedInput("padding")));
+            auto& padding = op->GetParameters()["padding"]->toValue<std::vector<int>>();
+            if (padding.size() == 2) {
+                // Conv1d only accepts tuple of one integer
+                if (padding[0] == padding[1]) {
+                    padding.resize(1);
+                } else if (padding[0] != padding[1]) {
+                    padding.resize(0);
+                    op->GetParameters()["padding"] = std::make_shared<Parameter>("same");
+                }
+            }
+        } else {
+            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>("zeros");
+            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(convolution->namedInput("padding")));
+        }
+        op->GetParameters()["dilation"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(convolution->namedInput("dilation")));
+        op->GetParameters()["bias"] = std::make_shared<Parameter>(mod.hasattr("bias"));
+
+        op->GetAttributes()["weight"] = std::make_shared<Attribute>(mod.attr("weight").toTensor());
+        if (mod.hasattr("bias")) {
+            op->GetAttributes()["bias"] = std::make_shared<Attribute>(mod.attr("bias").toTensor());
+        }
     }
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(Conv1d);
