@@ -785,6 +785,55 @@ public:
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(ConvTranspose1d);
 
+class ConvTranspose2d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.conv.ConvTranspose2d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.ConvTranspose2d";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
+        const auto* convolution = FindNodeByKind(graph, "aten::_convolution");
+        auto& params = op->GetParameters();
+        const auto& weight = mod.attr("weight").toTensor();
+
+        params["groups"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(convolution->namedInput("groups")));
+        const auto& groups = params["groups"]->toValue<int>();
+        params["in_channels"] = std::make_shared<Parameter>(weight.size(0));
+        params["out_channels"] = std::make_shared<Parameter>(weight.size(1) * groups);
+        params["kernel_size"] = std::make_shared<Parameter>(Parameter({weight.size(2), weight.size(3)}));
+        params["stride"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(convolution->namedInput("stride")));
+        params["padding"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(convolution->namedInput("padding")));
+        params["output_padding"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(convolution->namedInput("output_padding")));
+        params["dilation"] = std::make_shared<Parameter>(CreateParameterFromTorchValue(convolution->namedInput("dilation")));
+        params["bias"] = std::make_shared<Parameter>(mod.hasattr("bias"));
+
+        op->GetAttributes()["weight"] = std::make_shared<Attribute>(mod.attr("weight").toTensor());
+        if (mod.hasattr("bias")) {
+            op->GetAttributes()["bias"] = std::make_shared<Attribute>(mod.attr("bias").toTensor());
+        }
+
+        if (op->GetInputOperands().size() > 1) {
+            std::cerr << "ConvTranspose2d arg output_size detected and dropped !\n";
+
+            for (size_t i = 1; i < op->GetInputOperands().size(); i++) {
+                op->GetInputOperands()[i]->RemoveConsumer(op);
+            }
+            op->GetInputOperands().resize(1);
+        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(ConvTranspose2d);
+
 class ReLU : public FuseModulePass {
 public:
     std::string MatchTypeStr() const override {
