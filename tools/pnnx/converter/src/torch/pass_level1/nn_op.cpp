@@ -17,7 +17,8 @@ public:
         return "nn.AdaptiveAvgPool1d";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
         // Get adaptive avg pool1d node
         const auto* node = FindNodeByKind(graph, "aten::adaptive_avg_pool1d");
         op->GetParameters()["output_size"] = std::make_shared<Parameter>(
@@ -36,7 +37,8 @@ public:
         return "nn.AdaptiveAvgPool2d";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
         // Get adaptive avg pool2d node
         const auto* node = FindNodeByKind(graph, "aten::adaptive_avg_pool2d");
         op->GetParameters()["output_size"] = std::make_shared<Parameter>(
@@ -55,7 +57,8 @@ public:
         return "nn.AdaptiveAvgPool3d";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
         // Get adaptive avg pool3d node
         const auto* node = FindNodeByKind(graph, "aten::adaptive_avg_pool3d");
         op->GetParameters()["output_size"] = std::make_shared<Parameter>(
@@ -74,13 +77,15 @@ public:
         return "nn.AdaptiveMaxPool1d";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
         // Get adaptive max pool1d node
         const auto* node = FindNodeByKind(graph, "aten::adaptive_max_pool1d");
+        auto& params = op->GetParameters();
 
-        op->GetParameters()["output_size"] = std::make_shared<Parameter>(
+        params["output_size"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("output_size")));
-        op->GetParameters()["return_indices"] = std::make_shared<Parameter>(
+        params["return_indices"] = std::make_shared<Parameter>(
                 graph->outputs()[0]->node()->kind() == c10::prim::TupleConstruct ? true : false);
     }
 };
@@ -96,13 +101,15 @@ public:
         return "nn.AdaptiveMaxPool2d";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
         // Get adaptive max pool2d node
         const auto* node = FindNodeByKind(graph, "aten::adaptive_max_pool2d");
+        auto& params = op->GetParameters();
 
-        op->GetParameters()["output_size"] = std::make_shared<Parameter>(
+        params["output_size"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("output_size")));
-        op->GetParameters()["return_indices"] = std::make_shared<Parameter>(
+        params["return_indices"] = std::make_shared<Parameter>(
                 graph->outputs()[0]->node()->kind() == c10::prim::TupleConstruct ? true : false);
     }
 };
@@ -118,13 +125,15 @@ public:
         return "nn.AdaptiveMaxPool3d";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
         // Get adaptive max pool3d node
         const auto* node = FindNodeByKind(graph, "aten::adaptive_max_pool3d");
+        auto& params = op->GetParameters();
 
-        op->GetParameters()["output_size"] = std::make_shared<Parameter>(
+        params["output_size"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("output_size")));
-        op->GetParameters()["return_indices"] = std::make_shared<Parameter>(
+        params["return_indices"] = std::make_shared<Parameter>(
                 graph->outputs()[0]->node()->kind() == c10::prim::TupleConstruct ? true : false);
     }
 };
@@ -152,19 +161,21 @@ public:
         return "nn.AvgPool1d";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
         // Get avg pool1d node
         const auto* node = FindNodeByKind(graph, "aten::avg_pool1d");
+        auto& params = op->GetParameters();
 
-        op->GetParameters()["kernel_size"] = std::make_shared<Parameter>(
+        params["kernel_size"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("kernel_size")));
-        op->GetParameters()["stride"] = std::make_shared<Parameter>(
+        params["stride"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("stride")));
-        op->GetParameters()["padding"] = std::make_shared<Parameter>(
+        params["padding"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("padding")));
-        op->GetParameters()["ceil_mode"] = std::make_shared<Parameter>(
+        params["ceil_mode"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("ceil_mode")));
-        op->GetParameters()["count_include_pad"] = std::make_shared<Parameter>(
+        params["count_include_pad"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("count_include_pad")));
     }
 };
@@ -180,20 +191,22 @@ public:
         return "nn.AvgPool2d";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
         const auto* node = FindNodeByKind(graph, "aten::avg_pool2d");
+        auto& params = op->GetParameters();
 
-        op->GetParameters()["kernel_size"] = std::make_shared<Parameter>(
+        params["kernel_size"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("kernel_size")));
-        op->GetParameters()["stride"] = std::make_shared<Parameter>(
+        params["stride"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("stride")));
-        op->GetParameters()["padding"] = std::make_shared<Parameter>(
+        params["padding"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("padding")));
-        op->GetParameters()["ceil_mode"] = std::make_shared<Parameter>(
+        params["ceil_mode"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("ceil_mode")));
-        op->GetParameters()["count_include_pad"] = std::make_shared<Parameter>(
+        params["count_include_pad"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("count_include_pad")));
-        op->GetParameters()["divisor_override"] = std::make_shared<Parameter>(
+        params["divisor_override"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("divisor_override")));
     }
 };
@@ -209,20 +222,22 @@ public:
         return "nn.AvgPool3d";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
         const auto* node = FindNodeByKind(graph, "aten::avg_pool3d");
+        auto& params = op->GetParameters();
 
-        op->GetParameters()["kernel_size"] = std::make_shared<Parameter>(
+        params["kernel_size"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("kernel_size")));
-        op->GetParameters()["stride"] = std::make_shared<Parameter>(
+        params["stride"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("stride")));
-        op->GetParameters()["padding"] = std::make_shared<Parameter>(
+        params["padding"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("padding")));
-        op->GetParameters()["ceil_mode"] = std::make_shared<Parameter>(
+        params["ceil_mode"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("ceil_mode")));
-        op->GetParameters()["count_include_pad"] = std::make_shared<Parameter>(
+        params["count_include_pad"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("count_include_pad")));
-        op->GetParameters()["divisor_override"] = std::make_shared<Parameter>(
+        params["divisor_override"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("divisor_override")));
     }
 };
@@ -238,15 +253,17 @@ public:
         return "nn.BatchNorm1d";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph, const torch::jit::Module& mod) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
         const auto* bn = FindNodeByKind(graph, "aten::batch_norm");
-
+        auto& params = op->GetParameters();
         const auto& running_mean = mod.attr("running_mean").toTensor();
         const auto& running_var = mod.attr("running_var").toTensor();
 
-        op->GetParameters()["num_features"] = std::make_shared<Parameter>(running_mean.size(0));
-        op->GetParameters()["eps"] = std::make_shared<Parameter>(CreateParameterFromTorchValue(bn->namedInput("eps")));
-        op->GetParameters()["affine"] = std::make_shared<Parameter>(mod.hasattr("weight") && mod.hasattr("bias"));
+        params["num_features"] = std::make_shared<Parameter>(running_mean.size(0));
+        params["eps"] = std::make_shared<Parameter>(CreateParameterFromTorchValue(bn->namedInput("eps")));
+        params["affine"] = std::make_shared<Parameter>(mod.hasattr("weight") && mod.hasattr("bias"));
 
         op->GetAttributes()["running_mean"] = std::make_shared<Attribute>(running_mean);
         op->GetAttributes()["running_var"] = std::make_shared<Attribute>(running_var);
@@ -268,15 +285,17 @@ public:
         return "nn.BatchNorm2d";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph, const torch::jit::Module& mod) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
         const auto* bn = FindNodeByKind(graph, "aten::batch_norm");
-
+        auto& params = op->GetParameters();
         const auto& running_mean = mod.attr("running_mean").toTensor();
         const auto& running_var = mod.attr("running_var").toTensor();
 
-        op->GetParameters()["num_features"] = std::make_shared<Parameter>(running_mean.size(0));
-        op->GetParameters()["eps"] = std::make_shared<Parameter>(CreateParameterFromTorchValue(bn->namedInput("eps")));
-        op->GetParameters()["affine"] = std::make_shared<Parameter>(mod.hasattr("weight") && mod.hasattr("bias"));
+        params["num_features"] = std::make_shared<Parameter>(running_mean.size(0));
+        params["eps"] = std::make_shared<Parameter>(CreateParameterFromTorchValue(bn->namedInput("eps")));
+        params["affine"] = std::make_shared<Parameter>(mod.hasattr("weight") && mod.hasattr("bias"));
 
         op->GetAttributes()["running_mean"] = std::make_shared<Attribute>(running_mean);
         op->GetAttributes()["running_var"] = std::make_shared<Attribute>(running_var);
@@ -298,15 +317,17 @@ public:
         return "nn.BatchNorm3d";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph, const torch::jit::Module& mod) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
         const auto* bn = FindNodeByKind(graph, "aten::batch_norm");
-
         const auto& running_mean = mod.attr("running_mean").toTensor();
         const auto& running_var = mod.attr("running_var").toTensor();
+        auto& params = op->GetParameters();
 
-        op->GetParameters()["num_features"] = std::make_shared<Parameter>(running_mean.size(0));
-        op->GetParameters()["eps"] = std::make_shared<Parameter>(CreateParameterFromTorchValue(bn->namedInput("eps")));
-        op->GetParameters()["affine"] = std::make_shared<Parameter>(mod.hasattr("weight") && mod.hasattr("bias"));
+        params["num_features"] = std::make_shared<Parameter>(running_mean.size(0));
+        params["eps"] = std::make_shared<Parameter>(CreateParameterFromTorchValue(bn->namedInput("eps")));
+        params["affine"] = std::make_shared<Parameter>(mod.hasattr("weight") && mod.hasattr("bias"));
 
         op->GetAttributes()["running_mean"] = std::make_shared<Attribute>(running_mean);
         op->GetAttributes()["running_var"] = std::make_shared<Attribute>(running_var);
@@ -328,7 +349,8 @@ public:
         return "nn.CELU";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
         const torch::jit::Node* celu = FindNodeByKind(graph, "aten::celu");
 
         op->GetParameters()["alpha"] = std::make_shared<Parameter>(
@@ -347,7 +369,8 @@ public:
         return "nn.ChannelShuffle";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
         const auto* node = FindNodeByKind(graph, "aten::channel_shuffle");
 
         op->GetParameters()["groups"] = std::make_shared<Parameter>(
@@ -366,17 +389,18 @@ public:
         return "nn.ConstantPad1d";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
         const torch::jit::Node* pad = FindNodeByKind(graph, "aten::pad");
         const torch::jit::Node* constant_pad_nd = FindNodeByKind(graph, "aten::constant_pad_nd");
-
+        auto& params = op->GetParameters();
         if (!pad) {
             pad = constant_pad_nd;
         }
 
-        op->GetParameters()["padding"] = std::make_shared<Parameter>(
+        params["padding"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(pad->namedInput("pad")));
-        op->GetParameters()["value"] = std::make_shared<Parameter>(
+        params["value"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(pad->namedInput("value")));
     }
 };
@@ -392,17 +416,18 @@ public:
         return "nn.ConstantPad2d";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
         const torch::jit::Node* pad = FindNodeByKind(graph, "aten::pad");
         const torch::jit::Node* constant_pad_nd = FindNodeByKind(graph, "aten::constant_pad_nd");
-
+        auto& params = op->GetParameters();
         if (!pad) {
             pad = constant_pad_nd;
         }
 
-        op->GetParameters()["padding"] = std::make_shared<Parameter>(
+        params["padding"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(pad->namedInput("pad")));
-        op->GetParameters()["value"] = std::make_shared<Parameter>(
+        params["value"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(pad->namedInput("value")));
     }
 };
@@ -418,17 +443,18 @@ public:
         return "nn.ConstantPad3d";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
         const torch::jit::Node* pad = FindNodeByKind(graph, "aten::pad");
         const torch::jit::Node* constant_pad_nd = FindNodeByKind(graph, "aten::constant_pad_nd");
-
+        auto& params = op->GetParameters();
         if (!pad) {
             pad = constant_pad_nd;
         }
 
-        op->GetParameters()["padding"] = std::make_shared<Parameter>(
+        params["padding"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(pad->namedInput("pad")));
-        op->GetParameters()["value"] = std::make_shared<Parameter>(
+        params["value"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(pad->namedInput("value")));
     }
 };
@@ -444,79 +470,81 @@ public:
         return "nn.Conv1d";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph, const torch::jit::Module& mod) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
         const auto* convolution = FindNodeByKind(graph, "aten::_convolution");
         const auto* convolution_mode = FindNodeByKind(graph, "aten::_convolution_mode");
         const auto* pad = FindNodeByKind(graph, "aten::pad");
         const auto* reflection_pad1d = FindNodeByKind(graph, "aten::reflection_pad1d");
         const auto* replication_pad1d = FindNodeByKind(graph, "aten::replication_pad1d");
-
+        auto& params = op->GetParameters();
         if (convolution_mode) {
             convolution = convolution_mode;
         }
 
         const auto& weight = mod.attr("weight").toTensor();
 
-        op->GetParameters()["groups"] = std::make_shared<Parameter>(
+        params["groups"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(convolution->namedInput("groups")));
-        const auto& groups = op->GetParameters()["groups"]->toValue<int>();
-        op->GetParameters()["in_channels"] = std::make_shared<Parameter>(weight.size(1) * groups);
-        op->GetParameters()["out_channels"] = std::make_shared<Parameter>(weight.size(0));
-        op->GetParameters()["kernel_size"] = std::make_shared<Parameter>(Parameter({weight.size(2)}));
-        op->GetParameters()["stride"] = std::make_shared<Parameter>(
+        const auto& groups = params["groups"]->toValue<int>();
+        params["in_channels"] = std::make_shared<Parameter>(weight.size(1) * groups);
+        params["out_channels"] = std::make_shared<Parameter>(weight.size(0));
+        params["kernel_size"] = std::make_shared<Parameter>(Parameter({weight.size(2)}));
+        params["stride"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(convolution->namedInput("stride")));
 
         if (pad) {
-            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>(
+            params["padding_mode"] = std::make_shared<Parameter>(
                     CreateParameterFromTorchValue(pad->namedInput("mode")));
-            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+            params["padding"] = std::make_shared<Parameter>(
                     CreateParameterFromTorchValue(pad->namedInput("pad")));
-            auto& padding = op->GetParameters()["padding"]->toValue<std::vector<int>>();
+            auto& padding = params["padding"]->toValue<std::vector<int>>();
             if (padding.size() == 2) {
                 // Conv1d only accepts tuple of one integer
                 if (padding[0] == padding[1]) {
                     padding.resize(1);
                 } else if (padding[0] != padding[1]) {
                     padding.resize(0);
-                    op->GetParameters()["padding"] = std::make_shared<Parameter>("same");
+                    params["padding"] = std::make_shared<Parameter>("same");
                 }
             }
         } else if (reflection_pad1d) {
-            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>("reflect");
-            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+            params["padding_mode"] = std::make_shared<Parameter>("reflect");
+            params["padding"] = std::make_shared<Parameter>(
                     CreateParameterFromTorchValue(reflection_pad1d->namedInput("padding")));
-            auto& padding = op->GetParameters()["padding"]->toValue<std::vector<int>>();
+            auto& padding = params["padding"]->toValue<std::vector<int>>();
             if (padding.size() == 2) {
                 // Conv1d only accepts tuple of one integer
                 if (padding[0] == padding[1]) {
                     padding.resize(1);
                 } else if (padding[0] != padding[1]) {
                     padding.resize(0);
-                    op->GetParameters()["padding"] = std::make_shared<Parameter>("same");
+                    params["padding"] = std::make_shared<Parameter>("same");
                 }
             }
         } else if (replication_pad1d) {
-            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>("replicate");
-            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+            params["padding_mode"] = std::make_shared<Parameter>("replicate");
+            params["padding"] = std::make_shared<Parameter>(
                     CreateParameterFromTorchValue(replication_pad1d->namedInput("padding")));
-            auto& padding = op->GetParameters()["padding"]->toValue<std::vector<int>>();
+            auto& padding = params["padding"]->toValue<std::vector<int>>();
             if (padding.size() == 2) {
                 // Conv1d only accepts tuple of one integer
                 if (padding[0] == padding[1]) {
                     padding.resize(1);
                 } else if (padding[0] != padding[1]) {
                     padding.resize(0);
-                    op->GetParameters()["padding"] = std::make_shared<Parameter>("same");
+                    params["padding"] = std::make_shared<Parameter>("same");
                 }
             }
         } else {
-            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>("zeros");
-            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+            params["padding_mode"] = std::make_shared<Parameter>("zeros");
+            params["padding"] = std::make_shared<Parameter>(
                     CreateParameterFromTorchValue(convolution->namedInput("padding")));
         }
-        op->GetParameters()["dilation"] = std::make_shared<Parameter>(
+        params["dilation"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(convolution->namedInput("dilation")));
-        op->GetParameters()["bias"] = std::make_shared<Parameter>(mod.hasattr("bias"));
+        params["bias"] = std::make_shared<Parameter>(mod.hasattr("bias"));
 
         op->GetAttributes()["weight"] = std::make_shared<Attribute>(mod.attr("weight").toTensor());
         if (mod.hasattr("bias")) {
@@ -536,80 +564,82 @@ public:
         return "nn.Conv2d";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph, const torch::jit::Module& mod) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
         const auto* convolution = FindNodeByKind(graph, "aten::_convolution");
         const auto* convolution_mode = FindNodeByKind(graph, "aten::_convolution_mode");
         const auto* pad = FindNodeByKind(graph, "aten::pad");
         const auto* reflection_pad2d = FindNodeByKind(graph, "aten::reflection_pad2d");
         const auto* replication_pad2d = FindNodeByKind(graph, "aten::replication_pad2d");
-
+        auto& params = op->GetParameters();
         if (convolution_mode) {
             convolution = convolution_mode;
         }
 
         const auto& weight = mod.attr("weight").toTensor();
 
-        op->GetParameters()["groups"] = std::make_shared<Parameter>(
+        params["groups"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(convolution->namedInput("groups")));
-        const auto& groups = op->GetParameters()["groups"]->toValue<int>();
-        op->GetParameters()["in_channels"] = std::make_shared<Parameter>(weight.size(1) * groups);
-        op->GetParameters()["out_channels"] = std::make_shared<Parameter>(weight.size(0));
-        op->GetParameters()["kernel_size"] = std::make_shared<Parameter>(Parameter({weight.size(2), weight.size(3)}));
-        op->GetParameters()["stride"] = std::make_shared<Parameter>(
+        const auto& groups = params["groups"]->toValue<int>();
+        params["in_channels"] = std::make_shared<Parameter>(weight.size(1) * groups);
+        params["out_channels"] = std::make_shared<Parameter>(weight.size(0));
+        params["kernel_size"] = std::make_shared<Parameter>(Parameter({weight.size(2), weight.size(3)}));
+        params["stride"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(convolution->namedInput("stride")));
 
         if (pad) {
-            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>(
+            params["padding_mode"] = std::make_shared<Parameter>(
                     CreateParameterFromTorchValue(pad->namedInput("mode")));
-            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+            params["padding"] = std::make_shared<Parameter>(
                     CreateParameterFromTorchValue(pad->namedInput("pad")));
-            auto& padding = op->GetParameters()["padding"]->toValue<std::vector<int>>();
+            auto& padding = params["padding"]->toValue<std::vector<int>>();
             if (padding.size() == 4) {
                 // Conv2d only accepts tuple of two integers
                 if (padding[0] == padding[1] && padding[1] == padding[2] && padding[2] == padding[3]) {
                     padding.resize(2);
                 } else if (padding[0] == padding[2] && padding[1] == padding[3] && padding[0] != padding[1]) {
                     padding.resize(0);
-                    op->GetParameters()["padding"] = std::make_shared<Parameter>("same");
+                    params["padding"] = std::make_shared<Parameter>("same");
                 }
             }
         } else if (reflection_pad2d) {
-            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>("reflect");
-            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+            params["padding_mode"] = std::make_shared<Parameter>("reflect");
+            params["padding"] = std::make_shared<Parameter>(
                     CreateParameterFromTorchValue(reflection_pad2d->namedInput("padding")));
 
-            auto& padding = op->GetParameters()["padding"]->toValue<std::vector<int>>();
+            auto& padding = params["padding"]->toValue<std::vector<int>>();
             if (padding.size() == 4) {
                 // Conv2d only accepts tuple of two integers
                 if (padding[0] == padding[1] && padding[1] == padding[2] && padding[2] == padding[3]) {
                     padding.resize(2);
                 } else if (padding[0] == padding[2] && padding[1] == padding[3] && padding[0] != padding[1]) {
                     padding.resize(0);
-                    op->GetParameters()["padding"] = std::make_shared<Parameter>("same");
+                    params["padding"] = std::make_shared<Parameter>("same");
                 }
             }
         } else if (replication_pad2d) {
-            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>("replicate");
-            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+            params["padding_mode"] = std::make_shared<Parameter>("replicate");
+            params["padding"] = std::make_shared<Parameter>(
                     CreateParameterFromTorchValue(replication_pad2d->namedInput("padding")));
-            auto& padding = op->GetParameters()["padding"]->toValue<std::vector<int>>();
+            auto& padding = params["padding"]->toValue<std::vector<int>>();
             if (padding.size() == 4) {
                 // Conv2d only accepts tuple of two integers
                 if (padding[0] == padding[1] && padding[1] == padding[2] && padding[2] == padding[3]) {
                     padding.resize(2);
                 } else if (padding[0] == padding[2] && padding[1] == padding[3] && padding[0] != padding[1]) {
                     padding.resize(0);
-                    op->GetParameters()["padding"] = std::make_shared<Parameter>("same");
+                    params["padding"] = std::make_shared<Parameter>("same");
                 }
             }
         } else {
-            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>("zeros");
-            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+            params["padding_mode"] = std::make_shared<Parameter>("zeros");
+            params["padding"] = std::make_shared<Parameter>(
                     CreateParameterFromTorchValue(convolution->namedInput("padding")));
         }
-        op->GetParameters()["dilation"] = std::make_shared<Parameter>(
+        params["dilation"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(convolution->namedInput("dilation")));
-        op->GetParameters()["bias"] = std::make_shared<Parameter>(mod.hasattr("bias") && mod.attr("bias").isTensor());
+        params["bias"] = std::make_shared<Parameter>(mod.hasattr("bias") && mod.attr("bias").isTensor());
 
         op->GetAttributes()["weight"] = std::make_shared<Attribute>(mod.attr("weight").toTensor());
         if (mod.hasattr("bias") && mod.attr("bias").isTensor()) {
@@ -629,76 +659,78 @@ public:
         return "nn.Conv3d";
     }
 
-    void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph, const torch::jit::Module& mod) const override {
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
         const auto* convolution = FindNodeByKind(graph, "aten::_convolution");
         const auto* convolution_mode = FindNodeByKind(graph, "aten::_convolution_mode");
         const auto* pad = FindNodeByKind(graph, "aten::pad");
         const auto* reflection_pad3d = FindNodeByKind(graph, "aten::reflection_pad3d");
         const auto* replication_pad3d = FindNodeByKind(graph, "aten::replication_pad3d");
-
+        auto& params = op->GetParameters();
         if (convolution_mode) {
             convolution = convolution_mode;
         }
 
         const auto& weight = mod.attr("weight").toTensor();
 
-        op->GetParameters()["groups"] = std::make_shared<Parameter>(
+        params["groups"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(convolution->namedInput("groups")));
-        const auto& groups = op->GetParameters()["groups"]->toValue<int>();
-        op->GetParameters()["in_channels"] = std::make_shared<Parameter>(weight.size(1) * groups);
-        op->GetParameters()["out_channels"] = std::make_shared<Parameter>(weight.size(0));
-        op->GetParameters()["kernel_size"] = std::make_shared<Parameter>(Parameter({weight.size(2), weight.size(3), weight.size(4)}));
-        op->GetParameters()["stride"] = std::make_shared<Parameter>(CreateParameterFromTorchValue(convolution->namedInput("stride")));
+        const auto& groups = params["groups"]->toValue<int>();
+        params["in_channels"] = std::make_shared<Parameter>(weight.size(1) * groups);
+        params["out_channels"] = std::make_shared<Parameter>(weight.size(0));
+        params["kernel_size"] = std::make_shared<Parameter>(Parameter({weight.size(2), weight.size(3), weight.size(4)}));
+        params["stride"] = std::make_shared<Parameter>(CreateParameterFromTorchValue(convolution->namedInput("stride")));
         if (pad) {
-            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>(
+            params["padding_mode"] = std::make_shared<Parameter>(
                     CreateParameterFromTorchValue(pad->namedInput("mode")));
-            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+            params["padding"] = std::make_shared<Parameter>(
                     CreateParameterFromTorchValue(pad->namedInput("pad")));
-            auto& padding = op->GetParameters()["padding"]->toValue<std::vector<int>>();
+            auto& padding = params["padding"]->toValue<std::vector<int>>();
             if (padding.size() == 6) {
                 // Conv3d only accepts tuple of three integers
                 if (padding[0] == padding[1] && padding[1] == padding[2] && padding[2] == padding[3] && padding[3] == padding[4] && padding[4] == padding[5]) {
                     padding.resize(3);
                 } else if (padding[0] == padding[3] && padding[1] == padding[4] && padding[2] == padding[5] && padding[0] != padding[1] && padding[1] != padding[2]) {
                     padding.resize(0);
-                    op->GetParameters()["padding"] = std::make_shared<Parameter>("same");
+                    params["padding"] = std::make_shared<Parameter>("same");
                 }
             }
         } else if (reflection_pad3d) {
-            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>("reflect");
-            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+            params["padding_mode"] = std::make_shared<Parameter>("reflect");
+            params["padding"] = std::make_shared<Parameter>(
                     CreateParameterFromTorchValue(reflection_pad3d->namedInput("padding")));
-            auto& padding = op->GetParameters()["padding"]->toValue<std::vector<int>>();
+            auto& padding = params["padding"]->toValue<std::vector<int>>();
             if (padding.size() == 6) {
                 // Conv3d only accepts tuple of three integers
                 if (padding[0] == padding[1] && padding[1] == padding[2] && padding[2] == padding[3] && padding[3] == padding[4] && padding[4] == padding[5]) {
                     padding.resize(3);
                 } else if (padding[0] == padding[3] && padding[1] == padding[4] && padding[2] == padding[5] && padding[0] != padding[1] && padding[1] != padding[2]) {
                     padding.resize(0);
-                    op->GetParameters()["padding"] = std::make_shared<Parameter>("same");
+                    params["padding"] = std::make_shared<Parameter>("same");
                 }
             }
         } else if (replication_pad3d) {
-            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>("replicate");
-            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+            params["padding_mode"] = std::make_shared<Parameter>("replicate");
+            params["padding"] = std::make_shared<Parameter>(
                     CreateParameterFromTorchValue(replication_pad3d->namedInput("padding")));
-            auto& padding = op->GetParameters()["padding"]->toValue<std::vector<int>>();
+            auto& padding = params["padding"]->toValue<std::vector<int>>();
             if (padding.size() == 6) {
                 // Conv3d only accepts tuple of three integers
                 if (padding[0] == padding[1] && padding[1] == padding[2] && padding[2] == padding[3] && padding[3] == padding[4] && padding[4] == padding[5]) {
                     padding.resize(3);
                 } else if (padding[0] == padding[3] && padding[1] == padding[4] && padding[2] == padding[5] && padding[0] != padding[1] && padding[1] != padding[2]) {
                     padding.resize(0);
-                    op->GetParameters()["padding"] = std::make_shared<Parameter>("same");
+                    params["padding"] = std::make_shared<Parameter>("same");
                 }
             }
         } else {
-            op->GetParameters()["padding_mode"] = std::make_shared<Parameter>("zeros");
-            op->GetParameters()["padding"] = std::make_shared<Parameter>(
+            params["padding_mode"] = std::make_shared<Parameter>("zeros");
+            params["padding"] = std::make_shared<Parameter>(
                     CreateParameterFromTorchValue(convolution->namedInput("padding")));
         }
-        op->GetParameters()["dilation"] = std::make_shared<Parameter>(CreateParameterFromTorchValue(convolution->namedInput("dilation")));
-        op->GetParameters()["bias"] = std::make_shared<Parameter>(mod.hasattr("bias"));
+        params["dilation"] = std::make_shared<Parameter>(CreateParameterFromTorchValue(convolution->namedInput("dilation")));
+        params["bias"] = std::make_shared<Parameter>(mod.hasattr("bias"));
 
         op->GetAttributes()["weight"] = std::make_shared<Attribute>(mod.attr("weight").toTensor());
         if (mod.hasattr("bias")) {
@@ -708,7 +740,50 @@ public:
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(Conv3d);
 
+class ConvTranspose1d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.conv.ConvTranspose1d";
+    }
 
+    std::string TypeStr() const override {
+        return "nn.ConvTranspose1d";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
+        const torch::jit::Node* convolution = FindNodeByKind(graph, "aten::_convolution");
+        auto& params = op->GetParameters();
+        const auto& weight = mod.attr("weight").toTensor();
+
+        params["groups"] = std::make_shared<Parameter>(CreateParameterFromTorchValue(convolution->namedInput("groups")));
+        params["in_channels"] = std::make_shared<Parameter>(weight.size(0));
+        const auto& groups = params["groups"]->toValue<int>();
+        params["out_channels"] = std::make_shared<Parameter>(weight.size(1) * groups);
+        params["kernel_size"] = std::make_shared<Parameter>(Parameter({weight.size(2)}));
+        params["stride"] = std::make_shared<Parameter>(CreateParameterFromTorchValue(convolution->namedInput("stride")));
+        params["padding"] = std::make_shared<Parameter>(CreateParameterFromTorchValue(convolution->namedInput("padding")));
+        params["output_padding"] = std::make_shared<Parameter>(CreateParameterFromTorchValue(convolution->namedInput("output_padding")));
+        params["dilation"] = std::make_shared<Parameter>(CreateParameterFromTorchValue(convolution->namedInput("dilation")));
+        params["bias"] = std::make_shared<Parameter>(mod.hasattr("bias"));
+
+        op->GetAttributes()["weight"] = std::make_shared<Attribute>(mod.attr("weight").toTensor());
+        if (mod.hasattr("bias")) {
+            op->GetAttributes()["bias"] = std::make_shared<Attribute>(mod.attr("bias").toTensor());
+        }
+
+        if (op->GetInputOperands().size() > 1) {
+            std::cerr << "ConvTranspose1d arg output_size detected and dropped !\n";
+
+            for (size_t i = 1; i < op->GetInputOperands().size(); i++) {
+                op->GetInputOperands()[i]->RemoveConsumer(op);
+            }
+            op->GetInputOperands().resize(1);
+        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(ConvTranspose1d);
 
 class ReLU : public FuseModulePass {
 public:

@@ -17,8 +17,9 @@ public:
     virtual ~FuseModulePass() = default;
     virtual std::string MatchTypeStr() const = 0;
     virtual std::string TypeStr() const = 0;
-    virtual void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph) const {}
-    virtual void Write(Operator* op, const std::shared_ptr<torch::jit::Graph>& graph, const torch::jit::Module& mod) const {
+    virtual void Write(const std::shared_ptr<Operator>& op, const std::shared_ptr<torch::jit::Graph>& graph) const {}
+    virtual void Write(const std::shared_ptr<Operator>& op,
+                       const std::shared_ptr<torch::jit::Graph>& graph, const torch::jit::Module& mod) const {
         Write(op, graph);
     }
 };

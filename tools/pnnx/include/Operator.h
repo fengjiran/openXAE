@@ -5,8 +5,8 @@
 #ifndef OPENXAE_OPERATOR_H
 #define OPENXAE_OPERATOR_H
 
-#include "Operand.h"
 #include "Attribute.h"
+#include "Operand.h"
 
 namespace pnnx {
 
@@ -70,7 +70,15 @@ public:
         return inputOperands_;
     }
 
+    std::vector<std::shared_ptr<Operand>>& GetInputOperands() {
+        return inputOperands_;
+    }
+
     NODISCARD const std::vector<std::shared_ptr<Operand>>& GetOutputOperands() const {
+        return outputOperands_;
+    }
+
+    std::vector<std::shared_ptr<Operand>>& GetOutputOperands() {
         return outputOperands_;
     }
 
@@ -112,6 +120,6 @@ private:
     std::map<std::string, std::shared_ptr<Parameter>> params_;
 };
 
-}
+}// namespace pnnx
 
 #endif//OPENXAE_OPERATOR_H
