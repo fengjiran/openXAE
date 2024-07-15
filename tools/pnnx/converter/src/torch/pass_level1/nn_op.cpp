@@ -1257,6 +1257,157 @@ public:
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(InstanceNorm1d);
 
+class InstanceNorm2d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.instancenorm.InstanceNorm2d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.InstanceNorm2d";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
+        const auto* in = FindNodeByKind(graph, "aten::instance_norm");
+        auto& params = op->GetParameters();
+
+        params["eps"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(in->namedInput("eps")));
+        params["affine"] = std::make_shared<Parameter>(mod.hasattr("weight") && mod.hasattr("bias"));
+        params["track_running_stats"] = std::make_shared<Parameter>(mod.hasattr("running_mean") && mod.hasattr("running_var"));
+
+        if (mod.hasattr("weight") && mod.hasattr("bias")) {
+            const auto& weight = mod.attr("weight").toTensor();
+
+            params["num_features"] = std::make_shared<Parameter>(weight.size(0));
+
+            op->GetAttributes()["weight"] = std::make_shared<Attribute>(mod.attr("weight").toTensor());
+            op->GetAttributes()["bias"] = std::make_shared<Attribute>(mod.attr("bias").toTensor());
+        }
+
+        if (mod.hasattr("running_mean") && mod.hasattr("running_var")) {
+            const auto& running_mean = mod.attr("running_mean").toTensor();
+
+            params["num_features"] = std::make_shared<Parameter>(running_mean.size(0));
+
+            op->GetAttributes()["running_mean"] = std::make_shared<Attribute>(mod.attr("running_mean").toTensor());
+            op->GetAttributes()["running_var"] = std::make_shared<Attribute>(mod.attr("running_var").toTensor());
+        }
+
+        // take num_features from input shape
+        if (!op->HasParam("num_features") && !op->GetInputOperands()[0]->GetShape().empty()) {
+            params["num_features"] = std::make_shared<Parameter>(
+                    op->GetInputOperands()[0]->GetShape()[op->GetInputOperands()[0]->GetShape().size() - 2]);
+        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(InstanceNorm2d);
+
+class InstanceNorm3d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.instancenorm.InstanceNorm3d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.InstanceNorm3d";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
+        const auto* in = FindNodeByKind(graph, "aten::instance_norm");
+        auto& params = op->GetParameters();
+
+        params["eps"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(in->namedInput("eps")));
+        params["affine"] = std::make_shared<Parameter>(mod.hasattr("weight") && mod.hasattr("bias"));
+        params["track_running_stats"] = std::make_shared<Parameter>(mod.hasattr("running_mean") && mod.hasattr("running_var"));
+
+        if (mod.hasattr("weight") && mod.hasattr("bias")) {
+            const auto& weight = mod.attr("weight").toTensor();
+
+            params["num_features"] = std::make_shared<Parameter>(weight.size(0));
+
+            op->GetAttributes()["weight"] = std::make_shared<Attribute>(weight);
+            op->GetAttributes()["bias"] = std::make_shared<Attribute>(mod.attr("bias").toTensor());
+        }
+
+        if (mod.hasattr("running_mean") && mod.hasattr("running_var")) {
+            const auto& running_mean = mod.attr("running_mean").toTensor();
+
+            params["num_features"] = std::make_shared<Parameter>(running_mean.size(0));
+
+            op->GetAttributes()["running_mean"] = std::make_shared<Attribute>(running_mean);
+            op->GetAttributes()["running_var"] = std::make_shared<Attribute>(mod.attr("running_var").toTensor());
+        }
+
+        // take num_features from input shape
+        if (!op->HasParam("num_features") && !op->GetInputOperands()[0]->GetShape().empty()) {
+            params["num_features"] = std::make_shared<Parameter>(
+                    op->GetInputOperands()[0]->GetShape()[op->GetInputOperands()[0]->GetShape().size() - 2]);
+        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(InstanceNorm3d);
+
+class LayerNorm : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.normalization.LayerNorm";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.LayerNorm";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
+        const auto* ln = FindNodeByKind(graph, "aten::layer_norm");
+        auto& params = op->GetParameters();
+
+        params["normalized_shape"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(ln->namedInput("normalized_shape")));
+        params["eps"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(ln->namedInput("eps")));
+        params["elementwise_affine"] = std::make_shared<Parameter>(mod.hasattr("weight") && mod.hasattr("bias"));
+
+        if (mod.hasattr("weight") && mod.hasattr("bias")) {
+            op->GetAttributes()["weight"] = std::make_shared<Attribute>(mod.attr("weight").toTensor());
+            op->GetAttributes()["bias"] = std::make_shared<Attribute>(mod.attr("bias").toTensor());
+        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(LayerNorm);
+
+class LeakyReLU : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.activation.LeakyReLU";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.LeakyReLU";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const auto* leaky_relu = FindNodeByKind(graph, "aten::leaky_relu");
+        const auto* leaky_relu_ = FindNodeByKind(graph, "aten::leaky_relu_");
+
+        if (leaky_relu_) {
+            leaky_relu = leaky_relu_;
+        }
+
+        op->GetParameters()["negative_slope"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(leaky_relu->namedInput("negative_slope")));
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(LeakyReLU);
+
 class ReLU : public FuseModulePass {
 public:
     std::string MatchTypeStr() const override {
