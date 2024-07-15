@@ -940,6 +940,36 @@ public:
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(ELU);
 
+class Embedding : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.sparse.Embedding";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.Embedding";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
+        const auto* embedding = FindNodeByKind(graph, "aten::embedding");
+        auto& params = op->GetParameters();
+        const auto& weight = mod.attr("weight").toTensor();
+
+        params["num_embeddings"] = std::make_shared<Parameter>(weight.size(0));
+        params["embedding_dim"] = std::make_shared<Parameter>(weight.size(1));
+
+        // op->params["padding_idx"] = embedding->namedInput("padding_idx");
+        // op->params["scale_grad_by_freq"] = embedding->namedInput("scale_grad_by_freq");
+        params["sparse"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(embedding->namedInput("sparse")));
+
+        op->GetAttributes()["weight"] = std::make_shared<Attribute>(mod.attr("weight").toTensor());
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Embedding);
+
 class ReLU : public FuseModulePass {
 public:
     std::string MatchTypeStr() const override {
