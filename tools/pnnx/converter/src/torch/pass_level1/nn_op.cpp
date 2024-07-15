@@ -970,6 +970,35 @@ public:
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(Embedding);
 
+class Fold : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.fold.Fold";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.Fold";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const auto* col2im = FindNodeByKind(graph, "aten::col2im");
+        auto& params = op->GetParameters();
+
+        params["output_size"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(col2im->namedInput("output_size")));
+        params["kernel_size"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(col2im->namedInput("kernel_size")));
+        params["stride"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(col2im->namedInput("stride")));
+        params["padding"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(col2im->namedInput("padding")));
+        params["dilation"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(col2im->namedInput("dilation")));
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Fold);
+
 class ReLU : public FuseModulePass {
 public:
     std::string MatchTypeStr() const override {
