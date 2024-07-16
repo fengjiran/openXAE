@@ -74,7 +74,8 @@ static bool OperandMaybeTensor(const std::shared_ptr<Operand>& operand) {
         // dim=0
         if (inputs_size == 3 && op->GetParameters().at("dim")->toValue<int>() != 0)
             return true;
-        if ((inputs_size == 4 || inputs_size == 5) && op->GetInputOperands()[0]->GetProducer()->GetParameters().at("value")->toValue<int>() != 1)
+        if ((inputs_size == 4 || inputs_size == 5) &&
+            op->GetInputOperands()[0]->GetProducer()->GetParameters().at("value")->toValue<int>() != 1)
             return true;
 
         // step=1
