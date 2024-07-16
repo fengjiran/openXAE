@@ -2025,6 +2025,443 @@ public:
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(PixelUnshuffle);
 
+class PReLU : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.activation.PReLU";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.PReLU";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& /*graph*/,
+               const torch::jit::Module& mod) const override {
+        const auto& weight = mod.attr("weight").toTensor();
+
+        op->GetParameters()["num_parameters"] = std::make_shared<Parameter>(weight.size(0));
+
+        op->GetAttributes()["weight"] = std::make_shared<Attribute>(mod.attr("weight").toTensor());
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(PReLU);
+
+class QuantizedConv2d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.quantized.modules.conv.Conv2d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.quantized.Conv2d";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
+        //         graph->dump();
+
+        const torch::jit::Node* quantized_convolution = FindNodeByKind(graph, "quantized::conv2d");
+        auto& params = op->GetParameters();
+        //         for (auto aa : quantized_convolution->schema().arguments())
+        //         {
+        //             fprintf(stderr, "arg %s\n", aa.name().c_str());
+        //         }
+
+        //         torch::jit::Node* packed_params_node = 0;
+        //         for (const auto& n : graph->nodes())
+        //         {
+        //             if (n->kind() == c10::prim::GetAttr && n->s(torch::jit::attr::name) == "_packed_params")
+        //             {
+        //                 packed_params_node = n;
+        //                 break;
+        //             }
+        //         }
+
+        //         quantized_convolution->namedInput("output_scale");
+
+        const auto& packed_params = mod.attr("_packed_params").toObject();
+
+        //         auto x = torch::jit::script::Object(packed_params).run_method("__getstate__");
+        auto x = torch::jit::script::Object(packed_params).run_method("unpack").toTuple();
+        //         std::cout << x->elements()[0].toTensor() << std::endl;
+        //         std::cout << x->elements()[0].toTensor().quantizer() << std::endl;
+        //         std::cout << x->elements()[1] << std::endl;
+        //   at::Tensor dequantize() const;
+        //   double q_scale() const;
+        //   int64_t q_zero_point() const;
+        //   at::Tensor q_per_channel_scales() const;
+        //   at::Tensor q_per_channel_zero_points() const;
+        //   int64_t q_per_channel_axis() const;
+
+        //         auto quantizer = x->elements()[0].toTensor().quantizer();
+
+        const auto& weight = x->elements()[0].toTensor();
+        const auto& bias = x->elements()[1].toTensor();
+
+        op->GetAttributes()["weight"] = std::make_shared<Attribute>(x->elements()[0].toTensor());
+        op->GetAttributes()["bias"] = std::make_shared<Attribute>(x->elements()[1].toTensor());
+
+        if (weight.qscheme() == c10::kPerChannelAffine) {
+            op->GetAttributes()["weight.q_per_channel_scales"] = std::make_shared<Attribute>(weight.q_per_channel_scales());
+            op->GetAttributes()["weight.q_per_channel_zero_points"] = std::make_shared<Attribute>(weight.q_per_channel_zero_points());
+            //             op->params["weight.q_per_channel_axis"] = weight.q_per_channel_axis();
+        }
+
+        params["in_channels"] = std::make_shared<Parameter>(mod.attr("in_channels").toInt());
+        params["out_channels"] = std::make_shared<Parameter>(mod.attr("out_channels").toInt());
+        params["kernel_size"] = std::make_shared<Parameter>(
+                Parameter({mod.attr("kernel_size").toTuple()->elements()[0].toInt(), mod.attr("kernel_size").toTuple()->elements()[1].toInt()}));
+        params["stride"] = std::make_shared<Parameter>(
+                Parameter({mod.attr("stride").toTuple()->elements()[0].toInt(), mod.attr("stride").toTuple()->elements()[1].toInt()}));
+        params["padding"] = std::make_shared<Parameter>(
+                Parameter({mod.attr("padding").toTuple()->elements()[0].toInt(), mod.attr("padding").toTuple()->elements()[1].toInt()}));
+        params["dilation"] = std::make_shared<Parameter>(
+                Parameter({mod.attr("dilation").toTuple()->elements()[0].toInt(), mod.attr("dilation").toTuple()->elements()[1].toInt()}));
+        params["groups"] = std::make_shared<Parameter>(mod.attr("groups").toInt());
+        params["padding_mode"] = std::make_shared<Parameter>("zeros");
+        params["bias"] = std::make_shared<Parameter>(mod.hasattr("bias"));
+
+        params["scale"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(quantized_convolution->namedInput("output_scale")));
+        params["zero_point"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(quantized_convolution->namedInput("output_zero_point")));
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(QuantizedConv2d);
+
+class QuantizedConvReLU2d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.intrinsic.quantized.modules.conv_relu.ConvReLU2d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.intrinsic.quantized.ConvReLU2d";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
+        //         graph->dump();
+
+        const torch::jit::Node* quantized_convolution = FindNodeByKind(graph, "quantized::conv2d_relu");
+        auto& params = op->GetParameters();
+        //         for (auto aa : quantized_convolution->schema().arguments())
+        //         {
+        //             fprintf(stderr, "arg %s\n", aa.name().c_str());
+        //         }
+
+        //         torch::jit::Node* packed_params_node = 0;
+        //         for (const auto& n : graph->nodes())
+        //         {
+        //             if (n->kind() == c10::prim::GetAttr && n->s(torch::jit::attr::name) == "_packed_params")
+        //             {
+        //                 packed_params_node = n;
+        //                 break;
+        //             }
+        //         }
+
+        //         quantized_convolution->namedInput("output_scale");
+
+        const auto& packed_params = mod.attr("_packed_params").toObject();
+
+        //         auto x = torch::jit::script::Object(packed_params).run_method("__getstate__");
+        auto x = torch::jit::script::Object(packed_params).run_method("unpack").toTuple();
+        //         std::cout << x->elements()[0].toTensor() << std::endl;
+        //         std::cout << x->elements()[0].toTensor().quantizer() << std::endl;
+        //         std::cout << x->elements()[1] << std::endl;
+        //   at::Tensor dequantize() const;
+        //   double q_scale() const;
+        //   int64_t q_zero_point() const;
+        //   at::Tensor q_per_channel_scales() const;
+        //   at::Tensor q_per_channel_zero_points() const;
+        //   int64_t q_per_channel_axis() const;
+
+        //         auto quantizer = x->elements()[0].toTensor().quantizer();
+
+        const auto& weight = x->elements()[0].toTensor();
+        const auto& bias = x->elements()[1].toTensor();
+
+        op->GetAttributes()["weight"] = std::make_shared<Attribute>(x->elements()[0].toTensor());
+        op->GetAttributes()["bias"] = std::make_shared<Attribute>(x->elements()[1].toTensor());
+
+        if (weight.qscheme() == c10::kPerChannelAffine) {
+            op->GetAttributes()["weight.q_per_channel_scales"] = std::make_shared<Attribute>(weight.q_per_channel_scales());
+            op->GetAttributes()["weight.q_per_channel_zero_points"] = std::make_shared<Attribute>(weight.q_per_channel_zero_points());
+            //             op->params["weight.q_per_channel_axis"] = weight.q_per_channel_axis();
+        }
+
+        params["in_channels"] = std::make_shared<Parameter>(mod.attr("in_channels").toInt());
+        params["out_channels"] = std::make_shared<Parameter>(mod.attr("out_channels").toInt());
+        params["kernel_size"] = std::make_shared<Parameter>(
+                Parameter({mod.attr("kernel_size").toTuple()->elements()[0].toInt(), mod.attr("kernel_size").toTuple()->elements()[1].toInt()}));
+        params["stride"] = std::make_shared<Parameter>(
+                Parameter({mod.attr("stride").toTuple()->elements()[0].toInt(), mod.attr("stride").toTuple()->elements()[1].toInt()}));
+        params["padding"] = std::make_shared<Parameter>(
+                Parameter({mod.attr("padding").toTuple()->elements()[0].toInt(), mod.attr("padding").toTuple()->elements()[1].toInt()}));
+        params["dilation"] = std::make_shared<Parameter>(
+                Parameter({mod.attr("dilation").toTuple()->elements()[0].toInt(), mod.attr("dilation").toTuple()->elements()[1].toInt()}));
+        params["groups"] = std::make_shared<Parameter>(mod.attr("groups").toInt());
+        params["padding_mode"] = std::make_shared<Parameter>("zeros");
+        params["bias"] = std::make_shared<Parameter>(mod.hasattr("bias"));
+
+        params["scale"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(quantized_convolution->namedInput("output_scale")));
+        params["zero_point"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(quantized_convolution->namedInput("output_zero_point")));
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(QuantizedConvReLU2d);
+
+class DeQuantize : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.quantized.modules.DeQuantize";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.quantized.DeQuantize";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
+        //         mod.dump(true, false, false);
+
+        //         graph->dump();
+
+        const torch::jit::Node* dequantize = FindNodeByKind(graph, "aten::dequantize");
+
+        //         for (auto aa : dequantize->schema().arguments())
+        //         {
+        //             fprintf(stderr, "arg %s\n", aa.name().c_str());
+        //         }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(DeQuantize);
+
+class QuantizedLinear : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.quantized.modules.linear.Linear";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.quantized.Linear";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
+        //         mod.dump(true, false, false);
+
+        //         graph->dump();
+
+        const torch::jit::Node* quantized_linear = FindNodeByKind(graph, "quantized::linear");
+        auto& params = op->GetParameters();
+        //         for (auto aa : quantized_linear->schema().arguments())
+        //         {
+        //             fprintf(stderr, "arg %s\n", aa.name().c_str());
+        //         }
+
+        //         torch::jit::Node* packed_params_node = 0;
+        //         for (const auto& n : graph->nodes())
+        //         {
+        //             if (n->kind() == c10::prim::GetAttr && n->s(torch::jit::attr::name) == "_packed_params")
+        //             {
+        //                 packed_params_node = n;
+        //                 break;
+        //             }
+        //         }
+
+        const auto& packed_params = mod.attr("_packed_params").toObject();
+
+        //         for (auto aa : torch::jit::script::Object(packed_params).get_methods())
+        //         {
+        //             fprintf(stderr, "method %s\n", aa.name().c_str());
+        //         }
+
+        auto x = torch::jit::script::Object(packed_params).run_method("_weight_bias").toTuple();
+
+        const auto& weight = x->elements()[0].toTensor();
+        const auto& bias = x->elements()[1].toTensor();
+
+        op->GetAttributes()["weight"] = std::make_shared<Attribute>(x->elements()[0].toTensor());
+        op->GetAttributes()["bias"] = std::make_shared<Attribute>(x->elements()[1].toTensor());
+
+        if (weight.qscheme() == c10::kPerChannelAffine) {
+            op->GetAttributes()["weight.q_per_channel_scales"] = std::make_shared<Attribute>(weight.q_per_channel_scales());
+            op->GetAttributes()["weight.q_per_channel_zero_points"] = std::make_shared<Attribute>(weight.q_per_channel_zero_points());
+            //             op->params["weight.q_per_channel_axis"] = weight.q_per_channel_axis();
+        }
+
+        params["in_features"] = std::make_shared<Parameter>(weight.size(1));
+        params["out_features"] = std::make_shared<Parameter>(weight.size(0));
+
+        params["scale"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(quantized_linear->namedInput("Y_scale_i")));
+        params["zero_point"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(quantized_linear->namedInput("Y_zero_point_i")));
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(QuantizedLinear);
+
+class QuantizedLinearReLU : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.intrinsic.quantized.modules.linear_relu.LinearReLU";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.intrinsic.quantized.LinearReLU";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
+        //         mod.dump(true, false, false);
+
+        graph->dump();
+
+        const torch::jit::Node* quantized_linear = FindNodeByKind(graph, "quantized::linear_relu");
+        auto& params = op->GetParameters();
+        //         for (auto aa : quantized_linear->schema().arguments())
+        //         {
+        //             fprintf(stderr, "arg %s\n", aa.name().c_str());
+        //         }
+
+        //         torch::jit::Node* packed_params_node = 0;
+        //         for (const auto& n : graph->nodes())
+        //         {
+        //             if (n->kind() == c10::prim::GetAttr && n->s(torch::jit::attr::name) == "_packed_params")
+        //             {
+        //                 packed_params_node = n;
+        //                 break;
+        //             }
+        //         }
+
+        const auto& packed_params = mod.attr("_packed_params").toObject();
+
+        //         for (auto aa : torch::jit::script::Object(packed_params).get_methods())
+        //         {
+        //             fprintf(stderr, "method %s\n", aa.name().c_str());
+        //         }
+
+        auto x = torch::jit::script::Object(packed_params).run_method("_weight_bias").toTuple();
+
+        const auto& weight = x->elements()[0].toTensor();
+        const auto& bias = x->elements()[1].toTensor();
+
+        op->GetAttributes()["weight"] = std::make_shared<Attribute>(x->elements()[0].toTensor());
+        op->GetAttributes()["bias"] = std::make_shared<Attribute>(x->elements()[1].toTensor());
+
+        if (weight.qscheme() == c10::kPerChannelAffine) {
+            op->GetAttributes()["weight.q_per_channel_scales"] = std::make_shared<Attribute>(weight.q_per_channel_scales());
+            op->GetAttributes()["weight.q_per_channel_zero_points"] = std::make_shared<Attribute>(weight.q_per_channel_zero_points());
+            //             op->params["weight.q_per_channel_axis"] = weight.q_per_channel_axis();
+        }
+
+        params["in_features"] = std::make_shared<Parameter>(weight.size(1));
+        params["out_features"] = std::make_shared<Parameter>(weight.size(0));
+
+        params["scale"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(quantized_linear->namedInput("Y_scale_i")));
+        params["zero_point"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(quantized_linear->namedInput("Y_zero_point_i")));
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(QuantizedLinearReLU);
+
+class Quantize : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.quantized.modules.Quantize";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.quantized.Quantize";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
+        //         mod.dump(true, false, false);
+
+        //         graph->dump();
+
+        const torch::jit::Node* quantize_per_tensor = FindNodeByKind(graph, "aten::quantize_per_tensor");
+        auto& params = op->GetParameters();
+        //         for (auto aa : quantize_per_tensor->schema().arguments())
+        //         {
+        //             fprintf(stderr, "arg %s\n", aa.name().c_str());
+        //         }
+
+        // scale, zero_point
+        params["scale"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(quantize_per_tensor->namedInput("scale")));
+        params["zero_point"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(quantize_per_tensor->namedInput("zero_point")));
+        params["dtype"] = std::make_shared<Parameter>("torch.qint8");
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Quantize);
+
+class ReflectionPad1d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.padding.ReflectionPad1d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.ReflectionPad1d";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* pad = FindNodeByKind(graph, "aten::pad");
+        const torch::jit::Node* reflection_pad1d = FindNodeByKind(graph, "aten::reflection_pad1d");
+        auto& params = op->GetParameters();
+
+        if (pad) {
+            params["padding"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(pad->namedInput("pad")));
+        } else {
+            params["padding"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(reflection_pad1d->namedInput("padding")));
+        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(ReflectionPad1d);
+
+class ReflectionPad2d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.padding.ReflectionPad2d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.ReflectionPad2d";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* pad = FindNodeByKind(graph, "aten::pad");
+        const torch::jit::Node* reflection_pad2d = FindNodeByKind(graph, "aten::reflection_pad2d");
+        auto& params = op->GetParameters();
+
+        if (pad) {
+            params["padding"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(pad->namedInput("pad")));
+        } else {
+            params["padding"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(reflection_pad2d->namedInput("padding")));
+        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(ReflectionPad2d);
+
 class ReLU : public FuseModulePass {
 public:
     std::string MatchTypeStr() const override {
@@ -2036,5 +2473,696 @@ public:
     }
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(ReLU);
+
+class ReLU6 : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.activation.ReLU6";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.ReLU6";
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(ReLU6);
+
+class ReplicationPad1d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.padding.ReplicationPad1d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.ReplicationPad1d";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* pad = FindNodeByKind(graph, "aten::pad");
+        const torch::jit::Node* replication_pad1d = FindNodeByKind(graph, "aten::replication_pad1d");
+        auto& params = op->GetParameters();
+
+        if (pad) {
+            params["padding"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(pad->namedInput("pad")));
+        } else {
+            params["padding"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(replication_pad1d->namedInput("padding")));
+        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(ReplicationPad1d);
+
+class ReplicationPad2d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.padding.ReplicationPad2d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.ReplicationPad2d";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* pad = FindNodeByKind(graph, "aten::pad");
+        const torch::jit::Node* replication_pad2d = FindNodeByKind(graph, "aten::replication_pad2d");
+        auto& params = op->GetParameters();
+
+        if (pad) {
+            params["padding"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(pad->namedInput("pad")));
+        } else {
+            params["padding"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(replication_pad2d->namedInput("padding")));
+        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(ReplicationPad2d);
+
+class ReplicationPad3d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.padding.ReplicationPad3d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.ReplicationPad3d";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* pad = FindNodeByKind(graph, "aten::pad");
+        const torch::jit::Node* replication_pad3d = FindNodeByKind(graph, "aten::replication_pad3d");
+        auto& params = op->GetParameters();
+
+        if (pad) {
+            params["padding"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(pad->namedInput("pad")));
+        } else {
+            params["padding"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(replication_pad3d->namedInput("padding")));
+        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(ReplicationPad3d);
+
+class RNN : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.rnn.RNN";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.RNN";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
+        //         mod.dump(true, true, true);
+
+        //         graph->dump();
+
+        const torch::jit::Node* rnn = FindNodeByKind(graph, "aten::rnn_tanh");
+        const torch::jit::Node* rnn_relu = FindNodeByKind(graph, "aten::rnn_relu");
+        auto& params = op->GetParameters();
+        auto& attrs = op->GetAttributes();
+
+        if (rnn_relu) {
+            rnn = rnn_relu;
+        }
+
+        const torch::jit::Node* return_tuple = FindNodeByKind(graph, "prim::TupleConstruct");
+        if (return_tuple && return_tuple->inputs().size() == 2 && rnn->outputs().size() == 2 &&
+            return_tuple->inputs()[0] == rnn->outputs()[1] && return_tuple->inputs()[1] == rnn->outputs()[0]) {
+            // mark the swapped output tuple
+            // we would restore the fine order in pass_level3/fuse_rnn_unpack
+            std::cerr << "swapped detected !\n";
+            params["pnnx_rnn_output_swapped"] = std::make_shared<Parameter>(1);
+        }
+
+        //         for (auto aa : rnn->schema().arguments())
+        //         {
+        //             fprintf(stderr, "arg %s\n", aa.name().c_str());
+        //         }
+
+        const auto& weight_ih_l0 = mod.attr("weight_ih_l0").toTensor();
+
+        params["input_size"] = std::make_shared<Parameter>(weight_ih_l0.size(1));
+        params["hidden_size"] = std::make_shared<Parameter>(weight_ih_l0.size(0));
+        params["num_layers"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(rnn->namedInput("num_layers")));
+        params["nonlinearity"] = std::make_shared<Parameter>(rnn_relu ? "relu" : "tanh");
+        params["bias"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(rnn->namedInput("has_biases")));
+        params["batch_first"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(rnn->namedInput("batch_first")));
+        params["bidirectional"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(rnn->namedInput("bidirectional")));
+
+        const int num_layers = params["num_layers"]->toValue<int>();
+        const bool bias = params["bias"]->toValue<bool>();
+        const bool bidirectional = params["bidirectional"]->toValue<bool>();
+
+        for (int k = 0; k < num_layers; k++) {
+            std::string weight_ih_lk_key = std::string("weight_ih_l") + std::to_string(k);
+            std::string weight_hh_lk_key = std::string("weight_hh_l") + std::to_string(k);
+
+            attrs[weight_ih_lk_key] = std::make_shared<Attribute>(mod.attr(weight_ih_lk_key).toTensor());
+            attrs[weight_hh_lk_key] = std::make_shared<Attribute>(mod.attr(weight_hh_lk_key).toTensor());
+
+            if (bias) {
+                std::string bias_ih_lk_key = std::string("bias_ih_l") + std::to_string(k);
+                std::string bias_hh_lk_key = std::string("bias_hh_l") + std::to_string(k);
+
+                attrs[bias_ih_lk_key] = std::make_shared<Attribute>(mod.attr(bias_ih_lk_key).toTensor());
+                attrs[bias_hh_lk_key] = std::make_shared<Attribute>(mod.attr(bias_hh_lk_key).toTensor());
+            }
+
+            if (bidirectional) {
+                std::string weight_ih_lk_reverse_key = std::string("weight_ih_l") + std::to_string(k) + "_reverse";
+                std::string weight_hh_lk_reverse_key = std::string("weight_hh_l") + std::to_string(k) + "_reverse";
+
+                attrs[weight_ih_lk_reverse_key] = std::make_shared<Attribute>(mod.attr(weight_ih_lk_reverse_key).toTensor());
+                attrs[weight_hh_lk_reverse_key] = std::make_shared<Attribute>(mod.attr(weight_hh_lk_reverse_key).toTensor());
+
+                if (bias) {
+                    std::string bias_ih_lk_reverse_key = std::string("bias_ih_l") + std::to_string(k) + "_reverse";
+                    std::string bias_hh_lk_reverse_key = std::string("bias_hh_l") + std::to_string(k) + "_reverse";
+
+                    attrs[bias_ih_lk_reverse_key] = std::make_shared<Attribute>(mod.attr(bias_ih_lk_reverse_key).toTensor());
+                    attrs[bias_hh_lk_reverse_key] = std::make_shared<Attribute>(mod.attr(bias_hh_lk_reverse_key).toTensor());
+                }
+            }
+        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(RNN);
+
+class RReLU : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.activation.RReLU";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.RReLU";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* rrelu = FindNodeByKind(graph, "aten::rrelu");
+        auto& params = op->GetParameters();
+
+        params["lower"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(rrelu->namedInput("lower")));
+        params["upper"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(rrelu->namedInput("upper")));
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(RReLU);
+
+class SELU : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.activation.SELU";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.SELU";
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(SELU);
+
+class Sigmoid : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.activation.Sigmoid";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.Sigmoid";
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Sigmoid);
+
+class SiLU : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.activation.SiLU";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.SiLU";
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(SiLU);
+
+class Softmax : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.activation.Softmax";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.Softmax";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* softmax = FindNodeByKind(graph, "aten::softmax");
+
+        op->GetParameters()["dim"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(softmax->namedInput("dim")));
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Softmax);
+
+class Softmax2d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.activation.Softmax2d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.Softmax2d";
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Softmax2d);
+
+class Softmin : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.activation.Softmin";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.Softmin";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* softmax = FindNodeByKind(graph, "aten::softmax");
+
+        op->GetParameters()["dim"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(softmax->namedInput("dim")));
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Softmin);
+
+class Softplus : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.activation.Softplus";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.Softplus";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* softplus = FindNodeByKind(graph, "aten::softplus");
+
+        op->GetParameters()["beta"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(softplus->namedInput("beta")));
+        op->GetParameters()["threshold"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(softplus->namedInput("threshold")));
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Softplus);
+
+class Softshrink : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.activation.Softshrink";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.Softshrink";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* softshrink = FindNodeByKind(graph, "aten::softshrink");
+
+        op->GetParameters()["lambd"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(softshrink->namedInput("lambd")));
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Softshrink);
+
+class Softsign : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.activation.Softsign";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.Softsign";
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Softsign);
+
+class Tanh : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.activation.Tanh";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.Tanh";
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Tanh);
+
+class Tanhshrink : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.activation.Tanhshrink";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.Tanhshrink";
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Tanhshrink);
+
+class Threshold : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.activation.Threshold";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.Threshold";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* threshold = FindNodeByKind(graph, "aten::threshold");
+
+        op->GetParameters()["threshold"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(threshold->namedInput("threshold")));
+        op->GetParameters()["value"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(threshold->namedInput("value")));
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Threshold);
+
+class Unfold : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.fold.Unfold";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.Unfold";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* im2col = FindNodeByKind(graph, "aten::im2col");
+        auto& params = op->GetParameters();
+
+        params["kernel_size"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(im2col->namedInput("kernel_size")));
+        params["stride"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(im2col->namedInput("stride")));
+        params["padding"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(im2col->namedInput("padding")));
+        params["dilation"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(im2col->namedInput("dilation")));
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Unfold);
+
+class Upsample : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.upsampling.Upsample";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.Upsample";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* upsample_nearest1d = FindNodeByKind(graph, "aten::upsample_nearest1d");
+        const torch::jit::Node* upsample_linear1d = FindNodeByKind(graph, "aten::upsample_linear1d");
+
+        const torch::jit::Node* upsample_nearest2d = FindNodeByKind(graph, "aten::upsample_nearest2d");
+        const torch::jit::Node* upsample_bilinear2d = FindNodeByKind(graph, "aten::upsample_bilinear2d");
+        const torch::jit::Node* upsample_bicubic2d = FindNodeByKind(graph, "aten::upsample_bicubic2d");
+
+        const torch::jit::Node* upsample_nearest3d = FindNodeByKind(graph, "aten::upsample_nearest3d");
+        const torch::jit::Node* upsample_trilinear3d = FindNodeByKind(graph, "aten::upsample_trilinear3d");
+
+        const torch::jit::Node* upsample = 0;
+
+        auto& params = op->GetParameters();
+        if (upsample_nearest1d) {
+            upsample = upsample_nearest1d;
+            params["mode"] = std::make_shared<Parameter>("nearest");
+        } else if (upsample_linear1d) {
+            upsample = upsample_linear1d;
+            params["mode"] = std::make_shared<Parameter>("linear");
+        } else if (upsample_nearest2d) {
+            upsample = upsample_nearest2d;
+            params["mode"] = std::make_shared<Parameter>("nearest");
+        } else if (upsample_bilinear2d) {
+            upsample = upsample_bilinear2d;
+            params["mode"] = std::make_shared<Parameter>("bilinear");
+        } else if (upsample_bicubic2d) {
+            upsample = upsample_bicubic2d;
+            params["mode"] = std::make_shared<Parameter>("bicubic");
+        } else if (upsample_nearest3d) {
+            upsample = upsample_nearest3d;
+            params["mode"] = std::make_shared<Parameter>("nearest");
+        } else if (upsample_trilinear3d) {
+            upsample = upsample_trilinear3d;
+            params["mode"] = std::make_shared<Parameter>("trilinear");
+        }
+
+        if (upsample->hasNamedInput("output_size")) {
+            params["size"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(upsample->namedInput("output_size")));
+        }
+
+        if (upsample->hasNamedInput("scale_factors")) {
+            params["scale_factor"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(upsample->namedInput("scale_factors")));
+        }
+
+        if (upsample->hasNamedInput("align_corners")) {
+            params["align_corners"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(upsample->namedInput("align_corners")));
+        }
+
+        bool recompute_scale_factor = true;
+        if (params.find("size") != params.end()) {
+            if (params.at("size")->type() == ParameterType::kParameterInt) {
+                int s = params.at("size")->toValue<int>();
+                if (s != 0) {
+                    recompute_scale_factor = false;
+                }
+            }
+            if (params.at("size")->type() == ParameterType::kParameterArrayInt) {
+                const std::vector<int>& size = params.at("size")->toValue<std::vector<int>>();
+                for (auto s: size) {
+                    if (s != 0) {
+                        recompute_scale_factor = false;
+                        break;
+                    }
+                }
+            }
+        }
+        if (params.find("scale_factor") != params.end()) {
+            if (params.at("scale_factor")->type() != ParameterType::kParameterUnknown)
+                recompute_scale_factor = false;
+        }
+
+        if (recompute_scale_factor) {
+            params["size"] = std::make_shared<Parameter>();
+
+            // FIXME does this param really counts ?
+            // op->params["recompute_scale_factor"] = true;
+
+            // resolve scale_factor in recompute scale graph
+            std::vector<float> scale_factor;
+            try {
+                const torch::jit::Node* size_list = FindNodeByKind(graph, "prim::ListConstruct");
+                for (auto x: size_list->inputs()) {
+                    auto scale_tensor = x->node()->inputs()[0]->node()->inputs()[0]->node()->inputs()[0]->node()->inputs()[1]->node()->inputs()[0]->node()->inputs()[0]->node();
+                    auto t = scale_tensor->t(torch::jit::attr::value);
+                    float s = (float) t.item<double>();
+                    scale_factor.push_back(s);
+                }
+
+                params["scale_factor"] = std::make_shared<Parameter>(scale_factor);
+            } catch (...) {
+                std::cerr << "unhandled upsample recompute_scale_factor graph\n";
+                graph->dump();
+            }
+        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(Upsample);
+
+class UpsamplingBilinear2d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.upsampling.UpsamplingBilinear2d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.UpsamplingBilinear2d";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* upsample = FindNodeByKind(graph, "aten::upsample_bilinear2d");
+        auto& params = op->GetParameters();
+        if (upsample->hasNamedInput("output_size")) {
+            params["size"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(upsample->namedInput("output_size")));
+        }
+
+        if (upsample->hasNamedInput("scale_factors")) {
+            params["scale_factor"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(upsample->namedInput("scale_factors")));
+        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(UpsamplingBilinear2d);
+
+class UpsamplingNearest2d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.upsampling.UpsamplingNearest2d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.UpsamplingNearest2d";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* upsample = FindNodeByKind(graph, "aten::upsample_nearest2d");
+        auto& params = op->GetParameters();
+        if (upsample->hasNamedInput("output_size")) {
+            params["size"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(upsample->namedInput("output_size")));
+        }
+
+        if (upsample->hasNamedInput("scale_factors")) {
+            params["scale_factor"] = std::make_shared<Parameter>(
+                    CreateParameterFromTorchValue(upsample->namedInput("scale_factors")));
+        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(UpsamplingNearest2d);
+
+class ZeroPad2d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.padding.ZeroPad2d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.ZeroPad2d";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* pad = FindNodeByKind(graph, "aten::pad");
+        const torch::jit::Node* constant_pad_nd = FindNodeByKind(graph, "aten::constant_pad_nd");
+
+        if (!pad) {
+            pad = constant_pad_nd;
+        }
+
+        op->GetParameters()["padding"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(pad->namedInput("pad")));
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(ZeroPad2d);
+
+class DeformConv2d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torchvision.ops.deform_conv.DeformConv2d";
+    }
+
+    std::string TypeStr() const override {
+        return "torchvision.ops.DeformConv2d";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
+        const torch::jit::Node* deform_conv2d = FindNodeByKind(graph, "torchvision::deform_conv2d");
+        auto& params = op->GetParameters();
+        const auto& weight = mod.attr("weight").toTensor();
+
+        const Parameter stride_w = CreateParameterFromTorchValue(deform_conv2d->namedInput("stride_w"));
+        const Parameter stride_h = CreateParameterFromTorchValue(deform_conv2d->namedInput("stride_h"));
+        const Parameter pad_w = CreateParameterFromTorchValue(deform_conv2d->namedInput("pad_w"));
+        const Parameter pad_h = CreateParameterFromTorchValue(deform_conv2d->namedInput("pad_h"));
+        const Parameter dilation_w = CreateParameterFromTorchValue(deform_conv2d->namedInput("dilation_w"));
+        const Parameter dilation_h = CreateParameterFromTorchValue(deform_conv2d->namedInput("dilation_h"));
+
+        params["groups"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(deform_conv2d->namedInput("groups")));
+        params["in_channels"] = std::make_shared<Parameter>(weight.size(1) * params["groups"]->toValue<int>());
+        params["out_channels"] = std::make_shared<Parameter>(weight.size(0));
+        params["kernel_size"] = std::make_shared<Parameter>(Parameter({weight.size(2), weight.size(3)}));
+        params["stride"] = std::make_shared<Parameter>(Parameter({stride_h.toValue<int>(), stride_w.toValue<int>()}));
+        params["padding"] = std::make_shared<Parameter>(Parameter({pad_h.toValue<int>(), pad_w.toValue<int>()}));
+        params["dilation"] = std::make_shared<Parameter>(Parameter({dilation_h.toValue<int>(), dilation_w.toValue<int>()}));
+        params["bias"] = std::make_shared<Parameter>(mod.hasattr("bias"));
+
+        op->GetAttributes()["weight"] = std::make_shared<Attribute>(mod.attr("weight").toTensor());
+        if (mod.hasattr("bias")) {
+            op->GetAttributes()["bias"] = std::make_shared<Attribute>(mod.attr("bias").toTensor());
+        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(DeformConv2d);
+
+class RoIAlign : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torchvision.ops.roi_align.RoIAlign";
+    }
+
+    std::string TypeStr() const override {
+        return "torchvision.ops.RoIAlign";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph) const override {
+        const torch::jit::Node* roi_align = FindNodeByKind(graph, "torchvision::roi_align");
+        auto& params = op->GetParameters();
+        if (roi_align->inputs()[0] == graph->inputs()[2] && roi_align->inputs()[1] == graph->inputs()[1]) {
+            std::cerr << "roi_align inputs swapped detected !\n";
+            std::swap(op->GetInputOperands()[0], op->GetInputOperands()[1]);
+        }
+
+        const Parameter pooled_height = CreateParameterFromTorchValue(roi_align->namedInput("pooled_height"));
+        const Parameter pooled_width = CreateParameterFromTorchValue(roi_align->namedInput("pooled_width"));
+
+        params["spatial_scale"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(roi_align->namedInput("spatial_scale")));
+        params["sampling_ratio"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(roi_align->namedInput("sampling_ratio")));
+        params["aligned"] = std::make_shared<Parameter>(
+                CreateParameterFromTorchValue(roi_align->namedInput("aligned")));
+        params["output_size"] = std::make_shared<Parameter>(Parameter({pooled_height.toValue<int>(), pooled_width.toValue<int>()}));
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(RoIAlign);
 
 }// namespace pnnx
