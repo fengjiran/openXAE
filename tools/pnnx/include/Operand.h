@@ -72,6 +72,10 @@ public:
         producer_ = op;
     }
 
+    NODISCARD const std::shared_ptr<Operator>& GetProducer() const {
+        return producer_;
+    }
+
     void AddConsumer(const std::shared_ptr<Operator>& op) {
         consumers_.push_back(op);
     }
