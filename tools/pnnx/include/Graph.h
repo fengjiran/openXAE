@@ -52,6 +52,10 @@ public:
 
     std::shared_ptr<Operand> GetOperand(const std::string& name);
 
+    const std::vector<std::shared_ptr<Operator>>& GetOperators() const {
+        return ops_;
+    }
+
 #if BUILD_TORCH2PNNX
     std::shared_ptr<Operand> CreateOperand(const torch::jit::Value* v);
 #endif

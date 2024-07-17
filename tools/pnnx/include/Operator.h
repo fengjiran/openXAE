@@ -54,7 +54,15 @@ public:
         return type_;
     }
 
+    std::string& type() {
+        return type_;
+    }
+
     NODISCARD const std::string& name() const {
+        return name_;
+    }
+
+    std::string& name() {
         return name_;
     }
 
