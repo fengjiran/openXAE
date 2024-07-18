@@ -36,6 +36,10 @@ public:
         passes_.push_back(pass);
     }
 
+    const auto& GetGlobalPNNXFuseModulePass() const {
+        return passes_;
+    }
+
 private:
     FuseModulePassRegistry() = default;
     std::vector<std::shared_ptr<FuseModulePass>> passes_{};
@@ -52,6 +56,12 @@ public:
 
 #define REGISTER_PNNX_FUSE_MODULE_PASS(PASS) \
     static FuseModulePassRegEntry<PASS> CONCAT_STR(pnnx_fuse_module_pass_, PASS) = FuseModulePassRegEntry<PASS>()
+
+void pass_level1(const torch::jit::Module& mod,
+                 const std::shared_ptr<torch::jit::Graph>& g,
+                 const std::vector<std::string>& module_operators,
+                 Graph& pg);
+
 }// namespace pnnx
 
 #endif//OPENXAE_PASS_LEVEL1_H

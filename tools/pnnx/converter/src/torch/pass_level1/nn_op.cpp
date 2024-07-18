@@ -2,6 +2,7 @@
 // Created by richard on 7/10/24.
 //
 
+#include "../pass_level3/fuse_expression.h"
 #include "torch/pass_level1.h"
 #include "torch/torch_optimization.h"
 
@@ -1083,7 +1084,10 @@ public:
         const auto* gru = FindNodeByKind(graph, "aten::gru");
         const auto* return_tuple = FindNodeByKind(graph, "prim::TupleConstruct");
         auto& params = op->GetParameters();
-        if (return_tuple && return_tuple->inputs().size() == 2 && gru->outputs().size() == 2 && return_tuple->inputs()[0] == gru->outputs()[1] && return_tuple->inputs()[1] == gru->outputs()[0]) {
+        if (return_tuple && return_tuple->inputs().size() == 2 &&
+            gru->outputs().size() == 2 &&
+            return_tuple->inputs()[0] == gru->outputs()[1] &&
+            return_tuple->inputs()[1] == gru->outputs()[0]) {
             // mark the swapped output tuple
             // we would restore the fine order in pass_level3/fuse_rnn_unpack
             std::cerr << "swapped detected !\n";
@@ -1584,7 +1588,11 @@ public:
         const auto* return_tuple = FindNodeByKind(graph, "prim::TupleConstruct");
         auto& params = op->GetParameters();
 
-        if (return_tuple && return_tuple->inputs().size() == 3 && lstm->outputs().size() == 3 && return_tuple->inputs()[0] == lstm->outputs()[1] && return_tuple->inputs()[1] == lstm->outputs()[2] && return_tuple->inputs()[2] == lstm->outputs()[0]) {
+        if (return_tuple && return_tuple->inputs().size() == 3 &&
+            lstm->outputs().size() == 3 &&
+            return_tuple->inputs()[0] == lstm->outputs()[1] &&
+            return_tuple->inputs()[1] == lstm->outputs()[2] &&
+            return_tuple->inputs()[2] == lstm->outputs()[0]) {
             // mark the swapped output tuple
             // we would restore the fine order in pass_level3/fuse_rnn_unpack
             std::cerr << "swapped detected !\n";
@@ -1774,56 +1782,57 @@ public:
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(MaxPool3d);
 
-//class MaxUnpool2d : public FuseModulePass {
-//public:
-//    std::string MatchTypeStr() const override {
-//        return "__torch__.torch.nn.modules.pooling.MaxUnpool2d";
-//    }
-//
-//    std::string TypeStr() const override {
-//        return "nn.MaxUnpool2d";
-//    }
-//
-//    void Write(const std::shared_ptr<Operator>& op,
-//               const std::shared_ptr<torch::jit::Graph>& graph,
-//               const torch::jit::Module& mod) const override {
-//                graph->dump();
-//
-//        {
-//                        Graph pnnx_graph;
-//
-//                        pass_level1(mod, graph, pnnx_graph);
-//
-//                        fuse_expression(pnnx_graph);
-//
-//                        Operator* expr_op = pnnx_graph.ops[2];
-//
-//            if (expr_op->type == "pnnx.Expression") {
-//                std::string expr = expr_op->params["expr"].s;
-//
-//                int stride0;
-//                int stride1;
-//                int kernel_size0;
-//                int kernel_size1;
-//                int padding0;
-//                int padding1;
-//                int nscan = sscanf(expr.c_str(), "(int(sub(add(mul(sub(size(@0,2),1),%d),%d),%d)),int(sub(add(mul(sub(size(@1,3),1),%d),%d),%d)))", &stride0, &kernel_size0, &padding0, &stride1, &kernel_size1, &padding1);
-//                if (nscan == 6) {
-//                    op->params["kernel_size"] = Parameter{kernel_size0, kernel_size1};
-//                    op->params["stride"] = Parameter{stride0, stride1};
-//                    op->params["padding"] = Parameter{padding0 / 2, padding1 / 2};
-//                }
-//            }
-//        }
-//
-//        const torch::jit::Node* max_unpool2d = find_node_by_kind(graph, "aten::max_unpool2d");
-//
-//        for (auto aa: max_unpool2d->schema().arguments()) {
-//            fprintf(stderr, "arg %s\n", aa.name().c_str());
-//        }
-//    }
-//};
-//REGISTER_PNNX_FUSE_MODULE_PASS(MaxUnpool2d);
+class MaxUnpool2d : public FuseModulePass {
+public:
+    std::string MatchTypeStr() const override {
+        return "__torch__.torch.nn.modules.pooling.MaxUnpool2d";
+    }
+
+    std::string TypeStr() const override {
+        return "nn.MaxUnpool2d";
+    }
+
+    void Write(const std::shared_ptr<Operator>& op,
+               const std::shared_ptr<torch::jit::Graph>& graph,
+               const torch::jit::Module& mod) const override {
+        graph->dump();
+
+        {
+            Graph pnnx_graph;
+
+            pass_level1(mod, graph, {}, pnnx_graph);
+
+            fuse_expression(pnnx_graph, {}, {});
+
+            std::shared_ptr<Operator> expr_op = pnnx_graph.GetOperators()[2];
+
+            if (expr_op->type() == "pnnx.Expression") {
+                std::string expr = expr_op->GetParameters()["expr"]->toValue<std::string>();
+
+                int stride0;
+                int stride1;
+                int kernel_size0;
+                int kernel_size1;
+                int padding0;
+                int padding1;
+                int nscan = sscanf(expr.c_str(), "(int(sub(add(mul(sub(size(@0,2),1),%d),%d),%d)),int(sub(add(mul(sub(size(@1,3),1),%d),%d),%d)))",
+                                   &stride0, &kernel_size0, &padding0, &stride1, &kernel_size1, &padding1);
+                if (nscan == 6) {
+                    op->GetParameters()["kernel_size"] = std::make_shared<Parameter>(Parameter({kernel_size0, kernel_size1}));
+                    op->GetParameters()["stride"] = std::make_shared<Parameter>(Parameter({stride0, stride1}));
+                    op->GetParameters()["padding"] = std::make_shared<Parameter>(Parameter({padding0 / 2, padding1 / 2}));
+                }
+            }
+        }
+
+        const torch::jit::Node* max_unpool2d = FindNodeByKind(graph, "aten::max_unpool2d");
+
+        for (const auto& aa: max_unpool2d->schema().arguments()) {
+            std::cerr << "arg " << aa.name() << std::endl;
+        }
+    }
+};
+REGISTER_PNNX_FUSE_MODULE_PASS(MaxUnpool2d);
 
 class Mish : public FuseModulePass {
 public:
@@ -1862,7 +1871,8 @@ public:
             params["batch_first"] = std::make_shared<Parameter>(true);
             params["add_zero_attn"] = std::make_shared<Parameter>(false);
 
-            if (multi_head_attention->hasNamedInput("mask") && multi_head_attention->namedInput("mask") == graph->inputs()[graph->inputs().size() - 1]) {
+            if (multi_head_attention->hasNamedInput("mask") &&
+                multi_head_attention->namedInput("mask") == graph->inputs()[graph->inputs().size() - 1]) {
                 size_t input_count = op->GetInputOperands().size();
                 op->GetInputNames().resize(input_count);
                 op->GetInputNames()[input_count - 1] = "attn_mask";
@@ -2995,9 +3005,10 @@ public:
             try {
                 const torch::jit::Node* size_list = FindNodeByKind(graph, "prim::ListConstruct");
                 for (auto x: size_list->inputs()) {
-                    auto scale_tensor = x->node()->inputs()[0]->node()->inputs()[0]->node()->inputs()[0]->node()->inputs()[1]->node()->inputs()[0]->node()->inputs()[0]->node();
+                    auto scale_tensor =
+                            x->node()->inputs()[0]->node()->inputs()[0]->node()->inputs()[0]->node()->inputs()[1]->node()->inputs()[0]->node()->inputs()[0]->node();
                     auto t = scale_tensor->t(torch::jit::attr::value);
-                    float s = (float) t.item<double>();
+                    auto s = (float) t.item<double>();
                     scale_factor.push_back(s);
                 }
 

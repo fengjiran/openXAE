@@ -171,9 +171,7 @@ static void fuse_expression(Graph& graph,
                             std::vector<std::shared_ptr<Operand>>& inputs,
                             const std::set<std::string>& foldableConstants,
                             StoreZipReader& zip,
-                            bool checkSubgraph = true)
-
-{
+                            bool checkSubgraph = true) {
     //    Operator* op = operand->producer;
     const auto& op = operand->GetProducer();
 
