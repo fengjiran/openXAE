@@ -199,8 +199,6 @@ TEST(IRTEST, pnnx_graph_load) {
 
     int status_save = graph.save("test_linear1.pnnx.param", "test_linear1.pnnx.bin");
     ASSERT_EQ(status_save, 0);
-
-    std::cout << GetBasename("/home/richard/project/conv.pt") << std::endl;
 }
 
 TEST(IRTEST, create_pnnx_graph) {
