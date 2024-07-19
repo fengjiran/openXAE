@@ -3,7 +3,7 @@
 //
 
 #include "torch/pass_level1.h"
-#include "torch/torch_optimization.h"
+#include "torch/torch2pnnx.h"
 
 #include <torch/csrc/jit/passes/quantization/helper.h>
 

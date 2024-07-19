@@ -4,6 +4,10 @@
 
 #include "utils.h"
 
+#include <algorithm>
+#include <cstring>
+#include <iostream>
+
 namespace pnnx {
 
 unsigned short float32_to_float16(float value) {
@@ -325,6 +329,122 @@ DataType String2Type(const std::string& s) {
     if (s == "c32") return DataType::kDataTypeComplex32;
     if (s == "bf16") return DataType::kDataTypeBFloat16;
     return DataType::kDataTypeUnknown;
+}
+
+std::string GetBasename(const std::string& path) {
+    std::string dirpath;
+    std::string filename;
+
+    size_t dirpos = path.find_last_of("/\\");
+    if (dirpos != std::string::npos) {
+        dirpath = path.substr(0, dirpos + 1);
+        filename = path.substr(dirpos + 1);
+    } else {
+        filename = path;
+    }
+
+    std::string base = filename.substr(0, filename.find_last_of('.'));
+    // sanitize -
+    std::replace(base.begin(), base.end(), '-', '_');
+    return dirpath + base;
+}
+
+void ParseStringList(char* s, std::vector<std::string>& list) {
+    list.clear();
+    char* pch = strtok(s, ",");
+    while (pch) {
+        list.emplace_back(pch);
+        pch = strtok(nullptr, ",");
+    }
+}
+
+void PrintStringList(const std::vector<std::string>& list) {
+    auto size = list.size();
+    for (const auto& item: list) {
+        std::cerr << item + std::string(--size ? "," : "");
+    }
+
+    std::cerr << std::endl;
+}
+
+void ParseShapeList(char* s, std::vector<std::vector<int64_t>>& shapes, std::vector<std::string>& types) {
+    shapes.clear();
+    types.clear();
+
+    char* pch = strtok(s, "[]");
+    while (pch != nullptr) {
+        // assign user data type
+        if (!types.empty() && (pch[0] == 'b' ||
+                               pch[0] == 'f' ||
+                               pch[0] == 'i' ||
+                               pch[0] == 'u' ||
+                               pch[0] == 'c')) {
+            char type[32];
+            int nscan = sscanf(pch, "%31[^,]", type);
+            if (nscan == 1) {
+                types[types.size() - 1] = std::string(type);
+            }
+        }
+
+        // parse a,b,c
+        int v;
+        int nconsumed = 0;
+        int nscan = sscanf(pch, "%d%n", &v, &nconsumed);
+        if (nscan == 1) {
+            // ok we get shape
+            pch += nconsumed;
+
+            std::vector<int64_t> ss;
+            ss.push_back(v);
+
+            nscan = sscanf(pch, ",%d%n", &v, &nconsumed);
+            while (nscan == 1) {
+                pch += nconsumed;
+
+                ss.push_back(v);
+
+                nscan = sscanf(pch, ",%d%n", &v, &nconsumed);
+            }
+
+            // shape end
+            shapes.push_back(ss);
+            types.emplace_back("f32");
+        }
+
+        pch = strtok(nullptr, "[]");
+    }
+}
+
+void PrintShapeList(const std::vector<std::vector<int64_t>>& shapes, const std::vector<std::string>& types) {
+    for (size_t i = 0; i < shapes.size(); ++i) {
+        const std::vector<int64_t>& s = shapes[i];
+        const std::string& t = types[i];
+        std::cerr << "[";
+        auto size = s.size();
+        for (const auto& item: s) {
+            std::cerr << std::to_string(item) + (--size ? "," : "");
+        }
+        std::cerr << "]" << t;
+        if (i != shapes.size() - 1) {
+            std::cerr << ",";
+        }
+    }
+}
+
+bool ModelFileMaybeTorchscript(const std::string& path) {
+    FILE* fp = fopen(path.c_str(), "rb");
+    if (!fp) {
+        std::cerr << "open failed: " << path << std::endl;
+        return false;
+    }
+
+    uint32_t signature = 0;
+    fread((char*) &signature, sizeof(signature), 1, fp);
+
+    fclose(fp);
+
+    // torchscript is a zip
+    return signature == 0x04034b50;
 }
 
 }// namespace pnnx

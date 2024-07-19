@@ -34,6 +34,16 @@ void ShapeInference(const torch::jit::Module& mod,
                     std::set<std::string>& foldableConstants,
                     const std::string& foldableConstantsZippath);
 
-}
+void pass_level0(const torch::jit::Module& mod,
+                 std::shared_ptr<torch::jit::Graph>& g,
+                 const std::vector<at::Tensor>& input_tensors,
+                 const std::vector<at::Tensor>& input_tensors2,
+                 const std::vector<std::string>& module_operators,
+                 const std::string& ptpath,
+                 const std::string& device,
+                 std::set<std::string>& foldable_constants,
+                 const std::string& foldable_constants_zippath);
+
+}// namespace pnnx
 
 #endif//OPENXAE_PASS_LEVEL0_H

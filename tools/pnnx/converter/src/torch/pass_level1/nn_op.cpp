@@ -4,7 +4,7 @@
 
 #include "../pass_level3/fuse_expression.h"
 #include "torch/pass_level1.h"
-#include "torch/torch_optimization.h"
+#include "torch/torch2pnnx.h"
 
 namespace pnnx {
 

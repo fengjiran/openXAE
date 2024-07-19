@@ -7,6 +7,7 @@
 
 #include "datatype.h"
 #include <string>
+#include <vector>
 
 //#ifdef __has_cpp_attribute
 //#if __has_cpp_attribute(nodiscard) > 201907L
@@ -36,7 +37,7 @@ class Tensor;
 #ifdef PNNX_TORCHVISION
 namespace vision {
 int64_t cuda_version();
-} // namespace vision
+}// namespace vision
 #endif
 
 namespace pnnx {
@@ -64,6 +65,16 @@ size_t SizeOf(DataType type);
 
 DataType String2Type(const std::string& s);
 
+std::string GetBasename(const std::string& path);
 
+void ParseStringList(char* s, std::vector<std::string>& list);
+
+void PrintStringList(const std::vector<std::string>& list);
+
+void ParseShapeList(char* s, std::vector<std::vector<int64_t>>& shapes, std::vector<std::string>& types);
+
+void PrintShapeList(const std::vector<std::vector<int64_t>>& shapes, const std::vector<std::string>& types);
+
+bool ModelFileMaybeTorchscript(const std::string& path);
 }// namespace pnnx
 #endif//OPENXAE_UTILS_H
