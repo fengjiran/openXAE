@@ -2,6 +2,7 @@
 // Created by richard on 6/19/24.
 //
 #include "torch/pass_level0.h"
+#include "torch/pass_level1.h"
 #include <stack>
 #include <torch/csrc/api/include/torch/version.h>
 #include <torch/csrc/jit/passes/quantization/helper.h>
@@ -76,16 +77,16 @@ static void inlineCalls(torch::jit::Block* block,
                     continue;
                 }
 
-                //                                bool skip_inline = false;
-                //                                for (const auto& ow: get_global_pnnx_fuse_module_passes()) {
-                //                                    if (class_type_str == ow->match_type_str()) {
-                //                                        skip_inline = true;
-                //                                        break;
-                //                                    }
-                //                                }
-                //
-                //                                if (skip_inline)
-                //                                    continue;
+                bool skip_inline = false;
+                for (const auto& ow: FuseModulePassRegistry::GetInstance().GetGlobalPNNXFuseModulePass()) {
+                    if (class_type_str == ow->MatchTypeStr()) {
+                        skip_inline = true;
+                        break;
+                    }
+                }
+
+                if (skip_inline)
+                    continue;
             }
 
 #if TORCH_VERSION_MAJOR >= 2 || (TORCH_VERSION_MAJOR >= 1 && TORCH_VERSION_MINOR >= 11)
