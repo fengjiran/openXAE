@@ -172,7 +172,6 @@ static void fuse_expression(Graph& graph,
                             const std::set<std::string>& foldableConstants,
                             StoreZipReader& zip,
                             bool checkSubgraph = true) {
-    //    Operator* op = operand->producer;
     const auto& op = operand->GetProducer();
 
     // fprintf(stderr, "fuse_expression %s %s\n", op->type.c_str(), operand->name.c_str());
@@ -184,50 +183,36 @@ static void fuse_expression(Graph& graph,
     }
 
     if (op->type() == "prim::Constant") {
+        if (op->GetParameters().find("value") == op->GetParameters().end()) {
+            op->GetParameters().insert({"value", std::make_shared<Parameter>()});
+        }
         const std::shared_ptr<Parameter>& param = op->GetParameters()["value"];
-        //         fprintf(stderr, "fuse_expression prim::Constant %d\n", param.type);
-        if (param->type() == ParameterType::kParameterUnknown) {
-            expr += "None";
-        } else if (param->type() == ParameterType::kParameterBool) {
-            expr += param->toValue<bool>() ? "True" : "False";
-        } else if (param->type() == ParameterType::kParameterInt) {
-            char tmp[32];
-            sprintf(tmp, "%d", param->toValue<int>());
-            expr += tmp;
-        } else if (param->type() == ParameterType::kParameterFloat) {
-            char tmp[32];
-            sprintf(tmp, "%e", param->toValue<float>());
-            expr += tmp;
-        } else if (param->type() == ParameterType::kParameterString) {
-            expr += param->toValue<std::string>();
-        } else if (param->type() == ParameterType::kParameterArrayInt) {
-            // ints
-            expr += "[";
-            for (int i = 0; i < (int) param->toValue<std::vector<int>>().size(); i++) {
-                char tmp[32];
-                sprintf(tmp, "%d", param->toValue<std::vector<int>>()[i]);
-                expr += tmp;
-                if (i != (int) param->toValue<std::vector<int>>().size() - 1)
-                    expr += ",";
+        std::cerr << "fuse_expression prim::Constant: " << (int)param->type() << std::endl;
+
+        switch (param->type()) {
+            case ParameterType::kParameterUnknown:
+            case ParameterType::kParameterBool:
+            case ParameterType::kParameterInt:
+            case ParameterType::kParameterFloat:
+            case ParameterType::kParameterString:
+            case ParameterType::kParameterComplex: {
+                expr += param->toString();
+                break;
             }
-            expr += "]";
-        } else if (param->type() == ParameterType::kParameterArrayFloat) {
-            // floats
-            expr += "[";
-            for (int i = 0; i < (int) param->toValue<std::vector<float>>().size(); i++) {
-                char tmp[32];
-                sprintf(tmp, "%e", param->toValue<std::vector<float>>()[i]);
-                expr += tmp;
-                if (i != (int) param->toValue<std::vector<float>>().size() - 1)
-                    expr += ",";
+
+            case ParameterType::kParameterArrayInt:
+            case ParameterType::kParameterArrayFloat: {
+                std::string temp = param->toString();
+                size_t size = temp.size();
+                temp[0] = '[';
+                temp[size - 1] = ']';
+                expr += temp;
+                break;
             }
-            expr += "]";
-        } else if (param->type() == ParameterType::kParameterComplex) {
-            char tmp[32];
-            sprintf(tmp, "%e%+ej", param->toValue<std::complex<float>>().real(), param->toValue<std::complex<float>>().imag());
-            expr += tmp;
-        } else {
-            goto DEFAULT;
+
+            default: {
+                goto DEFAULT;
+            }
         }
     } else if (op->type() == "pnnx.Attribute") {
         // fprintf(stderr, "operand pnnx.Attribute %s\n", operand->name.c_str());
@@ -743,8 +728,9 @@ void fuse_expression(Graph& graph,
             if (need_fuse) {
                 std::string expr;
                 std::vector<std::shared_ptr<Operand>> inputs;
-                fuse_expression(graph, op->GetOutputOperands()[0], expr, inputs, foldableConstants, zip, false);
-                //                 fprintf(stderr, "expr = %s\n", expr.c_str());
+                fuse_expression(graph, op->GetOutputOperands()[0], expr,
+                                inputs, foldableConstants, zip, false);
+                std::cerr << "expr = " << expr << std::endl;
 
                 // lets rewrite graph
                 char name[32];

@@ -230,6 +230,16 @@ TEST(IRTEST, create_pnnx_graph) {
                                    {}, {}, {t3}, {}, {}, {}, {});
     ASSERT_TRUE(!t4);
     graph.save("linear.pnnx.param", "linear.pnnx.bin");
+
+    Operator x("pnnx.Output", "pnnx_output_0");
+    auto iter = x.GetParameters().find("value");
+    if (iter == x.GetParameters().end()) {
+        x.GetParameters().insert({"value", std::make_shared<Parameter>()});
+
+    }
+
+    const auto& p = x.GetParameters()["value"];
+    std::cout << p->toString() << std::endl;
 }
 
 TEST(IRTEST, torch2pnnx) {

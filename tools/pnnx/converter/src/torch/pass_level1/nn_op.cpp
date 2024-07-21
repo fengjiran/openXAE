@@ -87,7 +87,7 @@ public:
         params["output_size"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("output_size")));
         params["return_indices"] = std::make_shared<Parameter>(
-                graph->outputs()[0]->node()->kind() == c10::prim::TupleConstruct ? true : false);
+                graph->outputs()[0]->node()->kind() == c10::prim::TupleConstruct);
     }
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(AdaptiveMaxPool1d);
@@ -111,7 +111,7 @@ public:
         params["output_size"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("output_size")));
         params["return_indices"] = std::make_shared<Parameter>(
-                graph->outputs()[0]->node()->kind() == c10::prim::TupleConstruct ? true : false);
+                graph->outputs()[0]->node()->kind() == c10::prim::TupleConstruct);
     }
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(AdaptiveMaxPool2d);
@@ -135,7 +135,7 @@ public:
         params["output_size"] = std::make_shared<Parameter>(
                 CreateParameterFromTorchValue(node->namedInput("output_size")));
         params["return_indices"] = std::make_shared<Parameter>(
-                graph->outputs()[0]->node()->kind() == c10::prim::TupleConstruct ? true : false);
+                graph->outputs()[0]->node()->kind() == c10::prim::TupleConstruct);
     }
 };
 REGISTER_PNNX_FUSE_MODULE_PASS(AdaptiveMaxPool3d);
