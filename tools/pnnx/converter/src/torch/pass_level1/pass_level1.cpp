@@ -59,7 +59,7 @@ void pass_level1(const torch::jit::Module& mod,
         const auto in = g->inputs()[i];
 
         char name[32];
-        sprintf(name, "pnnx_input_%d", i - 1);
+        snprintf(name, sizeof(name), "pnnx_input_%d", i - 1);
 
         // create pnnx operator and operand
         std::shared_ptr<Operator> op = pg.CreateOperator("pnnx.Input", name);
@@ -339,7 +339,7 @@ void pass_level1(const torch::jit::Module& mod,
         // }
         else {
             char name[32];
-            sprintf(name, "pnnx_%d", pnnx_unknown_index++);
+            snprintf(name, sizeof(name), "pnnx_%d", pnnx_unknown_index++);
 
             std::shared_ptr<Operator> op = pg.CreateOperator(n->kind().toDisplayString(), name);
 
