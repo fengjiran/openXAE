@@ -129,8 +129,7 @@ void pass_level1(const torch::jit::Module& mod,
                 op->GetOutputOperands()[0]->SetType(op->GetAttributes()["data"]->type());
                 op->GetOutputOperands()[0]->GetShape() = op->GetAttributes()["data"]->GetShape();
             }
-        } else if (n->kind() == c10::prim::Constant)// || n->kind() == c10::prim::ListConstruct)
-        {
+        } else if (n->kind() == c10::prim::Constant) { // || n->kind() == c10::prim::ListConstruct)
             char name[32];
             sprintf(name, "pnnx_%d", pnnx_unknown_index++);
 

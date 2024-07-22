@@ -58,30 +58,31 @@ static bool OperandMaybeTensor(const std::shared_ptr<Operand>& operand) {
 
     if (op->type() == "Tensor.slice") {
         // static slice
-        const size_t inputs_size = op->GetInputOperands().size();
-        if (inputs_size != 3 && inputs_size != 4 && inputs_size != 5)
+        const size_t inputSize = op->GetInputOperands().size();
+        if (inputSize != 3 && inputSize != 4 && inputSize != 5)
             return true;
 
-        for (size_t i = 0; i < inputs_size; i++) {
-            if (op->GetInputOperands()[i]->GetProducer()->type() != "prim::Constant")
+        for (size_t i = 0; i < inputSize; i++) {
+            auto producer = op->GetInputOperands()[i]->GetProducer();
+            if (producer->type() != "prim::Constant")
                 return true;
 
-            if (op->GetInputOperands()[i]->GetProducer()->GetParameters().at("value")->type() !=
-                ParameterType::kParameterInt)
+            if (producer->GetParameters().at("value")->type() != ParameterType::kParameterInt)
                 return true;
         }
 
         // dim=0
-        if (inputs_size == 3 && op->GetParameters().at("dim")->toValue<int>() != 0)
+        if (inputSize == 3 && op->GetParameters().at("dim")->toValue<int>() != 0)
             return true;
-        if ((inputs_size == 4 || inputs_size == 5) &&
+        if ((inputSize == 4 || inputSize == 5) &&
             op->GetInputOperands()[0]->GetProducer()->GetParameters().at("value")->toValue<int>() != 1)
             return true;
 
         // step=1
-        if ((inputs_size == 3 || inputs_size == 4) && op->GetParameters().at("step")->toValue<int>() != 1)
+        if ((inputSize == 3 || inputSize == 4) && op->GetParameters().at("step")->toValue<int>() != 1)
             return true;
-        if (inputs_size == 5 && op->GetInputOperands()[4]->GetProducer()->GetParameters().at("value")->toValue<int>() != 1)
+        if (inputSize == 5 &&
+            op->GetInputOperands()[4]->GetProducer()->GetParameters().at("value")->toValue<int>() != 1)
             return true;
 
         return !OperandMaybeShapeTensor(op->GetInputOperands()[0]);
@@ -173,8 +174,7 @@ static void fuse_expression(Graph& graph,
                             StoreZipReader& zip,
                             bool checkSubgraph = true) {
     const auto& op = operand->GetProducer();
-
-    // fprintf(stderr, "fuse_expression %s %s\n", op->type.c_str(), operand->name.c_str());
+    std::cerr << "fuse expression: " << op->type() << " and " << operand->name() << std::endl;
 
     if (checkSubgraph && OperandMaybeTensor(operand)) {
         if (op->GetOutputOperands().size() > 1 || op->GetOutputOperands()[0]->GetConsumers().size() > 1) {
@@ -187,7 +187,7 @@ static void fuse_expression(Graph& graph,
             op->GetParameters().insert({"value", std::make_shared<Parameter>()});
         }
         const std::shared_ptr<Parameter>& param = op->GetParameters()["value"];
-        std::cerr << "fuse_expression prim::Constant: " << (int)param->type() << std::endl;
+        std::cerr << "fuse_expression prim::Constant: " << (int) param->type() << std::endl;
 
         switch (param->type()) {
             case ParameterType::kParameterUnknown:
@@ -216,22 +216,25 @@ static void fuse_expression(Graph& graph,
         }
     } else if (op->type() == "pnnx.Attribute") {
         // fprintf(stderr, "operand pnnx.Attribute %s\n", operand->name.c_str());
-
+        if (op->GetAttributes().find("data") == op->GetAttributes().end()) {
+            op->GetAttributes().insert({"data", std::make_shared<Attribute>()});
+        }
         const std::shared_ptr<Attribute>& data = op->GetAttributes()["data"];
+
         if (data->GetShape().size() == 1 && data->GetShape()[0] == 1 && (int) data->type() != -1) {
             if (data->type() == DataType::kDataTypeUnknown) {
                 expr += "None";
             } else if (data->type() == DataType::kDataTypeFloat32) {
                 char tmp[32];
-                sprintf(tmp, "%e", ((const float*) data->GetRawData().data())[0]);
+                snprintf(tmp, sizeof(tmp), "%e", ((const float*) data->GetRawData().data())[0]);
                 expr += tmp;
             } else if (data->type() == DataType::kDataTypeFloat64) {
                 char tmp[32];
-                sprintf(tmp, "%e", ((const double*) data->GetRawData().data())[0]);
+                snprintf(tmp, sizeof(tmp), "%e", ((const double*) data->GetRawData().data())[0]);
                 expr += tmp;
             } else if (data->type() == DataType::kDataTypeInt32) {
                 char tmp[32];
-                sprintf(tmp, "%d", ((const int*) data->GetRawData().data())[0]);
+                snprintf(tmp, sizeof(tmp), "%d", ((const int*) data->GetRawData().data())[0]);
                 expr += tmp;
             } else if (data->type() == DataType::kDataTypeInt64) {
                 int64_t v = ((const int64_t*) data->GetRawData().data())[0];
@@ -239,19 +242,19 @@ static void fuse_expression(Graph& graph,
                 if (v == std::numeric_limits<int64_t>::min()) v = INT_MIN;
 
                 char tmp[32];
-                sprintf(tmp, "%d", (int) v);
+                snprintf(tmp, sizeof(tmp), "%d", (int) v);
                 expr += tmp;
             } else if (data->type() == DataType::kDataTypeInt16) {
                 char tmp[32];
-                sprintf(tmp, "%d", ((const short*) data->GetRawData().data())[0]);
+                snprintf(tmp, sizeof(tmp), "%d", ((const short*) data->GetRawData().data())[0]);
                 expr += tmp;
             } else if (data->type() == DataType::kDataTypeInt8) {
                 char tmp[32];
-                sprintf(tmp, "%d", ((const signed char*) data->GetRawData().data())[0]);
+                snprintf(tmp, sizeof(tmp), "%d", ((const signed char*) data->GetRawData().data())[0]);
                 expr += tmp;
             } else if (data->type() == DataType::kDataTypeUInt8) {
                 char tmp[32];
-                sprintf(tmp, "%u", ((const unsigned char*) data->GetRawData().data())[0]);
+                snprintf(tmp, sizeof(tmp), "%u", ((const unsigned char*) data->GetRawData().data())[0]);
                 expr += tmp;
             } else if (data->type() == DataType::kDataTypeBool) {
                 expr += ((const char*) data->GetRawData().data())[0] ? "True" : "False";
@@ -620,19 +623,14 @@ static void fuse_expression(Graph& graph,
 
 DEFAULT:
     auto it = std::find(inputs.begin(), inputs.end(), operand);
+    char tmp[32];
     if (it == inputs.end()) {
-        // tensor
-        char tmp[32];
-        sprintf(tmp, "@%d", (int) inputs.size());
-        expr += tmp;
-
+        snprintf(tmp, sizeof(tmp), "@%d", (int) inputs.size());
         inputs.push_back(operand);
     } else {
-        // tensor
-        char tmp[32];
-        sprintf(tmp, "@%d", (int) (it - inputs.begin()));
-        expr += tmp;
+        snprintf(tmp, sizeof(tmp), "@%d", (int) (it - inputs.begin()));
     }
+    expr += tmp;
 }
 
 void fuse_expression(Graph& graph,
