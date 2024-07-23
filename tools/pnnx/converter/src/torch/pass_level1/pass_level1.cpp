@@ -82,10 +82,8 @@ void pass_level1(const torch::jit::Module& mod,
             if (class_type) {
                 std::string class_type_str = class_type->str();
                 class_type_to_names[class_type_str] = name;
-                //             class_type_to_names[class_type_str] = class_type_str + "." + name;
             } else {
                 // Tensor from some class
-                //                 Operator* op = pg.new_operator(n->kind().toDisplayString(), name);
                 std::shared_ptr<Operator> op = pg.CreateOperator("pnnx.Attribute", name);
 
                 for (int i = 0; i < (int) n->outputs().size(); i++) {
@@ -95,43 +93,43 @@ void pass_level1(const torch::jit::Module& mod,
                     op->AddOutputOperand(r);
                 }
 
-                std::deque<std::string> module_names;// = split(n->input(0)->node()->s(torch::jit::attr::name), '.');
+                std::deque<std::string> moduleNames;// = split(n->input(0)->node()->s(torch::jit::attr::name), '.');
                 {
                     auto np = n->input(0)->node();
                     while (np->hasAttribute(torch::jit::attr::name)) {
-                        module_names.push_front(np->s(torch::jit::attr::name));
+                        moduleNames.push_front(np->s(torch::jit::attr::name));
                         np = np->input(0)->node();
                     }
                 }
 
-                std::string wrapped_name;
-                auto sub_mod = mod;
-                for (const auto& module_name: module_names) {
-                    if (!wrapped_name.empty())
-                        wrapped_name += ("." + module_name);
+                std::string wrappedName;
+                auto subMod = mod;
+                for (const auto& moduleName: moduleNames) {
+                    if (!wrappedName.empty())
+                        wrappedName += ("." + moduleName);
                     else
-                        wrapped_name = module_name;
-                    sub_mod = sub_mod.attr(module_name).toModule();
+                        wrappedName = moduleName;
+                    subMod = subMod.attr(moduleName).toModule();
                 }
 
-                if (wrapped_name.empty()) {
+                if (wrappedName.empty()) {
                     // top-level module
-                    wrapped_name = name;
+                    wrappedName = name;
                 }
 
-                op->name() = wrapped_name;
+                op->name() = wrappedName;
 
                 // op->params["this"] = n->input(i)
 
                 // sub_mod.dump(true, true, true);
 
-                op->GetAttributes()["data"] = std::make_shared<Attribute>(sub_mod.attr(name).toTensor());
+                op->GetAttributes()["data"] = std::make_shared<Attribute>(subMod.attr(name).toTensor());
                 op->GetOutputOperands()[0]->SetType(op->GetAttributes()["data"]->type());
                 op->GetOutputOperands()[0]->GetShape() = op->GetAttributes()["data"]->GetShape();
             }
-        } else if (n->kind() == c10::prim::Constant) { // || n->kind() == c10::prim::ListConstruct)
+        } else if (n->kind() == c10::prim::Constant) {// || n->kind() == c10::prim::ListConstruct)
             char name[32];
-            sprintf(name, "pnnx_%d", pnnx_unknown_index++);
+            snprintf(name, sizeof(name), "pnnx_%d", pnnx_unknown_index++);
 
             std::shared_ptr<Operator> op = pg.CreateOperator(n->kind().toDisplayString(), name);
 
@@ -358,6 +356,20 @@ void pass_level1(const torch::jit::Module& mod,
             }
         }
     }
+
+    for (int i = 0; i < (int) g->outputs().size(); i++) {
+        const auto& in = g->outputs()[i];
+
+        char name[32];
+        snprintf(name, sizeof(name), "pnnx_output_%d", i);
+        std::shared_ptr<Operator> op = pg.CreateOperator("pnnx.Output", name);
+        std::shared_ptr<Operand> r = pg.GetOperand(in->debugName());
+        r->AddConsumer(op);
+        op->AddInputOperand(r);
+    }
+
+    // post process
+    FuseModuleOpUnpack(pg, module_operators);
 }
 
 }// namespace pnnx
