@@ -414,10 +414,11 @@ int torch2pnnx(const std::string& ptPath,
     std::cerr << "############# pass_level0\n";
     pass_level0(mod, graph, inputTensors, inputTensors2, moduleOperators, ptPath, device,
                 foldableConstants, foldableConstantsZippath);
-    std::cerr << "After Optimization:\n";
 
     std::cerr << "############# pass_level1\n";
     pass_level1(mod, graph, moduleOperators, g);
+
+    std::cerr << "After Optimization:\n";
     graph->dump();
 
     return 0;

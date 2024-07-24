@@ -12,6 +12,16 @@
 
 namespace pnnx {
 
+static std::string SanitizeIdentifier(const std::string& s) {
+    std::string ss = s;
+    for (char& c: ss) {
+        if (c == '.' || c == ':' || c == '/') {
+            c = '_';
+        }
+    }
+    return ss;
+}
+
 static Parameter CreateParameterFromString(const std::string& value) {
     // string type
     if (value.find('%') != std::string::npos) {
@@ -401,6 +411,157 @@ int Graph::load(const std::string& paramPath, const std::string& binPath) {
         }
     }
 
+    return 0;
+}
+
+int Graph::python(const std::string& pyPath, const std::string& binPath) {
+    std::ofstream pyfp(pyPath, std::ios::out | std::ios::binary);
+    if (!pyfp.is_open()) {
+        std::cerr << "python file " << pyPath << " open failed!\n";
+        return -1;
+    }
+
+    pyfp << "import os\n";
+    pyfp << "import numpy as np\n";
+    pyfp << "import tempfile, zipfile\n";
+    pyfp << "import torch\n";
+    pyfp << "import torch.nn as nn\n";
+    pyfp << "import torch.nn.functional as F\n";
+    pyfp << "try:\n";
+    pyfp << "    import torchvision\n";
+    pyfp << "except:\n";
+    pyfp << "    pass\n\n";
+
+    pyfp << "class Model(nn.Module):\n";
+    pyfp << "    def __init__(self):\n";
+    pyfp << "        super(Model, self).__init__()\n\n";
+
+    // module
+    {
+        for (const auto& op: GetOperators()) {
+            if (op->type().substr(0, 3) != "nn." &&
+                op->type().substr(0, 16) != "torchvision.ops.")
+                continue;
+            pyfp << "        self." << SanitizeIdentifier(op->name()) << " = " << op->type() << "(";
+            size_t paramCnt = op->GetParameters().size();
+            if (op->type() == "nn.quantized.Conv2d" || op->type() == "nn.quantized.Linear") {
+                paramCnt -= 2;// ignore scale and zero_point
+            }
+
+            int paramIdx = 0;
+            for (const auto& it: op->GetParameters()) {
+                if (op->type() == "nn.quantized.Conv2d" || op->type() == "nn.quantized.Linear") {
+                    if (it.first == "scale" || it.first == "zero_point") {
+                        continue;
+                    }
+                }
+
+                pyfp << it.first << "=";
+                const auto& param = it.second;
+                if (param->type() == ParameterType::kParameterUnknown) {
+                    pyfp << "None";
+                }
+
+                if (param->type() == ParameterType::kParameterBool) {
+                    if (param->toValue<bool>()) {
+                        pyfp << "True";
+                    } else {
+                        pyfp << "False";
+                    }
+                }
+
+                if (param->type() == ParameterType::kParameterInt) {
+                    pyfp << param->toValue<int>();
+                }
+
+                if (param->type() == ParameterType::kParameterFloat) {
+                    pyfp << param->toValue<float>();
+                }
+
+                if (param->type() == ParameterType::kParameterString) {
+                    if (param->toValue<std::string>().substr(0, 6) == "torch.") {
+                        pyfp << param->toValue<std::string>();
+                    } else {
+                        pyfp << "\'" << param->toValue<std::string>() << "\'";
+                    }
+                }
+
+                if (param->type() == ParameterType::kParameterArrayInt) {
+                    pyfp << "(";
+                    const size_t size = param->toValue<std::vector<int>>().size();
+                    for (size_t i = 0; i < size; ++i) {
+                        const auto& elem = param->toValue<std::vector<int>>()[i];
+                        if ((op->type() == "nn.AdaptiveAvgPool2d" ||
+                             op->type() == "nn.AdaptiveAvgPool3d" ||
+                             op->type() == "nn.AdaptiveMaxPool2d" ||
+                             op->type() == "nn.AdaptiveMaxPool3d") &&
+                            it.first == "output_size" && elem == 0) {
+                            pyfp << "None";
+                        } else {
+                            pyfp << elem;
+                        }
+
+                        if (i + 1 != size || size == 1) {
+                            pyfp << ",";
+                        }
+                    }
+                    pyfp << ")";
+                }
+
+                if (param->type() == ParameterType::kParameterArrayFloat) {
+                    pyfp << "(";
+                    const size_t size = param->toValue<std::vector<float>>().size();
+                    for (size_t i = 0; i < size; ++i) {
+                        const auto& elem = param->toValue<std::vector<float>>()[i];
+                        pyfp << elem;
+                        if (i + 1 != size || size == 1) {
+                            pyfp << ",";
+                        }
+                    }
+                    pyfp << ")";
+                }
+
+                if (param->type() == ParameterType::kParameterArrayString) {
+                    pyfp << "(";
+                    const size_t size = param->toValue<std::string>().size();
+                    for (size_t i = 0; i < size; ++i) {
+                        const auto& elem = param->toValue<std::vector<std::string>>()[i];
+                        if (elem.substr(0, 6) == "torch.") {
+                            pyfp << elem;
+                        } else {
+                            pyfp << "\'" << elem << "\'";
+                        }
+                        if (i + 1 != size || size == 1) {
+                            pyfp << ",";
+                        }
+                    }
+                    pyfp << ")";
+                }
+                paramIdx++;
+                if (paramIdx != paramCnt) {
+                    pyfp << ", ";
+                }
+            }
+            pyfp << ")\n";
+        }
+    }
+
+    pyfp << "\n";
+
+    // load weight
+    {
+        pyfp << "        archive = zipfile.ZipFile(" << "\'" << binPath << "\'" << ", \'r\')\n";
+        for (const auto& op: GetOperators()) {
+            if (op->type().substr(0, 3) != "nn." &&
+                op->type().substr(0, 16) != "torchvision.ops.")
+                continue;
+
+        }
+    }
+
+    pyfp << "\n";
+
+    pyfp.close();
     return 0;
 }
 

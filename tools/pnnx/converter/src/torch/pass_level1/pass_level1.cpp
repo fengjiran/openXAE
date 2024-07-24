@@ -133,16 +133,14 @@ void pass_level1(const torch::jit::Module& mod,
 
             std::shared_ptr<Operator> op = pg.CreateOperator(n->kind().toDisplayString(), name);
 
-            for (int i = 0; i < (int) n->inputs().size(); i++) {
-                const auto& in = n->input(i);
-                std::shared_ptr<Operand> r = pg.GetOperand(in->debugName());
+            for (size_t i = 0; i < n->inputs().size(); i++) {
+                std::shared_ptr<Operand> r = pg.GetOperand(n->input(i)->debugName());
                 r->AddConsumer(op);
                 op->AddInputOperand(r);
             }
 
-            for (int i = 0; i < (int) n->outputs().size(); i++) {
-                const auto& on = n->output(i);
-                std::shared_ptr<Operand> r = pg.CreateOperand(on);
+            for (size_t i = 0; i < n->outputs().size(); i++) {
+                std::shared_ptr<Operand> r = pg.CreateOperand(n->output(i));
                 r->SetProducer(op);
                 op->AddOutputOperand(r);
             }
@@ -161,37 +159,31 @@ void pass_level1(const torch::jit::Module& mod,
             //             fprintf(stderr, "call %s\n", class_type->str().c_str());
 
             std::string name = class_type_to_names[class_type->str()];
-
             std::string class_type_str = torch::jit::removeTorchMangle(class_type->str());
-
             std::string class_type_str_no_torch_prefix = class_type_str.substr(10);
-
-            std::string optypename = class_type_str;
+            std::string opTypeName = class_type_str;
 
             for (const auto& ow: FuseModulePassRegistry::GetInstance().GetGlobalPNNXFuseModulePass()) {
-                if (class_type_str != ow->MatchTypeStr())
-                    continue;
-
-                optypename = ow->TypeStr();
-                break;
+                if (class_type_str == ow->MatchTypeStr()) {
+                    opTypeName = ow->TypeStr();
+                    break;
+                }
             }
 
-            if (optypename == class_type_str) {
-                optypename = class_type_str_no_torch_prefix;
+            if (opTypeName == class_type_str) {
+                opTypeName = class_type_str_no_torch_prefix;
             }
 
-            std::shared_ptr<Operator> op = pg.CreateOperator(optypename, name);
+            std::shared_ptr<Operator> op = pg.CreateOperator(opTypeName, name);
 
-            for (int i = 1; i < (int) n->inputs().size(); i++) {
-                const auto& in = n->input(i);
-                std::shared_ptr<Operand> r = pg.GetOperand(in->debugName());
+            for (size_t i = 1; i < n->inputs().size(); i++) {
+                std::shared_ptr<Operand> r = pg.GetOperand(n->input(i)->debugName());
                 r->AddConsumer(op);
                 op->AddInputOperand(r);
             }
 
-            for (int i = 0; i < (int) n->outputs().size(); i++) {
-                const auto& on = n->output(i);
-                std::shared_ptr<Operand> r = pg.CreateOperand(on);
+            for (size_t i = 0; i < n->outputs().size(); i++) {
+                std::shared_ptr<Operand> r = pg.CreateOperand(n->output(i));
                 r->SetProducer(op);
                 op->AddOutputOperand(r);
             }
@@ -201,21 +193,14 @@ void pass_level1(const torch::jit::Module& mod,
                 const std::string& function_name = n->s(torch::jit::attr::name);
                 torch::jit::Function& function = class_type->getMethod(function_name);
                 if (function.isGraphFunction()) {
-#if TORCH_VERSION_MAJOR >= 2 || (TORCH_VERSION_MAJOR >= 1 && TORCH_VERSION_MINOR >= 11)
-                    torch::jit::Block* moduleop_block = toGraphFunction(function).graph()->block();
-#else
-                    torch::jit::Block* moduleop_block = function.graph()->block();
-#endif
-
+                    torch::jit::Block* moduleOpBlock = toGraphFunction(function).graph()->block();
                     std::map<size_t, torch::jit::Node*> constant_attr_nodes;
-                    for (const auto& mn: moduleop_block->nodes()) {
+                    for (const auto& mn: moduleOpBlock->nodes()) {
                         if (mn->kind() == c10::prim::GetAttr) {
-                            std::string name = mn->s(torch::jit::attr::name);
-                            //             std::string name = mn->debugName();
+                            std::string nodeName = mn->s(torch::jit::attr::name);
+                            auto classType = mn->output(0)->type()->cast<torch::jit::ClassType>();
 
-                            auto class_type = mn->output(0)->type()->cast<torch::jit::ClassType>();
-
-                            if (!class_type) {
+                            if (!classType) {
                                 std::deque<std::string> module_names;// = split(mn->input(0)->node()->s(torch::jit::attr::name), '.');
                                 {
                                     auto np = n->input(0)->node();
@@ -251,12 +236,12 @@ void pass_level1(const torch::jit::Module& mod,
 
                                 if (wrapped_name.empty()) {
                                     // top-level module
-                                    wrapped_name = name;
+                                    wrapped_name = nodeName;
                                 } else {
-                                    wrapped_name += ("." + name);
+                                    wrapped_name += ("." + nodeName);
                                 }
 
-                                op->GetAttributes()[wrapped_name] = std::make_shared<Attribute>(sub_mod.attr(name).toTensor());
+                                op->GetAttributes()[wrapped_name] = std::make_shared<Attribute>(sub_mod.attr(nodeName).toTensor());
                             }
                         } else if (mn->kind() == c10::prim::Constant) {
                             Parameter p(mn);
@@ -270,94 +255,64 @@ void pass_level1(const torch::jit::Module& mod,
 
                     int pnnx_moduleop_unknown_index = 0;
                     for (auto attr: constant_attr_nodes) {
-                        char name[32];
-                        sprintf(name, "pnnx_%02d", pnnx_moduleop_unknown_index);
-                        op->GetAttributes()[name] = std::make_shared<Attribute>(attr.second->t(torch::jit::attr::value));
+                        char attrName[32];
+                        snprintf(attrName, sizeof(attrName), "pnnx_%02d", pnnx_moduleop_unknown_index);
+                        op->GetAttributes()[attrName] = std::make_shared<Attribute>(attr.second->t(torch::jit::attr::value));
                         pnnx_moduleop_unknown_index++;
                     }
                 }
             } else {
                 for (const auto& ow: FuseModulePassRegistry::GetInstance().GetGlobalPNNXFuseModulePass()) {
-                    if (class_type_str != ow->MatchTypeStr())
-                        continue;
+                    if (class_type_str == ow->MatchTypeStr()) {
+                        auto classType = n->input(0)->type()->cast<torch::jit::ClassType>();
+                        torch::jit::Function& function = classType->getMethod(n->s(torch::jit::attr::name));
 
-                    auto class_type = n->input(0)->type()->cast<torch::jit::ClassType>();
-                    torch::jit::Function& function = class_type->getMethod(n->s(torch::jit::attr::name));
-
-                    std::deque<std::string> module_names;// = split(n->input(0)->node()->s(torch::jit::attr::name), '.');
-                    {
-                        auto np = n->input(0)->node();
-                        while (np->hasAttribute(torch::jit::attr::name)) {
-                            module_names.push_front(np->s(torch::jit::attr::name));
-                            np = np->input(0)->node();
+                        std::deque<std::string> module_names;
+                        {
+                            auto np = n->input(0)->node();
+                            while (np->hasAttribute(torch::jit::attr::name)) {
+                                module_names.push_front(np->s(torch::jit::attr::name));
+                                np = np->input(0)->node();
+                            }
                         }
+
+                        std::string wrapped_name;
+                        auto sub_mod = mod;
+                        for (const auto& module_name: module_names) {
+                            if (!wrapped_name.empty())
+                                wrapped_name += ("." + module_name);
+                            else
+                                wrapped_name = module_name;
+                            sub_mod = sub_mod.attr(module_name).toModule();
+                        }
+
+                        op->name() = wrapped_name;
+                        ow->Write(op, toGraphFunction(function).graph(), sub_mod);
+                        break;
                     }
-
-                    std::string wrapped_name;
-                    auto sub_mod = mod;
-                    for (const auto& module_name: module_names) {
-                        if (!wrapped_name.empty())
-                            wrapped_name += ("." + module_name);
-                        else
-                            wrapped_name = module_name;
-                        sub_mod = sub_mod.attr(module_name).toModule();
-                    }
-
-                    op->name() = wrapped_name;
-
-#if TORCH_VERSION_MAJOR >= 2 || (TORCH_VERSION_MAJOR >= 1 && TORCH_VERSION_MINOR >= 11)
-                    ow->Write(op, toGraphFunction(function).graph(), sub_mod);
-#else
-                    ow->Write(op, function.graph(), sub_mod);
-#endif
-
-                    break;
                 }
             }
-        }
-        // else if (n->kind() == c10::prim::CallFunction)
-        // {
-        //     fprintf(stderr, "function %s", n->kind().toDisplayString());
-        //
-        //     AT_ASSERT(cur->input(0)->node()->kind() == c10::prim::Constant);
-        //     auto function_constant = cur->input(0)->node();
-        //     auto fun_type = function_constant->output()->type()->expect<torch::jit::FunctionType>();
-        //     if (!fun_type->function()->isGraphFunction())
-        //     {
-        //         continue;
-        //     }
-        //     cur->removeInput(0);
-        //
-        //     fprintf(stderr, "inline function %s\n", fun_type->function()->name().c_str());
-        //
-        //     GRAPH_UPDATE("Inlining function '", fun_type->function()->name(), "' to ", *cur);
-        //     GRAPH_UPDATE("Function body: ", *fun_type->function()->optimized_graph());
-        //     inlineCallTo(cur, fun_type->function(), false);
-        //     break;
-        // }
-        else {
+        } else {
             char name[32];
             snprintf(name, sizeof(name), "pnnx_%d", pnnx_unknown_index++);
 
             std::shared_ptr<Operator> op = pg.CreateOperator(n->kind().toDisplayString(), name);
 
-            for (int i = 0; i < (int) n->inputs().size(); i++) {
-                const auto& in = n->input(i);
-                std::shared_ptr<Operand> r = pg.GetOperand(in->debugName());
+            for (size_t i = 0; i < n->inputs().size(); i++) {
+                std::shared_ptr<Operand> r = pg.GetOperand(n->input(i)->debugName());
                 r->AddConsumer(op);
                 op->AddInputOperand(r);
             }
 
-            for (int i = 0; i < (int) n->outputs().size(); i++) {
-                const auto& on = n->output(i);
-                std::shared_ptr<Operand> r = pg.CreateOperand(on);
+            for (size_t i = 0; i < n->outputs().size(); i++) {
+                std::shared_ptr<Operand> r = pg.CreateOperand(n->output(i));
                 r->SetProducer(op);
                 op->AddOutputOperand(r);
             }
         }
     }
 
-    for (int i = 0; i < (int) g->outputs().size(); i++) {
+    for (int i = 0; i < g->outputs().size(); i++) {
         const auto& in = g->outputs()[i];
 
         char name[32];
