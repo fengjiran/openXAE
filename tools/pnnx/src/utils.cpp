@@ -178,8 +178,8 @@ std::string DataType2String(DataType type) {
     return str;
 }
 
-const char* DataType2NumpyString(DataType type) {
-    const char* str;
+std::string DataType2NumpyString(DataType type) {
+    std::string str;
     switch (type) {
         case DataType::kDataTypeFloat32:
             str = "float32";
@@ -227,8 +227,8 @@ const char* DataType2NumpyString(DataType type) {
     return str;
 }
 
-const char* DataType2TorchString(DataType type) {
-    const char* str;
+std::string DataType2TorchString(DataType type) {
+    std::string str;
     switch (type) {
         case DataType::kDataTypeFloat32:
             str = "torch.float";

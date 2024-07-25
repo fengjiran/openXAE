@@ -22,6 +22,205 @@ static std::string SanitizeIdentifier(const std::string& s) {
     return ss;
 }
 
+static std::string ExpandExpression(const std::shared_ptr<Operator>& op) {
+    std::string expr = op->GetParameters().at("expr")->toValue<std::string>();
+    // split into tokens
+    std::vector<std::string> tokens;
+    {
+        std::string t;
+        for (char ch: expr) {
+            if (ch == '[') {// list
+                t += ch;
+                tokens.push_back(t);
+                t.clear();
+            } else if (ch == '(' || ch == ')' || ch == ',' || ch == ']') {
+                if (!t.empty()) {
+                    tokens.push_back(t);
+                    t.clear();
+                }
+            } else {
+                t += ch;
+            }
+        }
+
+        if (!t.empty()) {
+            tokens.push_back(t);
+        }
+    }
+
+    // scan and stack
+    std::stack<std::string> stk;
+    for (int i = (int) tokens.size() - 1; i >= 0; --i) {
+        const auto& t = tokens[i];
+        if (t == "size") {
+            std::string a = stk.top();
+            stk.pop();
+            if (stk.empty()) {
+                std::string r = a + ".shape";
+                stk.push(r);
+            } else {
+                std::string b = stk.top();
+                stk.pop();
+
+                std::string r = a + ".size(" + b + ")";
+                stk.push(r);
+            }
+        } else if (t == "int" ||
+                   t == "abs" ||
+                   t == "acos" ||
+                   t == "acosh" ||
+                   t == "asin" ||
+                   t == "asinh" ||
+                   t == "atan" ||
+                   t == "atanh" ||
+                   t == "ceil" ||
+                   t == "cos" ||
+                   t == "cosh" ||
+                   t == "exp" ||
+                   t == "floor" ||
+                   t == "log" ||
+                   t == "log10" ||
+                   t == "neg" ||
+                   t == "reciprocal" ||
+                   t == "round" ||
+                   t == "rsqrt" ||
+                   t == "sign" ||
+                   t == "sin" ||
+                   t == "sinh" ||
+                   t == "sqrt" ||
+                   t == "square" ||
+                   t == "tan" ||
+                   t == "tanh" ||
+                   t == "trunc" ||
+                   t == "torch.bool" ||
+                   t == "torch.float" ||
+                   t == "torch.long") {
+            std::string unaryOp = t;
+            if (t == "int") unaryOp = "int";
+            if (t == "abs") unaryOp = "torch.abs";
+            if (t == "acos") unaryOp = "torch.acos";
+            if (t == "acosh") unaryOp = "torch.acosh";
+            if (t == "asin") unaryOp = "torch.asin";
+            if (t == "asinh") unaryOp = "torch.asinh";
+            if (t == "atan") unaryOp = "torch.atan";
+            if (t == "atanh") unaryOp = "torch.atanh";
+            if (t == "ceil") unaryOp = "torch.ceil";
+            if (t == "cos") unaryOp = "torch.cos";
+            if (t == "cosh") unaryOp = "torch.cosh";
+            if (t == "exp") unaryOp = "torch.exp";
+            if (t == "floor") unaryOp = "torch.floor";
+            if (t == "log") unaryOp = "torch.log";
+            if (t == "log10") unaryOp = "torch.log10";
+            if (t == "neg") unaryOp = "-";
+            if (t == "reciprocal") unaryOp = "torch.reciprocal";
+            if (t == "round") unaryOp = "torch.round";
+            if (t == "rsqrt") unaryOp = "torch.rsqrt";
+            if (t == "sign") unaryOp = "torch.sign";
+            if (t == "sin") unaryOp = "torch.sin";
+            if (t == "sinh") unaryOp = "torch.sinh";
+            if (t == "sqrt") unaryOp = "torch.sqrt";
+            if (t == "square") unaryOp = "torch.square";
+            if (t == "tan") unaryOp = "torch.tan";
+            if (t == "tanh") unaryOp = "torch.tanh";
+            if (t == "trunc") unaryOp = "torch.trunc";
+
+            std::string a = stk.top();
+            stk.pop();
+
+            std::string r = unaryOp + "(" + a + ")";
+            stk.push(r);
+        } else if (t == "atan2" ||
+                   t == "fmod" ||
+                   t == "max" ||
+                   t == "maximum" ||
+                   t == "min" ||
+                   t == "minimum" ||
+                   t == "pow") {
+            std::string binaryOp;
+            if (t == "atan2") binaryOp = "torch.atan2";
+            if (t == "fmod") binaryOp = "torch.fmod";
+            if (t == "max") binaryOp = "torch.max";
+            if (t == "maximum") binaryOp = "torch.maximum";
+            if (t == "min") binaryOp = "torch.min";
+            if (t == "minimum") binaryOp = "torch.minimum";
+            if (t == "pow") binaryOp = "torch.pow";
+
+            std::string a = stk.top();
+            stk.pop();
+            std::string b = stk.top();
+            stk.pop();
+
+            std::string r = binaryOp + "(" + a + ", " + b + ")";
+            stk.push(r);
+        } else if (t == "add" ||
+                   t == "sub" ||
+                   t == "mul" ||
+                   t == "div" ||
+                   t == "floor_divide" ||
+                   t == "remainder" ||
+                   t == "and" ||
+                   t == "or" ||
+                   t == "xor" ||
+                   t == "lshift" ||
+                   t == "rshift") {
+            std::string binaryOp;
+            if (t == "add") binaryOp = "+";
+            if (t == "sub") binaryOp = "-";
+            if (t == "mul") binaryOp = "*";
+            if (t == "div") binaryOp = "/";
+            if (t == "floor_divide") binaryOp = "//";
+            if (t == "remainder") binaryOp = "%";
+            if (t == "and") binaryOp = "&";
+            if (t == "or") binaryOp = "|";
+            if (t == "xor") binaryOp = "^";
+            if (t == "lshift") binaryOp = "<<";
+            if (t == "rshift") binaryOp = ">>";
+
+            std::string a = stk.top();
+            stk.pop();
+            std::string b = stk.top();
+            stk.pop();
+
+            std::string r = "(" + a + " " + binaryOp + " " + b + ")";
+            stk.push(r);
+        } else if (t == "[") {// list
+            std::vector<std::string> elements;
+            while (!stk.empty()) {
+                std::string a = stk.top();
+                stk.pop();
+                elements.push_back(a);
+            }
+
+            std::string r = "[";
+            size_t size = elements.size();
+            for (const auto& elem: elements) {
+                r += (elem + (--size ? ", " : ""));
+            }
+            r += "]";
+
+            stk.push(r);
+        } else if (t[0] == '@') {
+            int input_index = std::stoi(t.substr(1));
+            std::string varid = std::string("v_") + SanitizeIdentifier(op->GetInputOperands()[input_index]->name());
+            stk.push(varid);
+        } else {
+            // literal
+            if (t[t.size() - 1] == 'j') {
+                // complex
+                std::string r = std::string("(") + t + ")";
+                stk.push(r);
+            } else {
+                stk.push(t);
+            }
+        }
+    }
+
+    std::string r = stk.top();
+    stk.pop();
+
+    return r;
+}
+
 static Parameter CreateParameterFromString(const std::string& value) {
     // string type
     if (value.find('%') != std::string::npos) {
@@ -556,6 +755,163 @@ int Graph::python(const std::string& pyPath, const std::string& binPath) {
                 op->type().substr(0, 16) != "torchvision.ops.")
                 continue;
 
+            if (op->type() == "nn.quantized.Conv2d" || op->type() == "nn.quantized.Linear") {
+                for (const auto& it: op->GetAttributes()) {
+                    if (it.first == "weight" || it.first == "bias") {
+                        pyfp << "        self_" + SanitizeIdentifier(op->name()) + "_" + it.first
+                             << " = self.load_pnnx_bin_as_parameter(archive, \'" + op->name() + "." + it.first + "\', (";
+                    } else {
+                        // unknown attr
+                        continue;
+                    }
+                    const auto& attr = it.second;
+                    size_t size = attr->GetShape().size();
+                    for (const auto& elem: attr->GetShape()) {
+                        pyfp << elem << (--size ? "," : "");
+                    }
+                    pyfp << "), \'" + DataType2NumpyString(attr->type()) + "\', requires_grad=False)\n";
+                }
+
+                pyfp << "        self." + SanitizeIdentifier(op->name()) + ".set_weight_bias(self_"
+                     << SanitizeIdentifier(op->name()) + "_weight, self_" + SanitizeIdentifier(op->name()) + "_bias)\n";
+                pyfp << "        self." + SanitizeIdentifier(op->name()) + ".scale = "
+                     << op->GetParameters()["scale"]->toValue<float>() << "\n";
+                pyfp << "        self." + SanitizeIdentifier(op->name()) + ".zero_point = "
+                     << op->GetParameters()["zero_point"]->toValue<int>() << "\n";
+                continue;
+            }
+
+            for (const auto& it: op->GetAttributes()) {
+                if (it.first == "running_mean" || it.first == "running_var") {
+                    pyfp << "        self." + SanitizeIdentifier(op->name()) + "." + it.first
+                         << " = self.load_pnnx_bin_as_tensor(archive, \'" + op->name() + "." + it.first + "\', (";
+                } else {
+                    pyfp << "        self." + SanitizeIdentifier(op->name()) + "." + it.first
+                         << " = self.load_pnnx_bin_as_parameter(archive, \'" + op->name() + "." + it.first + "\', (";
+                }
+                const auto& attr = it.second;
+                size_t size = attr->GetShape().size();
+                for (const auto& elem: attr->GetShape()) {
+                    pyfp << elem << (--size ? "," : "");
+                }
+
+                if (attr->type() == DataType::kDataTypeFloat32 ||
+                    attr->type() == DataType::kDataTypeFloat64 ||
+                    attr->type() == DataType::kDataTypeFloat16) {
+                    pyfp << "), \'" + DataType2NumpyString(attr->type()) + "\')\n";
+                } else {
+                    pyfp << "), \'" + DataType2NumpyString(attr->type()) + "\', requires_grad=False)\n";
+                }
+            }
+        }
+
+        for (const auto& op: GetOperators()) {
+            if (op->type() != "pnnx.Attribute") {
+                continue;
+            }
+
+            const auto& key = op->GetAttributes().begin()->first;
+            const auto& attr = op->GetAttributes().begin()->second;
+            bool is_running_mean_var = false;
+            {
+                const auto& r = op->GetOutputOperands()[0];
+                if (r->GetConsumers().size() == 1) {
+                    const auto& op2 = r->GetConsumers()[0];
+                    if (op2->type() == "F.batch_norm" || op2->type() == "F.instance_norm") {
+                        if (r == op2->GetInputOperands()[1] || r == op2->GetInputOperands()[2]) {
+                            is_running_mean_var = true;
+                        }
+                    }
+                }
+            }
+
+            bool is_empty = false;
+            for (const auto& elem: attr->GetShape()) {
+                if (elem == 0) {
+                    is_empty = true;
+                }
+            }
+
+            if (is_empty) {
+                pyfp << "        self." + SanitizeIdentifier(op->name()) + "_" + SanitizeIdentifier(key)
+                     << " = torch.from_numpy(np.empty((";
+                for (const auto& elem: attr->GetShape()) {
+                    pyfp << elem << ",";
+                }
+                pyfp << "), dtype=\'" + DataType2NumpyString(attr->type()) + "\'))\n";
+            } else {
+                if (is_running_mean_var) {
+                    pyfp << "        self." + SanitizeIdentifier(op->name()) + "_" + SanitizeIdentifier(key)
+                         << " = self.load_pnnx_bin_as_tensor(archive, \'" + op->name() + "." + key + "\', (";
+                } else {
+                    pyfp << "        self." + SanitizeIdentifier(op->name()) + "." + SanitizeIdentifier(key)
+                         << " = self.load_pnnx_bin_as_parameter(archive, \'" + op->name() + "." + key + "\', (";
+                }
+                for (const auto& elem: attr->GetShape()) {
+                    pyfp << elem << ",";
+                }
+                if (attr->type() == DataType::kDataTypeFloat32 ||
+                    attr->type() == DataType::kDataTypeFloat64 ||
+                    attr->type() == DataType::kDataTypeFloat16) {
+                    pyfp << "), \'" + DataType2NumpyString(attr->type()) + "\')\n";
+                } else {
+                    pyfp << "), \'" + DataType2NumpyString(attr->type()) + "\', requires_grad=False)\n";
+                }
+            }
+        }
+
+        pyfp << "        archive.close()\n";
+    }
+
+    pyfp << "\n";
+
+    // utility function
+    {
+        pyfp << "    def load_pnnx_bin_as_parameter(self, archive, key, shape, dtype, requires_grad=True):\n";
+        pyfp << "        return nn.Parameter(self.load_pnnx_bin_as_tensor(archive, key, shape, dtype), requires_grad)\n";
+        pyfp << "\n";
+        pyfp << "    def load_pnnx_bin_as_tensor(self, archive, key, shape, dtype):\n";
+        pyfp << "        fd, tmppath = tempfile.mkstemp()\n";
+        pyfp << "        with os.fdopen(fd, 'wb') as tmpf, archive.open(key) as keyfile:\n";
+        pyfp << "            tmpf.write(keyfile.read())\n";
+        pyfp << "        m = np.memmap(tmppath, dtype=dtype, mode='r', shape=shape).copy()\n";
+        pyfp << "        os.remove(tmppath)\n";
+        pyfp << "        return torch.from_numpy(m)\n";
+    }
+
+    pyfp << "\n";
+
+    // def forward
+    {
+        pyfp << "    def forward(self";
+        for (const auto& op: GetOperators()) {
+            if (op->type() == "pnnx.Input") {
+                pyfp << ", v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name());
+            }
+        }
+        pyfp << "):\n";
+    }
+
+    // forward body
+    {
+        for (const auto& op: GetOperators()) {
+            if (op->type() == "pnnx.Input" || op->type() == "pnnx.Output") {
+                continue;
+            }
+
+            if (op->type() == "pnnx.SliceIndexes") {
+                continue;
+            }
+
+            pyfp << "        ";
+
+            if (op->type() == "pnnx.Expression") {
+                // expr
+                size_t size = op->GetOutputOperands().size();
+                for (const auto& elem: op->GetOutputOperands()) {
+                    pyfp << "v_" << SanitizeIdentifier(elem->name()) << (--size ? ", " : "");
+                }
+            }
         }
     }
 

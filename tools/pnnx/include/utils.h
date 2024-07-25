@@ -57,9 +57,9 @@ bool IsInteger(DataType type);
 
 std::string DataType2String(DataType type);
 
-const char* DataType2NumpyString(DataType type);
+std::string DataType2NumpyString(DataType type);
 
-const char* DataType2TorchString(DataType type);
+std::string DataType2TorchString(DataType type);
 
 size_t SizeOf(DataType type);
 

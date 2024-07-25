@@ -288,15 +288,15 @@ static void fuse_expression(Graph& graph,
                     expr += "None";
                 } else if (data->type() == DataType::kDataTypeFloat32) {
                     char tmp[32];
-                    sprintf(tmp, "%e", ((const float*) data->GetRawData().data())[si]);
+                    snprintf(tmp, sizeof(tmp), "%e", ((const float*) data->GetRawData().data())[si]);
                     expr += tmp;
                 } else if (data->type() == DataType::kDataTypeFloat64) {
                     char tmp[32];
-                    sprintf(tmp, "%e", ((const double*) data->GetRawData().data())[si]);
+                    snprintf(tmp, sizeof(tmp), "%e", ((const double*) data->GetRawData().data())[si]);
                     expr += tmp;
                 } else if (data->type() == DataType::kDataTypeInt32) {
                     char tmp[32];
-                    sprintf(tmp, "%d", ((const int*) data->GetRawData().data())[si]);
+                    snprintf(tmp, sizeof(tmp), "%d", ((const int*) data->GetRawData().data())[si]);
                     expr += tmp;
                 } else if (data->type() == DataType::kDataTypeInt64) {
                     int64_t v = ((const int64_t*) data->GetRawData().data())[si];
@@ -304,19 +304,19 @@ static void fuse_expression(Graph& graph,
                     if (v == std::numeric_limits<int64_t>::min()) v = INT_MIN;
 
                     char tmp[32];
-                    sprintf(tmp, "%d", (int) v);
+                    snprintf(tmp, sizeof(tmp), "%d", (int) v);
                     expr += tmp;
                 } else if (data->type() == DataType::kDataTypeInt16) {
                     char tmp[32];
-                    sprintf(tmp, "%d", ((const short*) data->GetRawData().data())[si]);
+                    snprintf(tmp, sizeof(tmp), "%d", ((const short*) data->GetRawData().data())[si]);
                     expr += tmp;
                 } else if (data->type() == DataType::kDataTypeInt8) {
                     char tmp[32];
-                    sprintf(tmp, "%d", ((const signed char*) data->GetRawData().data())[si]);
+                    snprintf(tmp, sizeof(tmp), "%d", ((const signed char*) data->GetRawData().data())[si]);
                     expr += tmp;
                 } else if (data->type() == DataType::kDataTypeUInt8) {
                     char tmp[32];
-                    sprintf(tmp, "%u", ((const unsigned char*) data->GetRawData().data())[si]);
+                    snprintf(tmp, sizeof(tmp), "%u", ((const unsigned char*) data->GetRawData().data())[si]);
                     expr += tmp;
                 } else if (data->type() == DataType::kDataTypeBool) {
                     expr += ((const char*) data->GetRawData().data())[si] ? "True" : "False";
@@ -344,21 +344,21 @@ static void fuse_expression(Graph& graph,
                 zip.read_file(operand->name(), (char*) &v);
 
                 char tmp[32];
-                sprintf(tmp, "%e", v);
+                snprintf(tmp, sizeof(tmp), "%e", v);
                 expr += tmp;
             } else if (operand->type() == DataType::kDataTypeFloat64) {
                 double v;
                 zip.read_file(operand->name(), (char*) &v);
 
                 char tmp[32];
-                sprintf(tmp, "%e", v);
+                snprintf(tmp, sizeof(tmp), "%e", v);
                 expr += tmp;
             } else if (operand->type() == DataType::kDataTypeInt32) {
                 int v;
                 zip.read_file(operand->name(), (char*) &v);
 
                 char tmp[32];
-                sprintf(tmp, "%d", v);
+                snprintf(tmp, sizeof(tmp), "%d", v);
                 expr += tmp;
             } else if (operand->type() == DataType::kDataTypeInt64) {
                 int64_t v;
@@ -368,28 +368,28 @@ static void fuse_expression(Graph& graph,
                 if (v == std::numeric_limits<int64_t>::min()) v = INT_MIN;
 
                 char tmp[32];
-                sprintf(tmp, "%ld", v);
+                snprintf(tmp, sizeof(tmp), "%ld", v);
                 expr += tmp;
             } else if (operand->type() == DataType::kDataTypeInt16) {
                 short v;
                 zip.read_file(operand->name(), (char*) &v);
 
                 char tmp[32];
-                sprintf(tmp, "%d", v);
+                snprintf(tmp, sizeof(tmp), "%d", v);
                 expr += tmp;
             } else if (operand->type() == DataType::kDataTypeInt8) {
                 signed char v;
                 zip.read_file(operand->name(), (char*) &v);
 
                 char tmp[32];
-                sprintf(tmp, "%d", v);
+                snprintf(tmp, sizeof(tmp), "%d", v);
                 expr += tmp;
             } else if (operand->type() == DataType::kDataTypeUInt8) {
                 unsigned char v;
                 zip.read_file(operand->name(), (char*) &v);
 
                 char tmp[32];
-                sprintf(tmp, "%u", v);
+                snprintf(tmp, sizeof(tmp), "%u", v);
                 expr += tmp;
             } else if (operand->type() == DataType::kDataTypeBool) {
                 char v;
@@ -402,14 +402,14 @@ static void fuse_expression(Graph& graph,
                 if (it == inputs.end()) {
                     // tensor
                     char tmp[32];
-                    sprintf(tmp, "@%d", (int) inputs.size());
+                    snprintf(tmp, sizeof(tmp), "@%d", (int) inputs.size());
                     expr += tmp;
 
                     inputs.push_back(operand);
                 } else {
                     // tensor
                     char tmp[32];
-                    sprintf(tmp, "@%d", (int) (it - inputs.begin()));
+                    snprintf(tmp, sizeof(tmp), "@%d", (int) (it - inputs.begin()));
                     expr += tmp;
                 }
             }
@@ -732,7 +732,7 @@ void fuse_expression(Graph& graph,
 
                 // lets rewrite graph
                 char name[32];
-                sprintf(name, "pnnx_expr_%d", pnnx_expr_index++);
+                snprintf(name, sizeof(name), "pnnx_expr_%d", pnnx_expr_index++);
 
                 op->type() = "pnnx.Expression";
                 op->name() = name;
