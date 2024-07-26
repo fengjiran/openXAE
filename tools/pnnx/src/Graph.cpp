@@ -1486,12 +1486,269 @@ int Graph::python(const std::string& pyPath, const std::string& binPath) {
                         }
                         pyfp << ")";
                     }
+
+                    if (param->type() == ParameterType::kParameterArrayString) {
+                        std::vector<std::string> val = param->toValue<std::vector<std::string>>();
+                        pyfp << "(";
+                        for (size_t j = 0; j < val.size(); ++j) {
+                            if (val[j].substr(0, 6) == "torch.") {
+                                pyfp << val[j];
+                            } else {
+                                pyfp << "\'" << val[j] << "\'";
+                            }
+
+                            if (j + 1 != val.size() || val.size() == 1) {
+                                pyfp << ",";
+                            }
+                        }
+                        pyfp << ")";
+                    }
+
+                    if (param->type() == ParameterType::kParameterComplex) {
+                        pyfp << "(" << param->toString() << ")";
+                    }
+
+                    if (param->type() == ParameterType::kParameterArrayComplex) {
+                        auto val = param->toValue<std::vector<std::complex<float>>>();
+                        pyfp << "(";
+                        for (size_t j = 0; j < val.size(); ++j) {
+                            pyfp << "(" << val[j].real() << "+" << val[j].imag() << "i)";
+
+                            if (j + 1 != val.size() || val.size() == 1) {
+                                pyfp << ",";
+                            }
+                        }
+                        pyfp << ")";
+                    }
                 }
+                pyfp << ")\n";
             }
         }
     }
 
+    // return
+    {
+        pyfp << "        return ";
+        int outputCount = 0;
+        for (const auto& op: GetOperators()) {
+            if (op->type() == "pnnx.Output") {
+                outputCount++;
+            }
+        }
+
+        int outputIndex = 0;
+        for (const auto& op: GetOperators()) {
+            if (op->type() == "pnnx.Output") {
+                pyfp << "v_" << SanitizeIdentifier(op->GetInputOperands()[0]->name());
+                if (outputIndex + 1 != outputCount) {
+                    pyfp << ", ";
+                }
+                outputIndex++;
+            }
+        }
+        pyfp << std::endl;
+    }
+
     pyfp << std::endl;
+
+    // export torchscript
+    {
+        pyfp << "def export_torchscript():\n";
+        pyfp << "    net = Model()\n";
+        pyfp << "    net.eval()\n";
+        pyfp << std::endl;
+        pyfp << "    torch.manual_seed(0)\n";
+
+        std::vector<std::string> input_names;
+        for (const auto& op: GetOperators()) {
+            if (op->type() == "pnnx.Input") {
+                const auto& r = op->GetOutputOperands()[0];
+                std::string inputName = "v_" + SanitizeIdentifier(r->name());
+                if (IsInteger(r->type())) {
+                    pyfp << "    " << inputName << " = torch.randint(10, (";
+                    for (size_t i = 0; i < r->GetShape().size(); ++i) {
+                        pyfp << r->GetShape()[i];
+                        if (i + 1 != r->GetShape().size() || r->GetShape().size() == 1) {
+                            pyfp << ", ";
+                        }
+                    }
+
+                    pyfp << "), dtype=" << DataType2TorchString(r->type()) << ")\n";
+                } else {
+                    pyfp << "    " << inputName << " = torch.rand(";
+                    for (const auto& elem: r->GetShape()) {
+                        pyfp << elem << ", ";
+                    }
+                    pyfp << "dtype=" << DataType2TorchString(r->type()) << ")\n";
+                }
+                input_names.push_back(inputName);
+            }
+        }
+
+        pyfp << std::endl;
+
+        if (input_names.size() == 1) {
+            pyfp << "    mod = torch.jit.trace(net, " << input_names[0] << ")\n";
+        } else {
+            pyfp << "    mod = torch.jit.trace(net, (";
+            size_t size = input_names.size();
+            for (const auto& elem: input_names) {
+                pyfp << elem << (--size ? ", " : "");
+            }
+            pyfp << "))\n";
+        }
+        pyfp << "    mod.save(\"" << pyPath << ".pt\")\n";
+    }
+
+    pyfp << std::endl;
+
+    // export onnx
+    {
+        pyfp << "def export_onnx():\n";
+        pyfp << "    net = Model()\n";
+        pyfp << "    net.eval()\n";
+        pyfp << std::endl;
+        pyfp << "    torch.manual_seed(0)\n";
+
+        std::vector<std::string> input_names;
+        for (const auto& op: GetOperators()) {
+            if (op->type() == "pnnx.Input") {
+                const auto& r = op->GetOutputOperands()[0];
+                std::string inputName = "v_" + SanitizeIdentifier(r->name());
+                if (IsInteger(r->type())) {
+                    pyfp << "    " << inputName << " = torch.randint(10, (";
+                    for (size_t i = 0; i < r->GetShape().size(); ++i) {
+                        pyfp << r->GetShape()[i];
+                        if (i + 1 != r->GetShape().size() || r->GetShape().size() == 1) {
+                            pyfp << ", ";
+                        }
+                    }
+
+                    pyfp << "), dtype=" << DataType2TorchString(r->type()) << ")\n";
+                } else {
+                    pyfp << "    " << inputName << " = torch.rand(";
+                    for (const auto& elem: r->GetShape()) {
+                        pyfp << elem << ", ";
+                    }
+                    pyfp << "dtype=" << DataType2TorchString(r->type()) << ")\n";
+                }
+                input_names.push_back(inputName);
+            }
+        }
+
+        pyfp << std::endl;
+
+        if (input_names.size() == 1) {
+            pyfp << "    torch.onnx._export(net, " << input_names[0];
+        } else {
+            pyfp << "    torch.onnx._export(net, (";
+            size_t size = input_names.size();
+            for (const auto& elem: input_names) {
+                pyfp << elem << (--size ? ", " : "");
+            }
+            pyfp << ")";
+        }
+
+        pyfp << ", \"" << pyPath << ".onnx\", export_params=True, operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK, opset_version=13";
+        pyfp << ", input_names=[";
+
+        int inputCount = 0;
+        for (const auto& op: GetOperators()) {
+            if (op->type() == "pnnx.Input") {
+                inputCount++;
+            }
+        }
+
+        int inputIndex = 0;
+        for (const auto& op: GetOperators()) {
+            if (op->type() == "pnnx.Input") {
+                pyfp << "\'in" << inputIndex << "\'";
+                if (inputIndex + 1 != inputCount) {
+                    pyfp << ", ";
+                }
+                inputIndex++;
+            }
+        }
+
+        pyfp << "]";
+
+        pyfp << ", output_names=[";
+        int outputCount = 0;
+        for (const auto& op: GetOperators()) {
+            if (op->type() == "pnnx.Output") {
+                outputCount++;
+            }
+        }
+
+        int outputIndex = 0;
+        for (const auto& op: GetOperators()) {
+            if (op->type() == "pnnx.Output") {
+                pyfp << "\'out" << outputIndex << "\'";
+                if (outputIndex + 1 != outputCount) {
+                    pyfp << ", ";
+                }
+                outputIndex++;
+            }
+        }
+        pyfp << "]";
+        pyfp << ")\n";
+    }
+
+    pyfp << std::endl;
+
+    // test inference
+    {
+        pyfp << "def test_inference():\n";
+        pyfp << "    net = Model()\n";
+        pyfp << "    net.eval()\n";
+        pyfp << std::endl;
+        pyfp << "    torch.manual_seed(0)\n";
+
+        std::vector<std::string> input_names;
+        for (const auto& op: GetOperators()) {
+            if (op->type() == "pnnx.Input") {
+                const auto& r = op->GetOutputOperands()[0];
+                std::string inputName = "v_" + SanitizeIdentifier(r->name());
+                if (IsInteger(r->type())) {
+                    pyfp << "    " << inputName << " = torch.randint(10, (";
+                    for (size_t i = 0; i < r->GetShape().size(); ++i) {
+                        pyfp << r->GetShape()[i];
+                        if (i + 1 != r->GetShape().size() || r->GetShape().size() == 1) {
+                            pyfp << ", ";
+                        }
+                    }
+                    pyfp << "), dtype=" << DataType2TorchString(r->type()) << ")\n";
+                } else {
+                    pyfp << "    " << inputName << " = torch.rand(";
+                    for (const auto& elem: r->GetShape()) {
+                        pyfp << elem << ", ";
+                    }
+                    pyfp << "dtype=" << DataType2TorchString(r->type()) << ")\n";
+                }
+                input_names.push_back(inputName);
+            }
+        }
+
+        pyfp << std::endl;
+        if (input_names.size() == 1) {
+            pyfp << "    return net(" << input_names[0] << ")\n";
+        } else {
+            pyfp << "    return net(";
+            size_t size = input_names.size();
+            for (const auto& elem: input_names) {
+                pyfp << elem << (--size ? ", " : "");
+            }
+            pyfp << ")\n";
+        }
+    }
+
+    pyfp << std::endl;
+
+    // main
+    {
+        pyfp << "if __name__ == \"__main__\":\n";
+        pyfp << "    print(test_inference())\n";
+    }
 
     pyfp.close();
     return 0;
