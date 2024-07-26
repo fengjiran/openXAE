@@ -1310,10 +1310,183 @@ int Graph::python(const std::string& pyPath, const std::string& binPath) {
                 } else {
                     pyfp << ", need_weights=False";
                 }
-
                 pyfp << ")\n";
             } else if (op->type().substr(0, 3) == "nn." || op->type().substr(0, 16) == "torchvision.ops.") {
                 // self.xxx
+                size_t size = op->GetOutputOperands().size();
+                for (const auto& elem: op->GetOutputOperands()) {
+                    pyfp << "v_" << SanitizeIdentifier(elem->name()) << (--size ? ", " : "");
+                }
+                pyfp << " = self." << SanitizeIdentifier(op->name()) << "(";
+
+                size = op->GetInputOperands().size();
+                for (const auto& elem: op->GetInputOperands()) {
+                    pyfp << "v_" << SanitizeIdentifier(elem->name()) << (--size ? ", " : "");
+                }
+                pyfp << ")\n";
+            } else {
+                if (op->type().find("::") == std::string::npos && op->type().find('.') == std::string::npos) {
+                    pyfp << "todo " << op->type() << std::endl;
+                }
+
+                // direct
+                size_t size = op->GetOutputOperands().size();
+                for (const auto& elem: op->GetOutputOperands()) {
+                    pyfp << "v_" << SanitizeIdentifier(elem->name()) << (--size ? ", " : "");
+                }
+
+                if (op->type().substr(0, 7) == "Tensor.") {
+                    if (op->type() == "Tensor.fill") {
+                        pyfp << " = v_" << SanitizeIdentifier(op->GetInputOperands()[0]->name()) << ".fill_(";
+                    } else {
+                        pyfp << " = v_" << SanitizeIdentifier(op->GetInputOperands()[0]->name()) << "." << op->type().substr(0, 7) << "(";
+                    }
+
+                    if (op->GetInputNames().size() == op->GetInputOperands().size()) {
+                        for (size_t i = 1; i < op->GetInputOperands().size(); ++i) {
+                            if (!op->GetInputNames()[i].empty()) {
+                                continue;
+                            }
+                            pyfp << "v_" << SanitizeIdentifier(op->GetInputOperands()[i]->name()) << ", ";
+                        }
+
+                        for (size_t i = 1; i < op->GetInputOperands().size(); ++i) {
+                            if (op->GetInputNames()[i].empty()) {
+                                continue;
+                            }
+                            pyfp << op->GetInputNames()[i] << "=v_" << SanitizeIdentifier(op->GetInputOperands()[i]->name()) << ", ";
+                        }
+                    } else {
+                        for (size_t i = 1; i < op->GetInputOperands().size(); ++i) {
+                            pyfp << "v_" << SanitizeIdentifier(op->GetInputOperands()[i]->name()) << ", ";
+                        }
+                    }
+                } else {
+                    pyfp << " = " << op->type() << "(";
+                    if (op->GetInputNames().size() == op->GetInputOperands().size()) {
+                        for (size_t i = 0; i < op->GetInputOperands().size(); ++i) {
+                            if (!op->GetInputNames()[i].empty()) {
+                                continue;
+                            }
+                            pyfp << "v_" << SanitizeIdentifier(op->GetInputOperands()[i]->name());
+                            if (i + 1 != op->GetInputOperands().size()) {
+                                pyfp << ", ";
+                            }
+                        }
+
+                        for (size_t i = 0; i < op->GetInputOperands().size(); ++i) {
+                            if (op->GetInputNames()[i].empty()) {
+                                continue;
+                            }
+                            pyfp << op->GetInputNames()[i] << "=v_" << SanitizeIdentifier(op->GetInputOperands()[i]->name());
+                            if (i + 1 != op->GetInputOperands().size()) {
+                                pyfp << ", ";
+                            }
+                        }
+                    } else {
+                        size = op->GetInputOperands().size();
+                        for (const auto& elem: op->GetInputOperands()) {
+                            pyfp << "v_" << SanitizeIdentifier(elem->name()) << (--size ? ", " : "");
+                        }
+                    }
+                }
+
+                int i = 0;
+                for (const auto& it: op->GetParameters()) {
+                    if (op->type().substr(0, 7) == "Tensor." && i == 0) {
+                        pyfp << it.first << "=";
+                    } else if (op->GetInputOperands().empty() && i == 0) {
+                        pyfp << it.first << "=";
+                    } else {
+                        pyfp << ", " << it.first << "=";
+                    }
+                    ++i;
+
+                    const auto& param = it.second;
+                    if (param->type() == ParameterType::kParameterUnknown) {
+                        if (op->type() == "Tensor.index_put" && it.first == "values") {
+                            pyfp << "torch.tensor(False)";
+                        } else {
+                            pyfp << "None";
+                        }
+                    }
+
+                    if (param->type() == ParameterType::kParameterBool) {
+                        if (param->toValue<bool>()) {
+                            pyfp << "True";
+                        } else {
+                            pyfp << "False";
+                        }
+                    }
+
+                    if (param->type() == ParameterType::kParameterInt) {
+                        if (op->type() == "Tensor.index_put" && it.first == "values") {
+                            pyfp << "torch.tensor(" << param->toValue<int>() << ")";
+                        } else {
+                            pyfp << param->toValue<int>();
+                        }
+                    }
+
+                    if (param->type() == ParameterType::kParameterFloat) {
+                        if (op->type() == "Tensor.index_put" && it.first == "values") {
+                            pyfp << "torch.tensor(" << param->toValue<float>() << ")";
+                        } else {
+                            pyfp << param->toValue<float>();
+                        }
+                    }
+
+                    if (param->type() == ParameterType::kParameterString) {
+                        std::string val = param->toValue<std::string>();
+                        if (val.substr(0, 6) == "torch.") {
+                            pyfp << val;
+                        } else if (op->type() == "Tensor.index_put" && it.first == "values") {
+                            if (val == "inf" || val == "-inf") {
+                                pyfp << "torch.tensor(float(\'" << val << "\'))";
+                            } else {
+                                pyfp << "torch.tensor(\'" << val << "\')";
+                            }
+                        } else {
+                            if (val == "inf" || val == "-inf") {
+                                pyfp << "float(\'" << val << "\')";
+                            } else {
+                                pyfp << "\'" << val << "\'";
+                            }
+                        }
+                    }
+
+                    if (param->type() == ParameterType::kParameterArrayInt) {
+                        std::vector<int> val = param->toValue<std::vector<int>>();
+                        pyfp << "(";
+                        for (size_t j = 0; j < val.size(); ++j) {
+                            if ((op->type() == "F.adaptive_avg_pool2d" ||
+                                 op->type() == "F.adaptive_avg_pool3d" ||
+                                 op->type() == "F.adaptive_max_pool2d" ||
+                                 op->type() == "F.adaptive_max_pool3d") &&
+                                it.first == "output_size" && val[j] == 0) {
+                                pyfp << "None";
+                            } else {
+                                pyfp << val[j];
+                            }
+
+                            if (j + 1 != val.size() || val.size() == 1) {
+                                pyfp << ",";
+                            }
+                        }
+                        pyfp << ")";
+                    }
+
+                    if (param->type() == ParameterType::kParameterArrayFloat) {
+                        std::vector<float> val = param->toValue<std::vector<float>>();
+                        pyfp << "(";
+                        for (size_t j = 0; j < val.size(); ++j) {
+                            pyfp << val[j];
+                            if (j + 1 != val.size() || val.size() == 1) {
+                                pyfp << ",";
+                            }
+                        }
+                        pyfp << ")";
+                    }
+                }
             }
         }
     }
