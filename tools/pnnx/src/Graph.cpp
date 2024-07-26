@@ -968,9 +968,9 @@ int Graph::python(const std::string& pyPath, const std::string& binPath) {
                 pyfp << "        self." + SanitizeIdentifier(op->name()) + ".set_weight_bias(self_"
                      << SanitizeIdentifier(op->name()) + "_weight, self_" + SanitizeIdentifier(op->name()) + "_bias)\n";
                 pyfp << "        self." + SanitizeIdentifier(op->name()) + ".scale = "
-                     << op->GetParameters()["scale"]->toValue<float>() << "\n";
+                     << op->GetParameters()["scale"]->toValue<float>() << std::endl;
                 pyfp << "        self." + SanitizeIdentifier(op->name()) + ".zero_point = "
-                     << op->GetParameters()["zero_point"]->toValue<int>() << "\n";
+                     << op->GetParameters()["zero_point"]->toValue<int>() << std::endl;
                 continue;
             }
 
@@ -1056,7 +1056,7 @@ int Graph::python(const std::string& pyPath, const std::string& binPath) {
         pyfp << "        archive.close()\n";
     }
 
-    pyfp << "\n";
+    pyfp << std::endl;
 
     // utility function
     {
@@ -1106,18 +1106,219 @@ int Graph::python(const std::string& pyPath, const std::string& binPath) {
                 }
 
                 std::string expr = ExpandExpression(op);
-                pyfp << " = " << expr << "\n";
+                pyfp << " = " << expr << std::endl;
             } else if (op->type() == "pnnx.Attribute") {
                 const auto& key = op->GetAttributes().begin()->first;
                 pyfp << "v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name()) << " = self."
-                     << SanitizeIdentifier(op->name()) << "_" << SanitizeIdentifier(key) << "\n";
+                     << SanitizeIdentifier(op->name()) << "_" << SanitizeIdentifier(key) << std::endl;
             } else if (op->type() == "Tensor.slice") {
-                //
+                // slice expr
+                std::string expr = MakeSliceExpression(op);
+                pyfp << "v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name())
+                     << " = v_" << SanitizeIdentifier(op->GetInputOperands()[0]->name()) << "[" << expr << "]\n";
+            } else if (op->type() == "Tensor.slice_copy") {
+                std::string expr = MakeSliceExpression(op);
+                pyfp << "v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name())
+                     << " = v_" << SanitizeIdentifier(op->GetInputOperands()[0]->name()) << std::endl;
+                pyfp << "        v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name())
+                     << "[" << expr << "]" << " = v_" << SanitizeIdentifier(op->GetInputOperands()[1]->name());
+            } else if (op->type() == "Tensor.index") {
+                // index expr
+                if (op->GetInputOperands().size() == 2) {
+                    std::string expr = ExpandExpression(op->GetInputOperands()[1]->GetProducer());
+                    pyfp << "v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name())
+                         << " = v_" << SanitizeIdentifier(op->GetInputOperands()[0]->name()) << "[" << expr << "]\n";
+                } else {
+                    std::string expr = MakeIndexExpression(op);
+                    pyfp << "v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name())
+                         << " = v_" << SanitizeIdentifier(op->GetInputOperands()[0]->name()) << "[" << expr << "]\n";
+                }
+            } else if (op->type() == "Tensor.expand") {
+                // expand
+                pyfp << "v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name())
+                     << " = v_" << SanitizeIdentifier(op->GetInputOperands()[0]->name()) << "." << op->type().substr(7) << "(";
+                if (op->GetInputOperands().size() == 2) {
+                    pyfp << "*v_" << SanitizeIdentifier(op->GetInputOperands()[1]->name());
+                } else {
+                    const auto& shape = op->GetParameters().at("shape")->toValue<std::vector<int>>();
+                    size_t size = shape.size();
+                    for (const auto& elem: shape) {
+                        pyfp << elem << (--size ? ", " : "");
+                    }
+                }
+                pyfp << ")\n";
+            } else if (op->type() == "Tensor.view" || op->type() == "Tensor.reshape") {
+                // view reshape
+                pyfp << "v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name())
+                     << " = v_" << SanitizeIdentifier(op->GetInputOperands()[0]->name()) << "." << op->type().substr(7) << "(";
+                if (op->GetInputOperands().size() == 2) {
+                    pyfp << "*v_" << SanitizeIdentifier(op->GetInputOperands()[1]->name());
+                } else {
+                    const auto& shape = op->GetParameters().at("shape")->toValue<std::vector<int>>();
+                    size_t size = shape.size();
+                    for (const auto& elem: shape) {
+                        pyfp << elem << (--size ? ", " : "");
+                    }
+                }
+                pyfp << ")\n";
+            } else if (op->type() == "Tensor.repeat") {
+                pyfp << "v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name())
+                     << " = v_" << SanitizeIdentifier(op->GetInputOperands()[0]->name()) << "." << op->type().substr(7) << "(";
+                if (op->GetInputOperands().size() == 2) {
+                    pyfp << "*v_" << SanitizeIdentifier(op->GetInputOperands()[1]->name());
+                } else {
+                    const auto& shape = op->GetParameters().at("sizes")->toValue<std::vector<int>>();
+                    size_t size = shape.size();
+                    for (const auto& elem: shape) {
+                        pyfp << elem << (--size ? ", " : "");
+                    }
+                }
+                pyfp << ")\n";
+            } else if (op->type() == "torch.cat" || op->type() == "torch.stack") {
+                // cat
+                pyfp << "v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name()) << " = " << op->type() << "(";
+                if (op->GetInputOperands().size() == 1) {
+                    pyfp << "v_" << SanitizeIdentifier(op->GetInputOperands()[0]->name());
+                } else {
+                    pyfp << "(";
+                    size_t size = op->GetInputOperands().size();
+                    for (const auto& elem: op->GetInputOperands()) {
+                        pyfp << "v_" << SanitizeIdentifier(elem->name()) << (--size ? ", " : "");
+                    }
+                    pyfp << ")";
+                }
+                pyfp << ", dim=" << op->GetParameters().at("dim")->toValue<int>();
+                pyfp << ")\n";
+            } else if (op->type() == "torch.einsum") {
+                // einsum
+                pyfp << "v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name()) << " = " << op->type() << "(";
+                pyfp << "\'" << op->GetParameters().at("equation")->toValue<std::string>() << "\'";
+                for (const auto& elem: op->GetInputOperands()) {
+                    pyfp << ", v_" << SanitizeIdentifier(elem->name());
+                }
+                pyfp << ")\n";
+            } else if (op->type() == "prim::TupleUnpack") {
+                size_t size = op->GetOutputOperands().size();
+                for (const auto& elem: op->GetOutputOperands()) {
+                    pyfp << "v_" << SanitizeIdentifier(elem->name()) << (--size ? ", " : "");
+                }
+                pyfp << " = v_" << SanitizeIdentifier(op->GetInputOperands()[0]->name()) << std::endl;
+            } else if (op->type() == "prim::TupleConstruct") {
+                pyfp << "v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name()) << " = (";
+                for (const auto& elem: op->GetInputOperands()) {
+                    pyfp << "v_" << SanitizeIdentifier(elem->name()) << ", ";
+                }
+                pyfp << ")\n";
+            } else if (op->type() == "prim::ListUnpack") {
+                size_t size = op->GetOutputOperands().size();
+                for (const auto& elem: op->GetOutputOperands()) {
+                    pyfp << "v_" << SanitizeIdentifier(elem->name()) << (--size ? ", " : "");
+                }
+                pyfp << " = v_" << SanitizeIdentifier(op->GetInputOperands()[0]->name()) << std::endl;
+            } else if (op->type() == "prim::ListConstruct") {
+                pyfp << "v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name()) << " = [";
+                size_t size = op->GetInputOperands().size();
+                for (const auto& elem: op->GetInputOperands()) {
+                    pyfp << "v_" << SanitizeIdentifier(elem->name()) << (--size ? ", " : "");
+                }
+                pyfp << "]\n";
+            } else if (op->type() == "nn.GRU" || op->type() == "nn.RNN") {
+                if (op->GetOutputOperands().size() == 1) {
+                    pyfp << "v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name()) << ", _";
+                } else {
+                    pyfp << "v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name())
+                         << ", v_" << SanitizeIdentifier(op->GetOutputOperands()[1]->name());
+                }
+                pyfp << " = self." << SanitizeIdentifier(op->name()) << "(";
+                pyfp << "v_" << SanitizeIdentifier(op->GetInputOperands()[0]->name());
+
+                if (op->GetInputOperands().size() == 2) {
+                    pyfp << ", v_" << SanitizeIdentifier(op->GetInputOperands()[1]->name());
+                }
+                pyfp << ")\n";
+            } else if (op->type() == "nn.LSTM") {
+                if (op->GetOutputOperands().size() == 1) {
+                    pyfp << "v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name()) << ", _";
+                } else {
+                    pyfp << "v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name())
+                         << ", (v_" << SanitizeIdentifier(op->GetOutputOperands()[1]->name())
+                         << ", v_" << SanitizeIdentifier(op->GetOutputOperands()[2]->name()) << ")";
+                }
+                pyfp << " = self." << SanitizeIdentifier(op->name()) << "(";
+                pyfp << "v_" << SanitizeIdentifier(op->GetInputOperands()[0]->name());
+
+                if (op->GetInputOperands().size() == 3) {
+                    pyfp << ", (v_" << SanitizeIdentifier(op->GetInputOperands()[1]->name())
+                         << ", v_" << SanitizeIdentifier(op->GetInputOperands()[2]->name()) << ")";
+                }
+                pyfp << ")\n";
+            } else if (op->type() == "nn.MultiheadAttention") {
+                bool need_weights = true;
+                if (op->GetOutputOperands().size() == 1) {
+                    pyfp << "v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name()) << ", _";
+                    need_weights = false;
+                } else {
+                    size_t size = op->GetOutputOperands().size();
+                    for (const auto& elem: op->GetOutputOperands()) {
+                        pyfp << "v_" << SanitizeIdentifier(elem->name()) << (--size ? ", " : "");
+                    }
+                }
+                pyfp << " = self." << SanitizeIdentifier(op->name()) << "(";
+
+                if (op->GetInputOperands().size() == 1) {
+                    std::string in0 = SanitizeIdentifier(op->GetInputOperands()[0]->name());
+                    pyfp << "v_" << in0 << ", v_" << in0 << ", v_" << in0;
+                } else if (op->GetInputOperands().size() == 2) {
+                    std::string in0 = SanitizeIdentifier(op->GetInputOperands()[0]->name());
+                    std::string in1 = SanitizeIdentifier(op->GetInputOperands()[1]->name());
+
+                    if (op->GetInputNames().size() == 2 && op->GetInputNames()[1] == "attn_mask") {
+                        pyfp << "v_" << in0 << ", v_" << in0 << ", v_" << in0 << ", attn_mask=v_" << in1;
+                    } else {
+                        pyfp << "v_" << in0 << ", v_" << in1 << ", v_" << in1;
+                    }
+                } else if (op->GetInputOperands().size() == 3) {
+                    std::string in0 = SanitizeIdentifier(op->GetInputOperands()[0]->name());
+                    std::string in1 = SanitizeIdentifier(op->GetInputOperands()[1]->name());
+                    std::string in2 = SanitizeIdentifier(op->GetInputOperands()[2]->name());
+
+                    if (op->GetInputNames().size() == 3 && op->GetInputNames()[2] == "attn_mask") {
+                        pyfp << "v_" << in0 << ", v_" << in1 << ", v_" << in1 << ", attn_mask=v_" << in2;
+                    } else {
+                        pyfp << "v_" << in0 << ", v_" << in1 << ", v_" << in2;
+                    }
+                } else if (op->GetInputOperands().size() == 4) {
+                    std::string in0 = SanitizeIdentifier(op->GetInputOperands()[0]->name());
+                    std::string in1 = SanitizeIdentifier(op->GetInputOperands()[1]->name());
+                    std::string in2 = SanitizeIdentifier(op->GetInputOperands()[2]->name());
+                    std::string in3 = SanitizeIdentifier(op->GetInputOperands()[3]->name());
+
+                    if (op->GetInputNames().size() == 4 && op->GetInputNames()[3] == "attn_mask") {
+                        pyfp << "v_" << in0 << ", v_" << in1 << ", v_" << in2 << ", attn_mask=v_" << in3;
+                    } else {
+                        pyfp << "v_" << in0 << ", v_" << in1 << ", v_" << in2 << ", v_" << in3;
+                    }
+                } else {
+                    size_t size = op->GetInputOperands().size();
+                    for (const auto& elem: op->GetInputOperands()) {
+                        pyfp << "v_" << SanitizeIdentifier(elem->name()) << (--size ? ", " : "");
+                    }
+                }
+
+                if (need_weights) {
+                    pyfp << ", need_weights=True";
+                } else {
+                    pyfp << ", need_weights=False";
+                }
+
+                pyfp << ")\n";
+            } else if (op->type().substr(0, 3) == "nn." || op->type().substr(0, 16) == "torchvision.ops.") {
+                // self.xxx
             }
         }
     }
 
-    pyfp << "\n";
+    pyfp << std::endl;
 
     pyfp.close();
     return 0;
