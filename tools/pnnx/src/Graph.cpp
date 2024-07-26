@@ -221,6 +221,199 @@ static std::string ExpandExpression(const std::shared_ptr<Operator>& op) {
     return r;
 }
 
+static std::string MakeSliceExpression(const std::shared_ptr<Operator>& op) {
+    const auto& params = op->GetParameters();
+    std::vector<int> dims;
+    if (op->HasParam("dims")) {
+        dims = params.at("dims")->toValue<std::vector<int>>();
+    } else {
+        dims.push_back(params.at("dim")->toValue<int>());
+    }
+
+    std::string pr;
+    std::string nr;
+    int lastDim = -1;
+    const int ndim = (int) dims.size();
+    for (int i = 0; i < ndim; ++i) {
+        int dim = dims[i];
+        std::string& r = dim < 0 ? nr : pr;
+        for (int j = lastDim + 1; j < dim; ++j) {
+            r += ":,";
+        }
+        lastDim = dim;
+
+        bool isSelect = false;
+        if (op->HasParam("select")) {
+            int select = params.at("select")->toValue<int>();
+            if (select != std::numeric_limits<int>::max()) {
+                r += std::to_string(select);
+                isSelect = true;
+            }
+        }
+
+        if (op->HasParam("selects")) {
+            std::vector<int> selects = params.at("selects")->toValue<std::vector<int>>();
+            int select = selects[i];
+            if (select != std::numeric_limits<int>::max()) {
+                r += std::to_string(select);
+                isSelect = true;
+            }
+        }
+
+        if (op->HasInput("select")) {
+            r += "v_" + SanitizeIdentifier(op->GetNamedInput("select")->name());
+            isSelect = true;
+        }
+
+        if (op->HasInput("selects")) {
+            // must be pnnx.SliceIndexes
+            const auto& opSliceIndexes = op->GetNamedInput("selects")->GetProducer();
+            const std::string& index = opSliceIndexes->GetParameters().at("indexes")->toValue<std::vector<std::string>>()[i];
+            if (index[0] == '@') {
+                int selecti = std::stoi(index.substr(1));
+                r += "v_" + SanitizeIdentifier(opSliceIndexes->GetInputOperands()[selecti]->name());
+                isSelect = true;
+            } else {
+                int select = std::stoi(index);
+                if (select != std::numeric_limits<int>::max()) {
+                    r += std::to_string(select);
+                    isSelect = true;
+                }
+            }
+        }
+
+        if (isSelect) {
+            if (i + 1 != ndim) {
+                r += ',';
+            }
+            continue;
+        }
+
+        if (op->HasParam("start")) {
+            int start = params.at("start")->toValue<int>();
+            if (start != 0) {
+                r += std::to_string(start);
+            }
+        } else if (op->HasParam("starts")) {
+            std::vector<int> starts = params.at("starts")->toValue<std::vector<int>>();
+            int start = starts[i];
+            if (start != 0) {
+                r += std::to_string(start);
+            }
+        } else if (op->HasInput("start")) {
+            r += "v_" + SanitizeIdentifier(op->GetNamedInput("start")->name());
+        } else {
+            // must be pnnx.SliceIndexes
+            const auto& opSliceIndexes = op->GetNamedInput("starts")->GetProducer();
+            const std::string& index = opSliceIndexes->GetParameters().at("indexes")->toValue<std::vector<std::string>>()[i];
+            if (index[0] == '@') {
+                int starti = std::stoi(index.substr(1));
+                r += "v_" + SanitizeIdentifier(opSliceIndexes->GetInputOperands()[starti]->name());
+            } else {
+                int start = std::stoi(index);
+                if (start != 0) {
+                    r += std::to_string(start);
+                }
+            }
+        }
+
+        r += ':';
+
+        if (op->HasParam("end")) {
+            int end = params.at("end")->toValue<int>();
+            if (end != std::numeric_limits<int>::max()) {
+                r += std::to_string(end);
+            }
+        } else if (op->HasParam("ends")) {
+            std::vector<int> ends = params.at("ends")->toValue<std::vector<int>>();
+            int end = ends[i];
+            if (end != std::numeric_limits<int>::max()) {
+                r += std::to_string(end);
+            }
+        } else if (op->HasInput("end")) {
+            r += "v_" + SanitizeIdentifier(op->GetNamedInput("end")->name());
+        } else {
+            // must be pnnx.SliceIndexes
+            const auto& opSliceIndexes = op->GetNamedInput("ends")->GetProducer();
+            const std::string& index = opSliceIndexes->GetParameters().at("indexes")->toValue<std::vector<std::string>>()[i];
+            if (index[0] == '@') {
+                int endi = std::stoi(index.substr(1));
+                r += "v_" + SanitizeIdentifier(opSliceIndexes->GetInputOperands()[endi]->name());
+            } else {
+                int end = std::stoi(index);
+                if (end != std::numeric_limits<int>::max()) {
+                    r += std::to_string(end);
+                }
+            }
+        }
+
+        if (op->HasParam("step")) {
+            int step = params.at("step")->toValue<int>();
+            if (step != 1) {
+                r += ':';
+                r += std::to_string(step);
+            }
+        } else if (op->HasParam("steps")) {
+            std::vector<int> steps = params.at("steps")->toValue<std::vector<int>>();
+            int step = steps[i];
+            if (step != 1) {
+                r += ':';
+                r += std::to_string(step);
+            }
+        } else if (op->HasInput("step")) {
+            r += ':';
+            r += "v_" + SanitizeIdentifier(op->GetNamedInput("step")->name());
+        } else {
+            // must be pnnx.SliceIndexes
+            const auto& opSliceIndexes = op->GetNamedInput("steps")->GetProducer();
+            const std::string& index = opSliceIndexes->GetParameters().at("indexes")->toValue<std::vector<std::string>>()[i];
+            if (index[0] == '@') {
+                int stepi = std::stoi(index.substr(1));
+                r += ':';
+                r += "v_" + SanitizeIdentifier(opSliceIndexes->GetInputOperands()[stepi]->name());
+            } else {
+                int step = std::stoi(index);
+                if (step != 1) {
+                    r += ':';
+                    r += std::to_string(step);
+                }
+            }
+        }
+
+        if (i + 1 != ndim) {
+            r += ',';
+        }
+    }
+
+    if (!pr.empty() && !nr.empty()) {
+        return pr + "...," + nr;
+    }
+
+    if (pr.empty() && !nr.empty()) {
+        return "...," + nr;
+    }
+
+    return pr + nr;
+}
+
+static std::string MakeIndexExpression(const std::shared_ptr<Operator>& op) {
+    std::cerr << "make index expression: " << op->name() << std::endl;
+    std::string idxExpr = op->GetParameters().at("expr")->toValue<std::string>();
+    idxExpr = idxExpr.substr(1, idxExpr.size() - 2);// strip out-most [] pair
+
+    // None,None,  ->  ...,
+    bool leadingNone = false;
+    while (idxExpr.substr(0, 5) == "None,") {
+        leadingNone = true;
+        idxExpr = idxExpr.substr(5);
+    }
+
+    if (leadingNone) {
+        idxExpr = "...," + idxExpr;
+    }
+    return idxExpr;
+}
+
 static Parameter CreateParameterFromString(const std::string& value) {
     // string type
     if (value.find('%') != std::string::npos) {
@@ -911,6 +1104,15 @@ int Graph::python(const std::string& pyPath, const std::string& binPath) {
                 for (const auto& elem: op->GetOutputOperands()) {
                     pyfp << "v_" << SanitizeIdentifier(elem->name()) << (--size ? ", " : "");
                 }
+
+                std::string expr = ExpandExpression(op);
+                pyfp << " = " << expr << "\n";
+            } else if (op->type() == "pnnx.Attribute") {
+                const auto& key = op->GetAttributes().begin()->first;
+                pyfp << "v_" << SanitizeIdentifier(op->GetOutputOperands()[0]->name()) << " = self."
+                     << SanitizeIdentifier(op->name()) << "_" << SanitizeIdentifier(key) << "\n";
+            } else if (op->type() == "Tensor.slice") {
+                //
             }
         }
     }
