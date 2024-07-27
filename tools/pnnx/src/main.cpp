@@ -59,6 +59,8 @@ int main(int argc, char** argv) {
     std::vector<std::string> customop_modules;
     std::vector<std::string> module_operators;
 
+    std::cerr << ptPath << std::endl;
+
     for (int i = 2; i < argc; ++i) {
         // key = value
         char* kv = argv[i];
@@ -107,22 +109,14 @@ int main(int argc, char** argv) {
     {
         std::cerr << "pnnxparam = " << pnnxParamPath << std::endl;
         std::cerr << "pnnxbin = " << pnnxBinPath << std::endl;
-        std::cerr << "pnnxpy = "
-                  << pnnxPyPath << std::endl;
-        std::cerr << "pnnxonnx = "
-                  << pnnxOnnxPath << std::endl;
-        std::cerr << "ncnnparam = "
-                  << ncnnParamPath << std::endl;
-        std::cerr << "ncnnbin = "
-                  << ncnnBinPath << std::endl;
-        std::cerr << "ncnnpy = "
-                  << ncnnPyPath << std::endl;
-        std::cerr << "fp16 = "
-                  << fp16 << std::endl;
-        std::cerr << "optlevel = "
-                  << optlevel << std::endl;
-        std::cerr << "device = "
-                  << device << std::endl;
+        std::cerr << "pnnxpy = " << pnnxPyPath << std::endl;
+        std::cerr << "pnnxonnx = " << pnnxOnnxPath << std::endl;
+        std::cerr << "ncnnparam = " << ncnnParamPath << std::endl;
+        std::cerr << "ncnnbin = " << ncnnBinPath << std::endl;
+        std::cerr << "ncnnpy = " << ncnnPyPath << std::endl;
+        std::cerr << "fp16 = " << fp16 << std::endl;
+        std::cerr << "optlevel = " << optlevel << std::endl;
+        std::cerr << "device = " << device << std::endl;
         std::cerr << "inputshape = ";
         pnnx::PrintShapeList(input_shapes, input_types);
         std::cerr << std::endl;
@@ -136,4 +130,13 @@ int main(int argc, char** argv) {
         pnnx::PrintStringList(module_operators);
         std::cerr << std::endl;
     }
+
+    std::set<std::string> foldableConstants;
+    std::string foldableConstantsZippath = ptBase + ".foldable_constants.zip";
+
+    pnnx::Graph pnnxGraph;
+    pnnx::torch2pnnx(ptPath, pnnxGraph, device, input_shapes,
+                     input_types, input_shapes2, input_types2,
+                     customop_modules, module_operators,
+                     foldableConstantsZippath, foldableConstants);
 }
