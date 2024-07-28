@@ -235,7 +235,6 @@ TEST(IRTEST, create_pnnx_graph) {
     auto iter = x.GetParameters().find("value");
     if (iter == x.GetParameters().end()) {
         x.GetParameters().insert({"value", std::make_shared<Parameter>()});
-
     }
 
     const auto& p = x.GetParameters()["value"];
@@ -248,7 +247,9 @@ TEST(IRTEST, torch2pnnx) {
     Graph g;
     std::set<std::string> foldConstants;
     //    std::string pt = "test_inline_block.pt";
-    torch2pnnx(pt, g, "cpu", {}, {}, {}, {}, {}, {}, "", foldConstants);
+    torch2pnnx(pt, g, "cpu", {}, {},
+               {}, {}, {}, {},
+               "", foldConstants);
 }
 
 TEST(IRTEST, create_parameter_from_torch_node) {

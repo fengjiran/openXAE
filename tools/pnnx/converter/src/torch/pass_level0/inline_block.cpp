@@ -116,7 +116,7 @@ void inline_block(std::shared_ptr<torch::jit::Graph>& graph,
         if (x == "torch.nn.modules.container.Sequential")
             continue;
 
-        std::cerr << "inline module = " << x.c_str() << std::endl;
+        std::cerr << "inline module = " << x << std::endl;
     }
 }
 

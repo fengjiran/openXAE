@@ -119,6 +119,7 @@ add_subdirectory(tests)
 
 file(GLOB_RECURSE pnnx_src ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 add_executable(${PROJECT_NAME} ${pnnx_src})
+#target_compile_definitions(${PROJECT_NAME} PRIVATE BUILD_TORCH2PNNX)
 set_property(SOURCE src/main.cpp APPEND PROPERTY COMPILE_DEFINITIONS BUILD_TORCH2PNNX)
 target_link_libraries(${PROJECT_NAME} PRIVATE
         torch2pnnx

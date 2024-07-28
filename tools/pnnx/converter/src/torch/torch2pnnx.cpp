@@ -409,16 +409,20 @@ int torch2pnnx(const std::string& ptPath,
         std::cerr << "Use method " << method->name() << " as the entrypoint instead of forward.\n";
     }
     auto graph = method->graph();
+
+    std::cerr << "Original Graph:\n";
     graph->dump();
 
     std::cerr << "############# Run pass_level0:\n";
     pass_level0(mod, graph, inputTensors, inputTensors2, moduleOperators, ptPath, device,
                 foldableConstants, foldableConstantsZippath);
+    std::cerr << "Graph after pass level 0:\n";
+    graph->dump();
 
     std::cerr << "############# Run pass_level1:\n";
     pass_level1(mod, graph, moduleOperators, g);
 
-    std::cerr << "After Optimization:\n";
+    std::cerr << "Graph after pass level 1:\n";
     graph->dump();
 
     return 0;
