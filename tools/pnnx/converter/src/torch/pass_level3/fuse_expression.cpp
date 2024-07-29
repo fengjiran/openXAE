@@ -368,7 +368,7 @@ static void fuse_expression(Graph& graph,
                 if (v == std::numeric_limits<int64_t>::min()) v = INT_MIN;
 
                 char tmp[32];
-                snprintf(tmp, sizeof(tmp), "%lld", v);
+                snprintf(tmp, sizeof(tmp), "%ld", v);
                 expr += tmp;
             } else if (operand->type() == DataType::kDataTypeInt16) {
                 short v;

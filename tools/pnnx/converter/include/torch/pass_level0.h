@@ -11,7 +11,7 @@
 namespace pnnx {
 
 void inline_block(std::shared_ptr<torch::jit::Graph>& graph,
-                  const std::vector<std::string>& module_operators);
+                  const std::vector<std::string>& moduleOperators);
 
 void Inline(std::shared_ptr<torch::jit::Graph>& graph,
             const std::vector<std::string>& moduleOps);

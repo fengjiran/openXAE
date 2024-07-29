@@ -2,6 +2,7 @@
 // Created by richard on 7/19/24.
 //
 #include "torch/pass_level0.h"
+#include <torch/csrc/jit/passes/inliner.h>
 
 namespace pnnx {
 
@@ -15,6 +16,7 @@ void pass_level0(const torch::jit::Module& mod,
                  std::set<std::string>& foldableConstants,
                  const std::string& foldableConstantsZippath) {
     inline_block(g, moduleOperators);
+//    Inline(*g);
     ConstantUnpooling(g);
     ResetDevice(g, device);
     FlattenInput(g);
