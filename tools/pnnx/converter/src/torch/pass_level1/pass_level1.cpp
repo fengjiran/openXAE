@@ -68,22 +68,16 @@ void pass_level1(const torch::jit::Module& mod,
 
     std::map<std::string, std::string> classTypeToNames;
     int pnnx_unknown_index = 0;
-
     for (const auto& n: g->block()->nodes()) {
         if (n->kind() == c10::prim::GetAttr) {
-            // pass
             std::string name = n->s(torch::jit::attr::name);
-            //             std::string name = n->debugName();
-
-            auto class_type = n->output(0)->type()->cast<torch::jit::ClassType>();
-
-            if (class_type) {
-                std::string class_type_str = class_type->str();
-                classTypeToNames[class_type_str] = name;
+            auto classType = n->output(0)->type()->cast<torch::jit::ClassType>();
+            if (classType) {
+                std::string classTypeStr = classType->str();
+                classTypeToNames[classTypeStr] = name;
             } else {
                 // Tensor from some class
                 std::shared_ptr<Operator> op = pg.CreateOperator("pnnx.Attribute", name);
-
                 for (int i = 0; i < (int) n->outputs().size(); i++) {
                     const auto on = n->output(i);
                     std::shared_ptr<Operand> r = pg.CreateOperand(on);
@@ -116,11 +110,6 @@ void pass_level1(const torch::jit::Module& mod,
                 }
 
                 op->name() = wrappedName;
-
-                // op->params["this"] = n->input(i)
-
-                // sub_mod.dump(true, true, true);
-
                 op->GetAttributes()["data"] = std::make_shared<Attribute>(subMod.attr(name).toTensor());
                 op->GetOutputOperands()[0]->SetType(op->GetAttributes()["data"]->type());
                 op->GetOutputOperands()[0]->GetShape() = op->GetAttributes()["data"]->GetShape();
