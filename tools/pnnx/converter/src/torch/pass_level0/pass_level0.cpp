@@ -15,8 +15,8 @@ void pass_level0(const torch::jit::Module& mod,
                  const std::string& device,
                  std::set<std::string>& foldableConstants,
                  const std::string& foldableConstantsZippath) {
-    inline_block(g, moduleOperators);
-//    Inline(*g);
+    //    inline_block(g, moduleOperators);
+    Inline(*g);
     ConstantUnpooling(g);
     ResetDevice(g, device);
     FlattenInput(g);

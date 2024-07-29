@@ -70,7 +70,6 @@ static void inlineCalls(torch::jit::Block* block,
                 }
 
                 bool skipInline = false;
-                std::cerr << "module pass num: " << FuseModulePassRegistry::GetInstance().GetGlobalPNNXFuseModulePass().size() << "\n";
                 for (const auto& ow: FuseModulePassRegistry::GetInstance().GetGlobalPNNXFuseModulePass()) {
                     if (classTypeStr == ow->MatchTypeStr()) {
                         skipInline = true;

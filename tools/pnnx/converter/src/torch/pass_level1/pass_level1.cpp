@@ -66,7 +66,7 @@ void pass_level1(const torch::jit::Module& mod,
         op->AddOutputOperand(r);
     }
 
-    std::map<std::string, std::string> class_type_to_names;
+    std::map<std::string, std::string> classTypeToNames;
     int pnnx_unknown_index = 0;
 
     for (const auto& n: g->block()->nodes()) {
@@ -79,7 +79,7 @@ void pass_level1(const torch::jit::Module& mod,
 
             if (class_type) {
                 std::string class_type_str = class_type->str();
-                class_type_to_names[class_type_str] = name;
+                classTypeToNames[class_type_str] = name;
             } else {
                 // Tensor from some class
                 std::shared_ptr<Operator> op = pg.CreateOperator("pnnx.Attribute", name);
@@ -156,7 +156,7 @@ void pass_level1(const torch::jit::Module& mod,
 
             //             fprintf(stderr, "call %s\n", class_type->str().c_str());
 
-            std::string name = class_type_to_names[class_type->str()];
+            std::string name = classTypeToNames[class_type->str()];
             std::string class_type_str = torch::jit::removeTorchMangle(class_type->str());
             std::string class_type_str_no_torch_prefix = class_type_str.substr(10);
             std::string opTypeName = class_type_str;
