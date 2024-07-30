@@ -125,6 +125,7 @@ Parameter CreateParameterFromTorchNode(const torch::jit::Node* node) {
                 } else {
                     // constant tensor will become pnnx attribute node later.
                     std::cerr << "constant tensor will become pnnx attribute node later.\n";
+//                    p.type() = ParameterType::kParameterOther;
                 }
                 break;
             }

@@ -119,7 +119,6 @@ void pass_level1(const torch::jit::Module& mod,
             snprintf(name, sizeof(name), "pnnx_%d", pnnx_unknown_index++);
 
             std::shared_ptr<Operator> op = pg.CreateOperator(n->kind().toDisplayString(), name);
-
             for (size_t i = 0; i < n->inputs().size(); i++) {
                 std::shared_ptr<Operand> r = pg.GetOperand(n->input(i)->debugName());
                 r->AddConsumer(op);
