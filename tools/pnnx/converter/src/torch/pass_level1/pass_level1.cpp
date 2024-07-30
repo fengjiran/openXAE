@@ -78,14 +78,13 @@ void pass_level1(const torch::jit::Module& mod,
             } else {
                 // Tensor from some class
                 std::shared_ptr<Operator> op = pg.CreateOperator("pnnx.Attribute", name);
-                for (int i = 0; i < (int) n->outputs().size(); i++) {
-                    const auto on = n->output(i);
-                    std::shared_ptr<Operand> r = pg.CreateOperand(on);
+                for (int i = 0; i < (int) n->outputs().size(); ++i) {
+                    std::shared_ptr<Operand> r = pg.CreateOperand(n->output(i));
                     r->SetProducer(op);
                     op->AddOutputOperand(r);
                 }
 
-                std::deque<std::string> moduleNames;// = split(n->input(0)->node()->s(torch::jit::attr::name), '.');
+                std::deque<std::string> moduleNames;
                 {
                     auto np = n->input(0)->node();
                     while (np->hasAttribute(torch::jit::attr::name)) {
@@ -94,22 +93,23 @@ void pass_level1(const torch::jit::Module& mod,
                     }
                 }
 
-                std::string wrappedName;
+                std::string wrapName;
                 auto subMod = mod;
                 for (const auto& moduleName: moduleNames) {
-                    if (!wrappedName.empty())
-                        wrappedName += ("." + moduleName);
-                    else
-                        wrappedName = moduleName;
+                    if (!wrapName.empty()) {
+                        wrapName += ("." + moduleName);
+                    } else {
+                        wrapName = moduleName;
+                    }
                     subMod = subMod.attr(moduleName).toModule();
                 }
 
-                if (wrappedName.empty()) {
+                if (wrapName.empty()) {
                     // top-level module
-                    wrappedName = name;
+                    wrapName = name;
                 }
 
-                op->name() = wrappedName;
+                op->name() = wrapName;
                 op->GetAttributes()["data"] = std::make_shared<Attribute>(subMod.attr(name).toTensor());
                 op->GetOutputOperands()[0]->SetType(op->GetAttributes()["data"]->type());
                 op->GetOutputOperands()[0]->GetShape() = op->GetAttributes()["data"]->GetShape();
