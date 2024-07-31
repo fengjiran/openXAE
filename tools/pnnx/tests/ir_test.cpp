@@ -101,6 +101,8 @@ TEST(IRTEST, Parameter) {
         EXPECT_EQ(p4.toValue<std::string>(), "pnnx");
         p4 = "tvm";
         EXPECT_EQ(p4.toValue<std::string>(), "tvm");
+        p4.SetOtherType();
+        EXPECT_EQ(p4.type(), ParameterType::kParameterOther);
     }
 
     // array int parameter

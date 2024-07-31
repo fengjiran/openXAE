@@ -96,7 +96,8 @@ struct GetParameterType<T, typename std::enable_if_t<is_std_vector_complex_v<T>>
 
 class ParameterBase {
 public:
-    NODISCARD virtual ParameterType type() const = 0;
+    NODISCARD virtual ParameterType& type() = 0;
+    NODISCARD virtual const ParameterType& type() const = 0;
     NODISCARD virtual std::string toString() const = 0;
 
     virtual ~ParameterBase() = default;
@@ -120,7 +121,11 @@ public:
         return value_;
     }
 
-    NODISCARD ParameterType type() const override {
+    NODISCARD ParameterType& type() override {
+        return type_;
+    }
+
+    NODISCARD const ParameterType& type() const override {
         return type_;
     }
 
@@ -270,6 +275,12 @@ public:
             return ptr_->type();
         }
         return ParameterType::kParameterUnknown;
+    }
+
+    void SetOtherType() {
+        if (has_value()) {
+            ptr_->type() = ParameterType::kParameterOther;
+        }
     }
 
     template<typename T>
