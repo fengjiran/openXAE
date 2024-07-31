@@ -616,7 +616,8 @@ int Graph::save(const std::string& paramPath, const std::string& binPath) {
     paramFile << "7767517" << std::endl;
 
     // op number and operand number
-    paramFile << static_cast<int>(ops_.size()) << " " << static_cast<int>(operands_.size()) << std::endl;
+    paramFile << static_cast<int>(ops_.size()) << " "
+              << static_cast<int>(operands_.size()) << std::endl;
 
     // dump op info
     for (const auto& op: ops_) {
