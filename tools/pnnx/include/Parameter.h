@@ -93,6 +93,11 @@ template<typename T>
 struct GetParameterType<T, typename std::enable_if_t<is_std_vector_complex_v<T>>>
     : std::integral_constant<ParameterType, ParameterType::kParameterArrayComplex> {};
 
+// Get array size int compile time
+template<typename T, std::size_t N>
+constexpr std::size_t GetArraySize(T (&)[N]) noexcept {
+    return N;
+}
 
 class ParameterBase {
 public:

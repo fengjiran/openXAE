@@ -45,6 +45,9 @@ TEST(IRTEST, type_check) {
     static_assert(GetParameterType<std::complex<float>>() == ParameterType::kParameterComplex);
     static_assert(GetParameterType<std::vector<int>>() == ParameterType::kParameterArrayInt);
     static_assert(std::is_convertible_v<int&&, int>);
+
+    int keys[] = {1, 3, 7, 9, 11, 22, 35};
+    static_assert(GetArraySize(keys) == 7);
 }
 
 TEST(IRTEST, Parameter) {
