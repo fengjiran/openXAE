@@ -827,7 +827,7 @@ int Graph::python(const std::string& pyPath, const std::string& binPath) {
 
     pyfp << "class Model(nn.Module):\n";
     pyfp << "    def __init__(self):\n";
-    pyfp << "        super(Model, self).__init__()\n\n";
+    pyfp << "        super(Model, self).__init__()\n";
 
     // module
     {

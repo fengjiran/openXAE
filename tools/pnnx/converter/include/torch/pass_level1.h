@@ -57,6 +57,7 @@ public:
 #define REGISTER_PNNX_FUSE_MODULE_PASS(PASS) \
     static FuseModulePassRegEntry<PASS> CONCAT_STR(pnnx_fuse_module_pass_, PASS) = FuseModulePassRegEntry<PASS>()
 
+// convert to pnnx
 void pass_level1(const torch::jit::Module& mod,
                  const std::shared_ptr<torch::jit::Graph>& g,
                  const std::vector<std::string>& moduleOperators,
