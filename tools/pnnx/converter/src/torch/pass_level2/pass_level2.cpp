@@ -11,4 +11,14 @@ void GraphRewriterPass::Write(const std::shared_ptr<Operator>& op,
     //
 }
 
+static bool IsAliasOp(const std::shared_ptr<Operator>& op) {
+    if (op->type() == "aten::slice" ||
+        op->type() == "aten::select" ||
+        op->type() == "aten::view") {
+        return true;
+    }
+
+    return false;
 }
+
+}// namespace pnnx

@@ -1788,13 +1788,17 @@ std::shared_ptr<Operator> Graph::CreateOperator(const std::string& type, const s
     return op;
 }
 
-std::shared_ptr<Operator> Graph::CreateOperatorBefore(const std::string& type, const std::string& name, const std::shared_ptr<Operator>& cur) {
+std::shared_ptr<Operator> Graph::CreateOperatorBefore(const std::string& type,
+                                                      const std::string& name,
+                                                      const std::shared_ptr<Operator>& cur) {
     auto op = std::make_shared<Operator>(name, type);
     ops_.insert(std::find(ops_.begin(), ops_.end(), cur), op);
     return op;
 }
 
-std::shared_ptr<Operator> Graph::CreateOperatorAfter(const std::string& type, const std::string& name, const std::shared_ptr<Operator>& cur) {
+std::shared_ptr<Operator> Graph::CreateOperatorAfter(const std::string& type,
+                                                     const std::string& name,
+                                                     const std::shared_ptr<Operator>& cur) {
     auto op = std::make_shared<Operator>(name, type);
     ops_.insert(std::find(ops_.begin(), ops_.end(), cur) + 1, op);
     return op;
