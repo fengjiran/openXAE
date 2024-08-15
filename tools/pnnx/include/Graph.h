@@ -60,6 +60,14 @@ public:
         return ops_;
     }
 
+    const std::vector<std::shared_ptr<Operand>>& GetOperands() const {
+        return operands_;
+    }
+
+    std::vector<std::shared_ptr<Operand>>& GetOperands() {
+        return operands_;
+    }
+
 #if BUILD_TORCH2PNNX
     std::shared_ptr<Operand> CreateOperand(const torch::jit::Value* v);
 #endif

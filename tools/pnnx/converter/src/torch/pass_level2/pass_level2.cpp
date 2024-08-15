@@ -24,46 +24,157 @@ static bool IsAliasOp(const std::shared_ptr<Operator>& op) {
 static void functionize(Graph& graph) {
 
     // step1: create shadow view/slice/select for each consumer.
-    for (int i = (int) graph.GetOperators().size() - 1; i >= 0; --i) {
-        auto op = graph.GetOperators()[i];
-        if (!IsAliasOp(op)) {
-            continue;
-        }
-
-        auto out0 = op->GetOutputOperands()[0];
-        if (out0->GetConsumers().size() == 1) {
-            continue;
-        }
-
-        for (int j = (int) out0->GetConsumers().size() - 1; j > 0; --j) {
-            auto op1 = out0->GetConsumers()[j];
-            auto shadowOp = graph.CreateOperatorAfter(op->type(),
-                                                      op->name() + "_pnnxshadow_" + std::to_string(j),
-                                                      op);
-            auto shadowOut = graph.CreateOperand(shadowOp->name() + "_out");
-
-            shadowOp->GetInputOperands() = op->GetInputOperands();
-            shadowOp->GetParameters() = op->GetParameters();
-            shadowOp->AddOutputOperand(shadowOut);
-
-            for (const auto& x: op->GetInputOperands()) {
-                x->AddConsumer(shadowOp);
+    {
+        for (int i = (int) graph.GetOperators().size() - 1; i >= 0; --i) {
+            auto op = graph.GetOperators()[i];
+            if (!IsAliasOp(op)) {
+                continue;
             }
 
-            shadowOut->SetProducer(shadowOp);
-            shadowOut->SetType(out0->type());
-            shadowOut->GetShape() = out0->GetShape();
-            shadowOut->GetParams() = out0->GetParams();
-            shadowOut->AddConsumer(op1);
+            auto out0 = op->GetOutputOperands()[0];
+            if (out0->GetConsumers().size() == 1) {
+                continue;
+            }
 
-            for (auto & k : op1->GetInputOperands()) {
-                if (k == out0) {
-                    k = shadowOut;
+            for (int j = (int) out0->GetConsumers().size() - 1; j > 0; --j) {
+                auto op1 = out0->GetConsumers()[j];
+                auto shadowOp = graph.CreateOperatorAfter(op->type(),
+                                                          op->name() + "_pnnxshadow_" + std::to_string(j),
+                                                          op);
+                auto shadowOut = graph.CreateOperand(shadowOp->name() + "_out");
+
+                shadowOp->GetInputOperands() = op->GetInputOperands();
+                shadowOp->GetParameters() = op->GetParameters();
+                shadowOp->AddOutputOperand(shadowOut);
+
+                for (const auto& x: op->GetInputOperands()) {
+                    x->AddConsumer(shadowOp);
+                }
+
+                shadowOut->SetProducer(shadowOp);
+                shadowOut->SetType(out0->type());
+                shadowOut->GetShape() = out0->GetShape();
+                shadowOut->GetParams() = out0->GetParams();
+                shadowOut->AddConsumer(op1);
+
+                for (auto& operand: op1->GetInputOperands()) {
+                    if (operand == out0) {
+                        operand = shadowOut;
+                    }
+                }
+            }
+
+            out0->GetConsumers().resize(1);
+        }
+    }
+
+    // step2: replace inplace op, append copy
+    // step3: tag operand alias for view/slice/select/... output
+    {
+        for (const auto& op: graph.GetOperators()) {
+            bool isInplaceOp = op->type().size() > 2 &&
+                               op->type()[op->type().size() - 2] != '_' &&
+                               op->type()[op->type().size() - 1] == '_';
+            if (op->type() != "aten::copy_" && !IsAliasOp(op) && !isInplaceOp) {
+                continue;
+            }
+
+            auto in = op->GetInputOperands()[0];
+            int aliasIdx;
+            if (in->GetParams().find("__alias__") != in->GetParams().end()) {
+                aliasIdx = in->GetParams().at("__alias__")->toValue<int>();
+            } else {
+                aliasIdx = std::find(graph.GetOperands().begin(), graph.GetOperands().end(), in) -
+                           graph.GetOperands().begin();
+            }
+
+            if (op->type() == "aten::copy_") {
+                op->GetOutputOperands()[0]->GetParams()["__alias__"] = std::make_shared<Parameter>(aliasIdx);
+
+                // set copy output shape as the alias one
+                op->GetOutputOperands()[0]->SetType(graph.GetOperands()[aliasIdx]->type());
+                op->GetOutputOperands()[0]->GetShape() = graph.GetOperands()[aliasIdx]->GetShape();
+                continue;
+            }
+
+            if (IsAliasOp(op)) {
+                op->GetOutputOperands()[0]->GetParams()["__alias__"] = std::make_shared<Parameter>(aliasIdx);
+                continue;
+            }
+
+            if (isInplaceOp) {
+                // replace with non-inplace version, create copy op
+                op->type() = op->type().substr(0, op->type().size() - 1);
+
+                // append aten::copy_
+                if (graph.GetOperands()[aliasIdx]->GetConsumers().size() > 1) {
+                    auto in0 = op->GetInputOperands()[0];
+                    auto out0 = op->GetOutputOperands()[0];
+
+                    auto copyOp = graph.CreateOperatorAfter("aten::copy_", op->name() + "_copy", op);
+                    auto copyOut = graph.CreateOperand(op->name() + "_copy_out");
+
+                    copyOp->AddInputOperand(in0);
+                    copyOp->AddInputOperand(out0);
+                    in0->AddConsumer(copyOp);
+                    out0->AddConsumer(copyOp);
+
+                    copyOp->AddOutputOperand(copyOut);
+                    copyOut->SetProducer(copyOp);
                 }
             }
         }
+    }
 
-        out0->GetConsumers().resize(1);
+    // step4: scan inplace copy op, collect affected alias
+    {
+        for (size_t i = 0; i < graph.GetOperators().size(); ++i) {
+            auto op = graph.GetOperators()[i];
+            if (op->type() != "aten::copy_") {
+                continue;
+            }
+
+            op->type() = "aten::copy";
+            auto out0 = op->GetOutputOperands()[0];
+
+            // inplace op output always alias with the input
+            const int aliasIdx = out0->GetParams().at("__alias__")->toValue<int>();
+            auto aliasIn0 = graph.GetOperands()[aliasIdx];
+
+            size_t iAdvanced = 0;
+
+            // step5: look fpr any op after the inplace op with alias input
+            for (size_t j = i + 1; j < graph.GetOperators().size(); ++j) {
+                auto op1 = graph.GetOperators()[j];
+                bool affected = false;
+                for (const auto& x: op1->GetInputOperands()) {
+                    if (x == aliasIn0) {
+                        affected = true;
+                        break;
+                    }
+
+                    if (x->GetParams().find("__alias__") == x->GetParams().end()) {
+                        continue;
+                    }
+
+                    int aliasIdx1 = x->GetParams().at("__alias__")->toValue<int>();
+                    if (aliasIdx1 == aliasIdx) {
+                        affected = true;
+                        break;
+                    }
+                }
+
+                if (!affected) {
+                    continue;
+                }
+
+                // step6: collect ops on the chain back to alias
+                std::set<size_t> chainsx_op_indexes;
+                {
+
+                }
+            }
+        }
     }
 }
 
