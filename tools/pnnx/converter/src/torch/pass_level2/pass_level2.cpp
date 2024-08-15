@@ -8,7 +8,76 @@ namespace pnnx {
 
 void GraphRewriterPass::Write(const std::shared_ptr<Operator>& op,
                               const std::map<std::string, Parameter>& capturedParams) const {
-    //
+    if (ReplacePatternGraph().empty()) {
+        for (const auto& x: capturedParams) {
+            op->GetParameters()[x.first] = std::make_shared<Parameter>(x.second);
+        }
+        return;
+    }
+
+    for (const auto& x: op->GetParameters()) {
+        if (x.second->type() != ParameterType::kParameterString) {
+            continue;
+        }
+
+        std::string str = x.second->toString();
+        if (str.find('%') == std::string::npos) {
+            continue;
+        }
+
+        // search % token and replace with captured
+        size_t pos = str.find('%');
+        while (pos != std::string::npos) {
+            // %xyz
+            char buf[256];
+            sscanf(str.c_str() + pos + 1, "%255[^][,() ]", buf);
+            std::string key(buf);
+            if (capturedParams.find(key) == capturedParams.end()) {
+                std::cerr << "replace pattern param " << key << " missing captured.\n";
+                return;
+            }
+
+            // replace %xyz with encoded_str
+            auto encodedStr = capturedParams.at(key).toString();
+            str.replace(pos, key.size() + 1, encodedStr);
+            pos = str.find('%', pos + 1);
+        }
+
+        op->GetParameters()[x.first] = std::make_shared<Parameter>(
+                Parameter::CreateParameterFromString(str));
+    }
+
+    for (const auto& operand: op->GetInputOperands()) {
+        auto shape = operand->GetShape();
+        for (size_t i = 0; i < shape.size(); ++i) {
+            int ai = shape[i];
+            if (ai == DimVariableTag) {
+                auto key = operand->GetParams().at(std::string("__shape__") + std::to_string(i))->toValue<std::string>();
+                if (capturedParams.find(key) == capturedParams.end()) {
+                    std::cerr << "replace pattern param " << key << " missing captured.\n";
+                    return;
+                }
+
+                shape[i] = capturedParams.at(key).toValue<int>();
+            }
+        }
+    }
+
+    for (const auto& operand: op->GetOutputOperands()) {
+        auto shape = operand->GetShape();
+        for (size_t i = 0; i < shape.size(); ++i) {
+            int ai = shape[i];
+            if (ai == DimVariableTag) {
+                auto key = operand->GetParams().at(std::string("__shape__") + std::to_string(i))->toValue<std::string>();
+                if (capturedParams.find(key) == capturedParams.end()) {
+                    std::cerr << "replace pattern param " << key << " missing captured.\n";
+                    return;
+                }
+
+                shape[i] = capturedParams.at(key).toValue<int>();
+            }
+        }
+    }
 }
 
 static bool IsAliasOp(const std::shared_ptr<Operator>& op) {

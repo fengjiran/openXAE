@@ -36,7 +36,7 @@ public:
         return Match(capturedParams);
     }
 
-    virtual bool Match(const std::map<std::string, const std::shared_ptr<Operator>>,
+    virtual bool Match(const std::map<std::string, const std::shared_ptr<Operator>>&,
                        const std::map<std::string, Parameter>& capturedParams,
                        const std::map<std::string, Attribute>& capturedAttrs) const {
         return Match(capturedParams, capturedAttrs);
@@ -78,10 +78,8 @@ public:
     }
 };
 
-
 #define REGISTER_PNNX_GRAPH_REWRITER_PASS(PASS, PRIORITY) \
     static GraphRewriterPassRegEntry<PASS, PRIORITY> CONCAT_STR(pnnx_graph_rewriter_pass_, PASS) = GraphRewriterPassRegEntry<PASS, PRIORITY>()
-
 
 }// namespace pnnx
 
