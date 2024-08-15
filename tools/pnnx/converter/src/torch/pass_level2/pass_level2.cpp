@@ -171,9 +171,80 @@ static void functionize(Graph& graph) {
                 // step6: collect ops on the chain back to alias
                 std::set<size_t> chainsx_op_indexes;
                 {
+                    size_t op1Idx = std::find(graph.GetOperators().begin(), graph.GetOperators().end(), op1) -
+                                    graph.GetOperators().begin();
+                    if (op1Idx < i - iAdvanced) {
+                        chainsx_op_indexes.insert(op1Idx);
+                    }
 
+                    while (true) {
+                        auto x = op1->GetInputOperands()[0];
+                        if (x->GetParams().find("__alias__") == x->GetParams().end()) {
+                            break;
+                        }
+
+                        int aliasIdx1 = x->GetParams().at("__alias__")->toValue<int>();
+                        if (aliasIdx1 != aliasIdx) {
+                            break;
+                        }
+
+                        op1 = x->GetProducer();
+                        size_t newOp1Idx = std::find(graph.GetOperators().begin(), graph.GetOperators().end(), op1) -
+                                           graph.GetOperators().begin();
+                        if (newOp1Idx < i - iAdvanced) {
+                            chainsx_op_indexes.insert(newOp1Idx);
+                        }
+                    }
                 }
+
+                // step7: move chain after copy op
+                {
+                    int k = 0;
+                    for (size_t doi: chainsx_op_indexes) {
+                        doi -= k;
+
+                        for (size_t l = doi; l < i - iAdvanced; ++l) {
+                            std::swap(graph.GetOperators()[l], graph.GetOperators()[l + 1]);
+                        }
+
+                        k++;
+                    }
+                    iAdvanced += chainsx_op_indexes.size();
+                }
+
+                // step8: update all alias uses after copy op, retag alias
+                out0->GetParams().erase("__alias__");
+                const int newAliasIdx = std::find(graph.GetOperands().begin(), graph.GetOperands().end(), out0) -
+                                        graph.GetOperands().begin();
+                for (size_t k = i - iAdvanced + 1; k < graph.GetOperators().size(); ++k) {
+                    auto op2 = graph.GetOperators()[k];
+
+                    for (size_t l = 0; l < op2->GetInputOperands().size(); ++l) {
+                        if (op2->GetInputOperands()[l] == aliasIn0) {
+                            op2->GetInputOperands()[l] = out0;
+                            aliasIn0->RemoveConsumer(op2);
+                            out0->AddConsumer(op2);
+                        }
+                    }
+
+                    for (const auto& x: op2->GetOutputOperands()) {
+                        if (x->GetParams().find("__alias__") != x->GetParams().end() &&
+                            x->GetParams().at("__alias__")->toValue<int>() == aliasIdx) {
+                            x->GetParams()["__alias__"] = std::make_shared<Parameter>(newAliasIdx);
+                        }
+                    }
+                }
+
+                // rewind to the updated copy op
+                j -= chainsx_op_indexes.size();
             }
+        }
+    }
+
+    // step9: clear all alias tag
+    {
+        for (const auto& x: graph.GetOperands()) {
+            x->GetParams().erase("__alias__");
         }
     }
 }
