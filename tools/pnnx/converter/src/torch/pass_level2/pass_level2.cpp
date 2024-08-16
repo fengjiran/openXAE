@@ -126,6 +126,20 @@ void GraphRewriterPass::Write(const std::map<std::string, std::shared_ptr<Operat
     }
 }
 
+static bool TokenIsArgument(const std::string& t) {
+    if (t[0] != '@' || t.size() < 2) {
+        return false;
+    }
+
+    for (size_t i = 1; i < t.size(); i++) {
+        if (t[i] < '0' || t[i] > '9') {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 static bool IsAliasOp(const std::shared_ptr<Operator>& op) {
     if (op->type() == "aten::slice" ||
         op->type() == "aten::select" ||
