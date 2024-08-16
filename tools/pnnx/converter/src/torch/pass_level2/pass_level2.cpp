@@ -80,6 +80,52 @@ void GraphRewriterPass::Write(const std::shared_ptr<Operator>& op,
     }
 }
 
+void GraphRewriterPass::Write(const std::shared_ptr<Operator>& op,
+                              const std::map<std::string, Parameter>& capturedParams,
+                              const std::map<std::string, Attribute>& capturedAttrs) const {
+    Write(op, capturedParams);
+    for (auto& x: op->GetAttributes()) {
+        if (x.second->type() != DataType::kDataTypeUnknown) {
+            continue;
+        }
+
+        std::string key(x.second->GetRawData().data());
+        if (key.empty()) {
+            continue;
+        }
+
+        //        op->GetAttributes()[x.first] = std::make_shared<Attribute>(capturedAttrs.at(key));
+        x.second = std::make_shared<Attribute>(capturedAttrs.at(key));
+    }
+}
+
+void GraphRewriterPass::Write(const std::map<std::string, std::shared_ptr<Operator>>& ops,
+                              const std::map<std::string, Parameter>& capturedParams) const {
+    for (const auto& x: ops) {
+        Write(x.second, capturedParams);
+    }
+}
+
+void GraphRewriterPass::Write(const std::map<std::string, std::shared_ptr<Operator>>& ops,
+                              const std::map<std::string, Parameter>& capturedParams,
+                              const std::map<std::string, Attribute>& capturedAttrs) const {
+    Write(ops, capturedParams);
+    for (const auto& x: ops) {
+        for (auto& attr: x.second->GetAttributes()) {
+            if (attr.second->type() != DataType::kDataTypeUnknown) {
+                continue;
+            }
+
+            std::string key(attr.second->GetRawData().data());
+            if (key.empty() || key[0] != '%') {
+                continue;
+            }
+
+            attr.second = std::make_shared<Attribute>(capturedAttrs.at(key.substr(1)));
+        }
+    }
+}
+
 static bool IsAliasOp(const std::shared_ptr<Operator>& op) {
     if (op->type() == "aten::slice" ||
         op->type() == "aten::select" ||

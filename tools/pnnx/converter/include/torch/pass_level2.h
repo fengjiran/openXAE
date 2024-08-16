@@ -44,6 +44,17 @@ public:
 
     virtual void Write(const std::shared_ptr<Operator>& op,
                        const std::map<std::string, Parameter>& capturedParams) const;
+
+    virtual void Write(const std::shared_ptr<Operator>& op,
+                       const std::map<std::string, Parameter>& capturedParams,
+                       const std::map<std::string, Attribute>& capturedAttrs) const;
+
+    virtual void Write(const std::map<std::string, std::shared_ptr<Operator>>& ops,
+                       const std::map<std::string, Parameter>& capturedParams) const;
+
+    virtual void Write(const std::map<std::string, std::shared_ptr<Operator>>& ops,
+                       const std::map<std::string, Parameter>& capturedParams,
+                       const std::map<std::string, Attribute>& capturedAttrs) const;
 };
 
 class GraphRewriterPassRegistry {

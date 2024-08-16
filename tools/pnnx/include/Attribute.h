@@ -27,7 +27,9 @@ public:
     Attribute(const onnx::TensorProto& t);
 #endif
 
-    Attribute(const Attribute&) = delete;
+    Attribute(const Attribute& other)
+        : type_(other.type_), data_(other.data_), shape_(other.shape_) {}
+
     Attribute(Attribute&& other) noexcept
         : type_(other.type_), data_(std::move(other.data_)), shape_(std::move(other.shape_)) {}
 
@@ -68,7 +70,6 @@ public:
     void SetFloat32Data(const std::vector<float>& newData);
 
 private:
-
     DataType type_;
     std::vector<int> shape_;
     std::vector<char> data_;
@@ -84,6 +85,6 @@ bool operator==(const Attribute& lhs, const Attribute& rhs);
  */
 Attribute operator+(const Attribute& a, const Attribute& b);
 
-}
+}// namespace pnnx
 
 #endif//OPENXAE_ATTRIBUTE_H
