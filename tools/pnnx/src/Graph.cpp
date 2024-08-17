@@ -599,6 +599,14 @@ Parameter Parameter::CreateParameterFromString(const std::string& value) {
     return Parameter(std::stoi(value));
 }
 
+bool operator==(const Parameter& lhs, const Parameter& rhs) {
+    if (lhs.type() != rhs.type()) {
+        return false;
+    }
+
+    return lhs.toString() == rhs.toString();
+}
+
 int Graph::save(const std::string& paramPath, const std::string& binPath) {
     std::ofstream paramFile(paramPath, std::ios::out | std::ios::binary);
     if (!paramFile.is_open()) {

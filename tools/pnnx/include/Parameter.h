@@ -329,6 +329,7 @@ private:
     std::shared_ptr<ParameterBase> ptr_;
 };
 
+bool operator==(const Parameter& lhs, const Parameter& rhs);
 
 template<typename T>
 class Parameter_Deprecated {

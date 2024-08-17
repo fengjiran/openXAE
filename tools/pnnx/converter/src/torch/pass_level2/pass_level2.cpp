@@ -140,6 +140,284 @@ static bool TokenIsArgument(const std::string& t) {
     return true;
 }
 
+static bool MatchExpression(const std::shared_ptr<Operator>& op1,
+                            const std::shared_ptr<Operator>& op2,
+                            std::map<std::string, Parameter>& capturedParams) {
+    if (op1->GetParameters().size() != 1 || op1->GetParameters().find("expr") == op1->GetParameters().end()) {
+        return false;
+    }
+
+    if (op2->GetParameters().size() != 1 || op2->GetParameters().find("expr") == op2->GetParameters().end()) {
+        return false;
+    }
+
+    const auto& expr1 = op1->GetParameters().at("expr")->toValue<std::string>();
+    const auto& expr2 = op2->GetParameters().at("expr")->toValue<std::string>();
+    if (expr1 == expr2) {
+        return true;
+    }
+
+    // split expr1 into tokens
+    std::vector<std::string> tokens1;
+    std::vector<std::string> tokens2;
+    {
+        std::string t;
+        for (char ch: expr1) {
+            if (ch == '[') {// list
+                t += ch;
+                tokens1.push_back(t);
+                t.clear();
+            } else if (ch == '(' || ch == ')' || ch == ',' || ch == ']') {
+                if (!t.empty()) {
+                    tokens1.push_back(t);
+                    t.clear();
+                }
+            } else {
+                t += ch;
+            }
+        }
+        if (!t.empty()) {
+            tokens1.push_back(t);
+        }
+    }
+
+    // split expr1 into tokens
+    {
+        std::string t;
+        for (char ch: expr2) {
+            if (ch == '[') {// list
+                t += ch;
+                tokens2.push_back(t);
+                t.clear();
+            } else if (ch == '(' || ch == ')' || ch == ',' || ch == ']') {
+                if (!t.empty()) {
+                    tokens2.push_back(t);
+                    t.clear();
+                }
+            } else {
+                t += ch;
+            }
+        }
+        if (!t.empty()) {
+            tokens2.push_back(t);
+        }
+    }
+
+    if (tokens1.size() != tokens2.size()) {
+        return false;
+    }
+
+    // capture values
+    for (size_t i = 0; i < tokens1.size(); ++i) {
+        const std::string& at = tokens1[i];
+        const std::string& bt = tokens2[i];
+
+        if (at == bt) {
+            continue;
+        }
+
+        if (bt[0] != '%') {
+            return false;
+        }
+
+        if (TokenIsArgument(at)) {
+            return false;
+        }
+
+        std::string key = bt.substr(1);
+        capturedParams[key] = Parameter::CreateParameterFromString(at);
+    }
+
+    return true;
+}
+
+static bool MatchParameter(const Parameter& a,
+                           const Parameter& b,
+                           std::map<std::string, Parameter>& capturedParams) {
+    if (b.type() == ParameterType::kParameterString && b.toString()[0] == '%') {
+        auto key = b.toString().substr(1);
+        if (capturedParams.find(key) != capturedParams.end()) {
+            // match previous captured parameter
+            return capturedParams.at(key) == a;
+        }
+
+        // captured parameter
+        capturedParams[key] = a;
+        return true;
+    }
+
+    if (b.type() == ParameterType::kParameterString && b.toString() == "*") {
+        // ignored parameter
+        return true;
+    }
+
+    if (b.type() == ParameterType::kParameterString &&
+        (b.toString()[0] == '(' || b.toString()[0] == '[') &&
+        (b.toString().find('%') != std::string::npos)) {
+        // list with pattern
+        if (a.type() != ParameterType::kParameterArrayInt &&
+            a.type() != ParameterType::kParameterArrayFloat &&
+            a.type() != ParameterType::kParameterArrayString) {
+            return false;
+        }
+
+        std::string lc = b.toString().substr(1, b.toString().size() - 2);
+        std::istringstream lcss(lc);
+
+        size_t i = 0;
+        while (!lcss.eof()) {
+            std::string elem;
+            std::getline(lcss, elem, ',');
+
+            if (elem[0] == '%') {
+                std::string key = elem.substr(1);
+                if (capturedParams.find(key) != capturedParams.end()) {
+                    // match previous captured parameter
+                    if (a.type() == ParameterType::kParameterArrayInt &&
+                        capturedParams.at(key).toValue<int>() != a.toValue<std::vector<int>>()[i]) {
+                        return false;
+                    }
+
+                    if (a.type() == ParameterType::kParameterArrayFloat &&
+                        capturedParams.at(key).toValue<float>() != a.toValue<std::vector<float>>()[i]) {
+                        return false;
+                    }
+
+                    if (a.type() == ParameterType::kParameterArrayString &&
+                        capturedParams.at(key).toValue<std::string>() != a.toValue<std::vector<std::string>>()[i]) {
+                        return false;
+                    }
+                }
+
+                // captured parameter
+                if (a.type() == ParameterType::kParameterArrayInt) {
+                    capturedParams[key] = a.toValue<std::vector<int>>()[i];
+                }
+
+                if (a.type() == ParameterType::kParameterArrayFloat) {
+                    capturedParams[key] = a.toValue<std::vector<float>>()[i];
+                }
+
+                if (a.type() == ParameterType::kParameterArrayString) {
+                    capturedParams[key] = a.toValue<std::vector<std::string>>()[i];
+                }
+            } else if ((elem[0] != '-' && (elem[0] < '0' || elem[0] > '9')) ||
+                       (elem[0] == '-' && (elem[1] < '0' || elem[1] > '9'))) {
+                // string
+                if (a.type() != ParameterType::kParameterArrayString) {
+                    return false;
+                }
+
+                if (a.toValue<std::vector<std::string>>()[i] != elem) {
+                    return false;
+                }
+            } else if (elem.find('.') != std::string::npos || elem.find('e') != std::string::npos) {
+                // float
+                if (a.type() != ParameterType::kParameterArrayFloat) {
+                    return false;
+                }
+
+                if (a.toValue<std::vector<float>>()[i] != std::stof(elem)) {
+                    return false;
+                }
+            } else {
+                // integer
+                if (a.type() != ParameterType::kParameterArrayInt) {
+                    return false;
+                }
+
+                if (a.toValue<std::vector<int>>()[i] != std::stoi(elem)) {
+                    return false;
+                }
+            }
+
+            i++;
+        }
+        return true;
+    }
+
+    if (a.type() != b.type()) {
+        if (a.type() == ParameterType::kParameterInt && b.type() == ParameterType::kParameterFloat) {
+            return a.toValue<int>() == b.toValue<float>();
+        }
+
+        if (a.type() == ParameterType::kParameterFloat && b.type() == ParameterType::kParameterInt) {
+            return a.toValue<float>() == b.toValue<int>();
+        }
+
+        return false;
+    }
+
+    if (a.type() == ParameterType::kParameterUnknown) {
+        return true;
+    }
+
+    if (a.type() == ParameterType::kParameterBool) {
+        return a.toValue<bool>() == b.toValue<bool>();
+    }
+
+    if (a.type() == ParameterType::kParameterInt) {
+        return a.toValue<int>() == b.toValue<int>();
+    }
+
+    if (a.type() == ParameterType::kParameterFloat) {
+        return a.toValue<float>() == b.toValue<float>();
+    }
+
+    if (a.type() == ParameterType::kParameterString) {
+        return a.toValue<std::string>() == b.toValue<std::string>();
+    }
+
+    if (a.type() == ParameterType::kParameterArrayInt) {
+        const auto& val1 = a.toValue<std::vector<int>>();
+        const auto& val2 = b.toValue<std::vector<int>>();
+
+        if (val1.size() != val2.size()) {
+            return false;
+        }
+
+        for (size_t i = 0; i < val1.size(); ++i) {
+            if (val1[i] != val2[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    if (a.type() == ParameterType::kParameterArrayFloat) {
+        const auto& val1 = a.toValue<std::vector<float>>();
+        const auto& val2 = b.toValue<std::vector<float>>();
+
+        if (val1.size() != val2.size()) {
+            return false;
+        }
+
+        for (size_t i = 0; i < val1.size(); ++i) {
+            if (std::abs(val1[i] - val2[i]) > std::numeric_limits<float>::epsilon()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    if (a.type() == ParameterType::kParameterArrayString) {
+        const auto& val1 = a.toValue<std::vector<std::string>>();
+        const auto& val2 = b.toValue<std::vector<std::string>>();
+
+        for (size_t i = 0; i < val1.size(); ++i) {
+            if (val1[i] != val2[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    // unknown
+    return false;
+}
+
 static bool IsAliasOp(const std::shared_ptr<Operator>& op) {
     if (op->type() == "aten::slice" ||
         op->type() == "aten::select" ||
