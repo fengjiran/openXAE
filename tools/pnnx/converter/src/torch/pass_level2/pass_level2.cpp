@@ -418,6 +418,27 @@ static bool MatchParameter(const Parameter& a,
     return false;
 }
 
+static bool MatchAttribute(const Attribute& a,
+                           const Attribute& b,
+                           std::map<std::string, Parameter>& capturedParams,
+                           const std::string& attrName,
+                           std::map<std::string, Attribute>& capturedAttrs) {
+    // @data
+    // @data=(1,2,3,4)f32
+    // @data=%op1.data
+    if (b.type() == DataType::kDataTypeUnknown) {
+        std::string bs(b.GetRawData().data());
+        if (bs.empty())
+        {
+            // capture any shape
+//            capturedAttrs[attrName] = a;
+//            return true;
+        }
+
+
+    }
+}
+
 static bool IsAliasOp(const std::shared_ptr<Operator>& op) {
     if (op->type() == "aten::slice" ||
         op->type() == "aten::select" ||

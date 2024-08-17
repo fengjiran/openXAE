@@ -226,6 +226,8 @@ public:
     Parameter(Parameter&& other) noexcept : ptr_(std::move(other.ptr_)) {}
 
     Parameter& operator=(const Parameter& other) {
+//        Parameter tmp(other);
+//        swap(other, *this);
         if (this != &other) {
             ptr_ = other.ptr_;
         }
@@ -322,6 +324,8 @@ public:
         }
         return "None";
     }
+
+    friend void swap(Parameter& a, Parameter& b) noexcept;
 
     static Parameter CreateParameterFromString(const std::string& value);
 
