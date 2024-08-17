@@ -27,34 +27,34 @@ public:
         return TypeStr();
     }
 
-    virtual bool Match(const std::map<std::string, Parameter>& capturedParams) const {
+    virtual bool Match(const std::map<std::string, std::shared_ptr<Parameter>>& capturedParams) const {
         return true;
     }
 
-    virtual bool Match(const std::map<std::string, Parameter>& capturedParams,
-                       const std::map<std::string, Attribute>& capturedAttrs) const {
+    virtual bool Match(const std::map<std::string, std::shared_ptr<Parameter>>& capturedParams,
+                       const std::map<std::string, std::shared_ptr<Attribute>>& capturedAttrs) const {
         return Match(capturedParams);
     }
 
     virtual bool Match(const std::map<std::string, const std::shared_ptr<Operator>>&,
-                       const std::map<std::string, Parameter>& capturedParams,
-                       const std::map<std::string, Attribute>& capturedAttrs) const {
+                       const std::map<std::string, std::shared_ptr<Parameter>>& capturedParams,
+                       const std::map<std::string, std::shared_ptr<Attribute>>& capturedAttrs) const {
         return Match(capturedParams, capturedAttrs);
     }
 
     virtual void Write(const std::shared_ptr<Operator>& op,
-                       const std::map<std::string, Parameter>& capturedParams) const;
+                       const std::map<std::string, std::shared_ptr<Parameter>>& capturedParams) const;
 
     virtual void Write(const std::shared_ptr<Operator>& op,
-                       const std::map<std::string, Parameter>& capturedParams,
-                       const std::map<std::string, Attribute>& capturedAttrs) const;
+                       const std::map<std::string, std::shared_ptr<Parameter>>& capturedParams,
+                       const std::map<std::string, std::shared_ptr<Attribute>>& capturedAttrs) const;
 
     virtual void Write(const std::map<std::string, std::shared_ptr<Operator>>& ops,
-                       const std::map<std::string, Parameter>& capturedParams) const;
+                       const std::map<std::string, std::shared_ptr<Parameter>>& capturedParams) const;
 
     virtual void Write(const std::map<std::string, std::shared_ptr<Operator>>& ops,
-                       const std::map<std::string, Parameter>& capturedParams,
-                       const std::map<std::string, Attribute>& capturedAttrs) const;
+                       const std::map<std::string, std::shared_ptr<Parameter>>& capturedParams,
+                       const std::map<std::string, std::shared_ptr<Attribute>>& capturedAttrs) const;
 };
 
 class GraphRewriterPassRegistry {

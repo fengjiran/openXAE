@@ -226,18 +226,14 @@ public:
     Parameter(Parameter&& other) noexcept : ptr_(std::move(other.ptr_)) {}
 
     Parameter& operator=(const Parameter& other) {
-//        Parameter tmp(other);
-//        swap(other, *this);
-        if (this != &other) {
-            ptr_ = other.ptr_;
-        }
+        Parameter tmp(other);
+        swap(tmp, *this);
         return *this;
     }
 
     Parameter& operator=(Parameter&& other) noexcept {
-        if (this != &other) {
-            ptr_ = std::move(other.ptr_);
-        }
+        Parameter tmp(other);
+        swap(tmp, *this);
         return *this;
     }
 
@@ -325,9 +321,11 @@ public:
         return "None";
     }
 
-    friend void swap(Parameter& a, Parameter& b) noexcept;
-
     static Parameter CreateParameterFromString(const std::string& value);
+
+    friend void swap(Parameter& a, Parameter& b) noexcept {
+        std::swap(a.ptr_, b.ptr_);
+    }
 
 private:
     std::shared_ptr<ParameterBase> ptr_;

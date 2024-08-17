@@ -6,6 +6,76 @@
 
 namespace pnnx {
 
+bool operator==(const Parameter& lhs, const Parameter& rhs) {
+    if (lhs.type() != rhs.type()) {
+        return false;
+    }
+
+    bool isEqual;
+    switch (lhs.type()) {
+        case ParameterType::kParameterUnknown: {
+            isEqual = true;
+            break;
+        }
+        case ParameterType::kParameterBool: {
+            isEqual = lhs.toValue<bool>() == rhs.toValue<bool>();
+            break;
+        }
+        case ParameterType::kParameterInt: {
+            isEqual = lhs.toValue<int>() == rhs.toValue<int>();
+            break;
+        }
+        case ParameterType::kParameterFloat: {
+            isEqual = std::abs(lhs.toValue<float>() - rhs.toValue<float>()) <=
+                      std::numeric_limits<float>::epsilon();
+            break;
+        }
+
+        case ParameterType::kParameterString:{
+            isEqual = lhs.toValue<std::string>() == rhs.toValue<std::string>();
+            break;
+        }
+
+        case ParameterType::kParameterArrayInt:{
+            isEqual = lhs.toValue<std::vector<int>>() == rhs.toValue<std::vector<int>>();
+            break;
+        }
+
+        case ParameterType::kParameterArrayFloat:{
+            const auto& a = lhs.toValue<std::vector<float>>();
+            const auto& b = rhs.toValue<std::vector<float>>();
+            isEqual = std::equal(a.begin(), a.end(), b.begin(), b.end());
+            break;
+        }
+
+        case ParameterType::kParameterArrayString: {
+            const auto& a = lhs.toValue<std::vector<std::string>>();
+            const auto& b = rhs.toValue<std::vector<std::string>>();
+            isEqual = std::equal(a.begin(), a.end(), b.begin(), b.end());
+            break;
+        }
+
+        case ParameterType::kParameterComplex: {
+            isEqual = lhs.toValue<std::complex<float>>() == rhs.toValue<std::complex<float>>();
+            break;
+        }
+
+        case ParameterType::kParameterArrayComplex: {
+            const auto& a = lhs.toValue<std::vector<std::complex<float>>>();
+            const auto& b = rhs.toValue<std::vector<std::complex<float>>>();
+            isEqual = std::equal(a.begin(), a.end(), b.begin(), b.end());
+            break;
+        }
+
+        default:{
+            isEqual = false;
+            break;
+        }
+    }
+
+    return isEqual;
+}
+
 Parameter Parameter::CreateParameterFromString(const std::string& value) {
     // string type
     if (value.find('%') != std::string::npos) {
@@ -81,4 +151,4 @@ Parameter Parameter::CreateParameterFromString(const std::string& value) {
     return Parameter(std::stoi(value));
 }
 
-}
+}// namespace pnnx

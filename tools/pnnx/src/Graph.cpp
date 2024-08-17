@@ -524,14 +524,6 @@ static void LoadAttribute(const std::shared_ptr<Operator>& op, const std::string
     szr.read_file(filename, (char*) attr->GetRawData().data());
 }
 
-bool operator==(const Parameter& lhs, const Parameter& rhs) {
-    if (lhs.type() != rhs.type()) {
-        return false;
-    }
-
-    return lhs.toString() == rhs.toString();
-}
-
 int Graph::save(const std::string& paramPath, const std::string& binPath) {
     std::ofstream paramFile(paramPath, std::ios::out | std::ios::binary);
     if (!paramFile.is_open()) {

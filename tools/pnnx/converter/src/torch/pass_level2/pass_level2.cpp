@@ -7,10 +7,10 @@
 namespace pnnx {
 
 void GraphRewriterPass::Write(const std::shared_ptr<Operator>& op,
-                              const std::map<std::string, Parameter>& capturedParams) const {
+                              const std::map<std::string, std::shared_ptr<Parameter>>& capturedParams) const {
     if (ReplacePatternGraph().empty()) {
         for (const auto& x: capturedParams) {
-            op->GetParameters()[x.first] = std::make_shared<Parameter>(x.second);
+            op->GetParameters()[x.first] = x.second;
         }
         return;
     }
@@ -38,7 +38,7 @@ void GraphRewriterPass::Write(const std::shared_ptr<Operator>& op,
             }
 
             // replace %xyz with encoded_str
-            auto encodedStr = capturedParams.at(key).toString();
+            auto encodedStr = capturedParams.at(key)->toString();
             str.replace(pos, key.size() + 1, encodedStr);
             pos = str.find('%', pos + 1);
         }
@@ -58,7 +58,7 @@ void GraphRewriterPass::Write(const std::shared_ptr<Operator>& op,
                     return;
                 }
 
-                shape[i] = capturedParams.at(key).toValue<int>();
+                shape[i] = capturedParams.at(key)->toValue<int>();
             }
         }
     }
@@ -74,15 +74,15 @@ void GraphRewriterPass::Write(const std::shared_ptr<Operator>& op,
                     return;
                 }
 
-                shape[i] = capturedParams.at(key).toValue<int>();
+                shape[i] = capturedParams.at(key)->toValue<int>();
             }
         }
     }
 }
 
 void GraphRewriterPass::Write(const std::shared_ptr<Operator>& op,
-                              const std::map<std::string, Parameter>& capturedParams,
-                              const std::map<std::string, Attribute>& capturedAttrs) const {
+                              const std::map<std::string, std::shared_ptr<Parameter>>& capturedParams,
+                              const std::map<std::string, std::shared_ptr<Attribute>>& capturedAttrs) const {
     Write(op, capturedParams);
     for (auto& x: op->GetAttributes()) {
         if (x.second->type() != DataType::kDataTypeUnknown) {
@@ -95,20 +95,20 @@ void GraphRewriterPass::Write(const std::shared_ptr<Operator>& op,
         }
 
         //        op->GetAttributes()[x.first] = std::make_shared<Attribute>(capturedAttrs.at(key));
-        x.second = std::make_shared<Attribute>(capturedAttrs.at(key));
+        x.second = capturedAttrs.at(key);
     }
 }
 
 void GraphRewriterPass::Write(const std::map<std::string, std::shared_ptr<Operator>>& ops,
-                              const std::map<std::string, Parameter>& capturedParams) const {
+                              const std::map<std::string, std::shared_ptr<Parameter>>& capturedParams) const {
     for (const auto& x: ops) {
         Write(x.second, capturedParams);
     }
 }
 
 void GraphRewriterPass::Write(const std::map<std::string, std::shared_ptr<Operator>>& ops,
-                              const std::map<std::string, Parameter>& capturedParams,
-                              const std::map<std::string, Attribute>& capturedAttrs) const {
+                              const std::map<std::string, std::shared_ptr<Parameter>>& capturedParams,
+                              const std::map<std::string, std::shared_ptr<Attribute>>& capturedAttrs) const {
     Write(ops, capturedParams);
     for (const auto& x: ops) {
         for (auto& attr: x.second->GetAttributes()) {
@@ -121,7 +121,7 @@ void GraphRewriterPass::Write(const std::map<std::string, std::shared_ptr<Operat
                 continue;
             }
 
-            attr.second = std::make_shared<Attribute>(capturedAttrs.at(key.substr(1)));
+            attr.second = capturedAttrs.at(key.substr(1));
         }
     }
 }
@@ -142,7 +142,7 @@ static bool TokenIsArgument(const std::string& t) {
 
 static bool MatchExpression(const std::shared_ptr<Operator>& op1,
                             const std::shared_ptr<Operator>& op2,
-                            std::map<std::string, Parameter>& capturedParams) {
+                            std::map<std::string, std::shared_ptr<Parameter>>& capturedParams) {
     if (op1->GetParameters().size() != 1 || op1->GetParameters().find("expr") == op1->GetParameters().end()) {
         return false;
     }
@@ -225,7 +225,7 @@ static bool MatchExpression(const std::shared_ptr<Operator>& op1,
         }
 
         std::string key = bt.substr(1);
-        capturedParams[key] = Parameter::CreateParameterFromString(at);
+        capturedParams[key] = std::make_shared<Parameter>(Parameter::CreateParameterFromString(at));
     }
 
     return true;
@@ -233,16 +233,16 @@ static bool MatchExpression(const std::shared_ptr<Operator>& op1,
 
 static bool MatchParameter(const Parameter& a,
                            const Parameter& b,
-                           std::map<std::string, Parameter>& capturedParams) {
+                           std::map<std::string, std::shared_ptr<Parameter>>& capturedParams) {
     if (b.type() == ParameterType::kParameterString && b.toString()[0] == '%') {
         auto key = b.toString().substr(1);
         if (capturedParams.find(key) != capturedParams.end()) {
             // match previous captured parameter
-            return capturedParams.at(key) == a;
+            return *capturedParams.at(key) == *std::make_shared<Parameter>(a);
         }
 
         // captured parameter
-        capturedParams[key] = a;
+        capturedParams[key] = std::make_shared<Parameter>(a);
         return true;
     }
 
@@ -274,32 +274,32 @@ static bool MatchParameter(const Parameter& a,
                 if (capturedParams.find(key) != capturedParams.end()) {
                     // match previous captured parameter
                     if (a.type() == ParameterType::kParameterArrayInt &&
-                        capturedParams.at(key).toValue<int>() != a.toValue<std::vector<int>>()[i]) {
+                        capturedParams.at(key)->toValue<int>() != a.toValue<std::vector<int>>()[i]) {
                         return false;
                     }
 
                     if (a.type() == ParameterType::kParameterArrayFloat &&
-                        capturedParams.at(key).toValue<float>() != a.toValue<std::vector<float>>()[i]) {
+                        capturedParams.at(key)->toValue<float>() != a.toValue<std::vector<float>>()[i]) {
                         return false;
                     }
 
                     if (a.type() == ParameterType::kParameterArrayString &&
-                        capturedParams.at(key).toValue<std::string>() != a.toValue<std::vector<std::string>>()[i]) {
+                        capturedParams.at(key)->toValue<std::string>() != a.toValue<std::vector<std::string>>()[i]) {
                         return false;
                     }
                 }
 
                 // captured parameter
                 if (a.type() == ParameterType::kParameterArrayInt) {
-                    capturedParams[key] = a.toValue<std::vector<int>>()[i];
+                    capturedParams[key] = std::make_shared<Parameter>(a.toValue<std::vector<int>>()[i]);
                 }
 
                 if (a.type() == ParameterType::kParameterArrayFloat) {
-                    capturedParams[key] = a.toValue<std::vector<float>>()[i];
+                    capturedParams[key] = std::make_shared<Parameter>(a.toValue<std::vector<float>>()[i]);
                 }
 
                 if (a.type() == ParameterType::kParameterArrayString) {
-                    capturedParams[key] = a.toValue<std::vector<std::string>>()[i];
+                    capturedParams[key] = std::make_shared<Parameter>(a.toValue<std::vector<std::string>>()[i]);
                 }
             } else if ((elem[0] != '-' && (elem[0] < '0' || elem[0] > '9')) ||
                        (elem[0] == '-' && (elem[1] < '0' || elem[1] > '9'))) {
@@ -348,95 +348,306 @@ static bool MatchParameter(const Parameter& a,
         return false;
     }
 
-    if (a.type() == ParameterType::kParameterUnknown) {
-        return true;
-    }
-
-    if (a.type() == ParameterType::kParameterBool) {
-        return a.toValue<bool>() == b.toValue<bool>();
-    }
-
-    if (a.type() == ParameterType::kParameterInt) {
-        return a.toValue<int>() == b.toValue<int>();
-    }
-
-    if (a.type() == ParameterType::kParameterFloat) {
-        return a.toValue<float>() == b.toValue<float>();
-    }
-
-    if (a.type() == ParameterType::kParameterString) {
-        return a.toValue<std::string>() == b.toValue<std::string>();
-    }
-
-    if (a.type() == ParameterType::kParameterArrayInt) {
-        const auto& val1 = a.toValue<std::vector<int>>();
-        const auto& val2 = b.toValue<std::vector<int>>();
-
-        if (val1.size() != val2.size()) {
-            return false;
-        }
-
-        for (size_t i = 0; i < val1.size(); ++i) {
-            if (val1[i] != val2[i]) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    if (a.type() == ParameterType::kParameterArrayFloat) {
-        const auto& val1 = a.toValue<std::vector<float>>();
-        const auto& val2 = b.toValue<std::vector<float>>();
-
-        if (val1.size() != val2.size()) {
-            return false;
-        }
-
-        for (size_t i = 0; i < val1.size(); ++i) {
-            if (std::abs(val1[i] - val2[i]) > std::numeric_limits<float>::epsilon()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    if (a.type() == ParameterType::kParameterArrayString) {
-        const auto& val1 = a.toValue<std::vector<std::string>>();
-        const auto& val2 = b.toValue<std::vector<std::string>>();
-
-        for (size_t i = 0; i < val1.size(); ++i) {
-            if (val1[i] != val2[i]) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-    // unknown
-    return false;
+    return a == b;
 }
 
 static bool MatchAttribute(const Attribute& a,
                            const Attribute& b,
-                           std::map<std::string, Parameter>& capturedParams,
+                           std::map<std::string, std::shared_ptr<Parameter>>& capturedParams,
                            const std::string& attrName,
-                           std::map<std::string, Attribute>& capturedAttrs) {
+                           std::map<std::string, std::shared_ptr<Attribute>>& capturedAttrs) {
     // @data
     // @data=(1,2,3,4)f32
     // @data=%op1.data
     if (b.type() == DataType::kDataTypeUnknown) {
         std::string bs(b.GetRawData().data());
-        if (bs.empty())
-        {
+        if (bs.empty()) {
             // capture any shape
-//            capturedAttrs[attrName] = a;
-//            return true;
+            capturedAttrs[attrName] = std::make_shared<Attribute>(a);
+            return true;
         }
 
+        if (bs[0] == '%') {
+            // the captured replace
+            return true;
+        }
 
+        std::cerr << "malformed attribute pattern " << bs << std::endl;
+        return false;
     }
+
+    const auto& a_shape = a.GetShape();
+    const auto& b_shape = b.GetShape();
+
+    if (b_shape.empty()) {
+        return false;
+    }
+
+    if (a_shape.empty()) {
+        return false;
+    }
+
+    if (a_shape.size() != b_shape.size()) {
+        return false;
+    }
+
+    for (size_t i = 0; i < a_shape.size(); i++) {
+        int ai = a_shape[i];
+        int bi = b_shape[i];
+        if (ai == bi) {
+            continue;
+        }
+
+        if (bi == DimUnknownTag) {
+            continue;
+        }
+
+        if (bi > 0) {
+            return false;
+        }
+
+        if (bi != DimVariableTag) {
+            return false;
+        }
+
+        std::string key = b.GetParameters().at(std::string("__shape__") + std::to_string(i))->toValue<std::string>();
+        if (capturedParams.find(key) != capturedParams.end()) {
+            // match previous captured parameter
+            if (capturedParams.at(key)->toValue<int>() != ai) {
+                return false;
+            }
+        }
+
+        // captured parameter
+        capturedParams[key] = std::make_shared<Parameter>(ai);
+    }
+
+    capturedAttrs[attrName] = std::make_shared<Attribute>(a);
+    return true;
+}
+
+static bool MatchOperator(const std::shared_ptr<Operator>& a,
+                          const std::shared_ptr<Operator>& b,
+                          std::map<std::string, std::shared_ptr<Parameter>>& capturedParams,
+                          std::map<std::string, std::shared_ptr<Attribute>>& capturedAttrs) {
+    if (a->type() != b->type()) {
+        return false;
+    }
+
+    if (a->GetInputOperands().size() != b->GetInputOperands().size()) {
+        return false;
+    }
+
+    if (a->GetOutputOperands().size() != b->GetOutputOperands().size()) {
+        return false;
+    }
+
+    // match params
+    if (b->GetParameters().size() == 1 &&
+        b->GetParameters().find("%*") != b->GetParameters().end() &&
+        b->GetParameters().at("%*")->type() == ParameterType::kParameterString &&
+        b->GetParameters().at("%*")->toValue<std::string>() == "%*") {
+        for (const auto& p: a->GetParameters()) {
+            const auto& pkey = p.first;
+            const auto& pp = p.second;
+
+            // capture all parameters
+            capturedParams[b->name() + '.' + pkey] = pp;
+        }
+    } else if (a->type() == "pnnx.Expression") {
+        if (!MatchExpression(a, b, capturedParams))
+            return false;
+    } else {
+        if (a->GetParameters().size() != b->GetParameters().size()) {
+            return false;
+        }
+
+        for (const auto& p: a->GetParameters()) {
+            const auto& akey = p.first;
+            const auto& ap = p.second;
+
+            if (b->GetParameters().find(akey) == b->GetParameters().end()) {
+                return false;
+            }
+
+            if (!MatchParameter(*ap, *b->GetParameters().at(akey), capturedParams)) {
+                return false;
+            }
+        }
+    }
+
+    // match shapes
+    for (size_t i = 0; i < a->GetInputOperands().size(); ++i) {
+        auto type1 = a->GetInputOperands()[i]->type();
+        auto type2 = b->GetInputOperands()[i]->type();
+        if (type2 != DataType::kDataTypeUnknown && type1 != type2) {
+            return false;
+        }
+
+        const auto& shape1 = a->GetInputOperands()[i]->GetShape();
+        const auto& shape2 = b->GetInputOperands()[i]->GetShape();
+        if (shape2.empty()) {
+            continue;
+        }
+
+        if (shape1.empty()) {
+            return false;
+        }
+
+        if (shape1.size() != shape2.size()) {
+            return false;
+        }
+
+        for (size_t j = 0; j < shape1.size(); ++j) {
+            int ai = shape1[j];
+            int bi = shape2[j];
+            if (ai == bi) {
+                continue;
+            }
+
+            if (bi == DimUnknownTag) {
+                continue;
+            }
+
+            if (bi > 0) {
+                return false;
+            }
+
+            if (bi != DimVariableTag) {
+                return false;
+            }
+
+            std::string key = b->GetInputOperands()[i]->GetParams().at(std::string("__shape__") + std::to_string(j))->toValue<std::string>();
+            if (capturedParams.find(key) != capturedParams.end()) {
+                // match previous captured parameter
+                if (capturedParams.at(key)->toValue<int>() != ai) {
+                    return false;
+                }
+            }
+            // captured parameter
+            capturedParams[key] = std::make_shared<Parameter>(ai);
+        }
+    }
+
+    for (size_t i = 0; i < a->GetOutputOperands().size(); ++i) {
+        auto type1 = a->GetOutputOperands()[i]->type();
+        auto type2 = b->GetOutputOperands()[i]->type();
+        if (type2 != DataType::kDataTypeUnknown && type1 != type2) {
+            return false;
+        }
+
+        const auto& shape1 = a->GetOutputOperands()[i]->GetShape();
+        const auto& shape2 = b->GetOutputOperands()[i]->GetShape();
+        if (shape2.empty()) {
+            continue;
+        }
+
+        if (shape1.empty()) {
+            return false;
+        }
+
+        if (shape1.size() != shape2.size()) {
+            return false;
+        }
+
+        for (size_t j = 0; j < shape1.size(); ++j) {
+            int ai = shape1[j];
+            int bi = shape2[j];
+            if (ai == bi) {
+                continue;
+            }
+
+            if (bi == DimUnknownTag) {
+                continue;
+            }
+
+            if (bi > 0) {
+                return false;
+            }
+
+            if (bi != DimVariableTag) {
+                return false;
+            }
+
+            std::string key = b->GetOutputOperands()[i]->GetParams().at(std::string("__shape__") + std::to_string(j))->toValue<std::string>();
+            if (capturedParams.find(key) != capturedParams.end()) {
+                // match previous captured parameter
+                if (capturedParams.at(key)->toValue<int>() != ai) {
+                    return false;
+                }
+            }
+            // captured parameter
+            capturedParams[key] = std::make_shared<Parameter>(ai);
+        }
+    }
+
+    for (const auto& p: a->GetAttributes()) {
+        const auto& akey = p.first;
+        const auto& aa = p.second;
+        std::string attrName = b->name() + '.' + akey;
+        if (b->GetAttributes().find(akey) == b->GetAttributes().end()) {
+            // capture all attributes
+            capturedAttrs[attrName] = aa;
+        } else {
+            if (!MatchAttribute(*aa, *b->GetAttributes().at(akey), capturedParams, attrName, capturedAttrs)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+static bool Match(const std::shared_ptr<Operator>& anchor,
+                  const std::shared_ptr<Operator>& pattern,
+                  std::map<std::string, std::shared_ptr<Operator>>& matchedOperators,
+                  std::map<std::string, std::shared_ptr<Operand>>& matchedInputs,
+                  std::map<std::string, std::shared_ptr<Operand>>& matchedOutputs,
+                  std::map<std::string, std::shared_ptr<Parameter>>& capturedParams,
+                  std::map<std::string, std::shared_ptr<Attribute>>& capturedAttrs) {
+    if (!MatchOperator(anchor, pattern, capturedParams, capturedAttrs)) {
+        return false;
+    }
+
+    for (size_t i = 0; i < pattern->GetOutputOperands().size(); ++i) {
+        if (pattern->GetOutputOperands()[i]->GetConsumers().size() == 1 &&
+            pattern->GetOutputOperands()[i]->GetConsumers()[0]->type() == "pnnx.Output") {
+            if (matchedOutputs.find(pattern->GetOutputOperands()[i]->name()) == matchedOutputs.end()) {
+                matchedOutputs[pattern->GetOutputOperands()[i]->name()] = anchor->GetOutputOperands()[i];
+            } else if (matchedOutputs[pattern->GetOutputOperands()[i]->name()] != anchor->GetOutputOperands()[i]) {
+                return false;
+            }
+            continue;
+        }
+
+        if (anchor->GetOutputOperands()[i]->GetConsumers().size() != pattern->GetOutputOperands()[i]->GetConsumers().size()) {
+            return false;
+        }
+    }
+
+    matchedOperators[pattern->name()] = anchor;
+
+    for (size_t i = 0; i < anchor->GetInputOperands().size(); ++i) {
+        const auto& anchor2 = anchor->GetInputOperands()[i]->GetProducer();
+        const auto& pattern2 = pattern->GetInputOperands()[i]->GetProducer();
+        if (pattern2->type() == "pnnx.Input") {
+            if (matchedInputs.find(pattern->GetInputOperands()[i]->name()) == matchedInputs.end()) {
+                matchedInputs[pattern->GetInputOperands()[i]->name()] = anchor->GetInputOperands()[i];
+            } else if (matchedInputs[pattern->GetInputOperands()[i]->name()] != anchor->GetInputOperands()[i]) {
+                return false;
+            }
+            continue;
+        }
+        if (!Match(anchor2, pattern2, matchedOperators, matchedInputs, matchedOutputs, capturedParams, capturedAttrs)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void PNNXGraphRewrite(Graph& graph,
+                      const std::shared_ptr<GraphRewriterPass>& pass,
+                      int& opIdx) {
+    //
 }
 
 static bool IsAliasOp(const std::shared_ptr<Operator>& op) {

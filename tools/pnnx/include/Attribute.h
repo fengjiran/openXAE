@@ -27,14 +27,23 @@ public:
     Attribute(const onnx::TensorProto& t);
 #endif
 
-    Attribute(const Attribute& other)
-        : type_(other.type_), data_(other.data_), shape_(other.shape_) {}
+    Attribute(const Attribute& other) = default;
 
     Attribute(Attribute&& other) noexcept
-        : type_(other.type_), data_(std::move(other.data_)), shape_(std::move(other.shape_)) {}
+        : type_(other.type_), data_(std::move(other.data_)),
+          shape_(std::move(other.shape_)), params_(std::move(other.params_)) {}
 
-    Attribute& operator=(const Attribute&) = delete;
-    Attribute& operator=(Attribute&&) = delete;
+    Attribute& operator=(const Attribute& other) {
+        Attribute tmp(other);
+        swap(tmp, *this);
+        return *this;
+    }
+
+    Attribute& operator=(Attribute&& other) noexcept {
+        Attribute tmp(other);
+        swap(tmp, *this);
+        return *this;
+    }
 
     NODISCARD const DataType& type() const {
         return type_;
@@ -64,15 +73,31 @@ public:
         return data_;
     }
 
+    std::map<std::string, std::shared_ptr<Parameter>>& GetParameters() {
+        return params_;
+    }
+
+    NODISCARD const std::map<std::string, std::shared_ptr<Parameter>>& GetParameters() const {
+        return params_;
+    }
+
     // convenient routines for manipulate fp16/fp32 weight
     NODISCARD std::vector<float> CastToFloat32() const;
 
     void SetFloat32Data(const std::vector<float>& newData);
 
+    friend void swap(Attribute& a, Attribute& b) noexcept {
+        std::swap(a.type_, b.type_);
+        std::swap(a.shape_, b.shape_);
+        std::swap(a.data_, b.data_);
+        std::swap(a.params_, b.params_);
+    }
+
 private:
     DataType type_;
     std::vector<int> shape_;
     std::vector<char> data_;
+    std::map<std::string, std::shared_ptr<Parameter>> params_;
 };
 
 bool operator==(const Attribute& lhs, const Attribute& rhs);
