@@ -647,7 +647,184 @@ static bool Match(const std::shared_ptr<Operator>& anchor,
 void PNNXGraphRewrite(Graph& graph,
                       const std::shared_ptr<GraphRewriterPass>& pass,
                       int& opIdx) {
-    //
+    Graph patternGraph;
+    patternGraph.parse(pass->MatchPatternGraph());
+
+    // collect pattern inputs and outputs order
+    std::vector<std::string> pattern_graph_inputs;
+    std::vector<std::string> pattern_graph_outputs;
+    std::vector<std::shared_ptr<Operator>> pattern_graph_output_operators;
+
+    for (const auto& x: patternGraph.GetOperators()) {
+        if (x->type() == "pnnx.Input") {
+            for (const auto& y: x->GetOutputOperands()) {
+                pattern_graph_inputs.push_back(y->name());
+            }
+        }
+
+        if (x->type() == "pnnx.Output") {
+            pattern_graph_output_operators.push_back(x);
+            for (const auto& y: x->GetInputOperands()) {
+                pattern_graph_outputs.push_back(y->name());
+            }
+        }
+    }
+
+    std::vector<std::shared_ptr<Operator>> new_ops;
+    while (true) {
+        const int graph_op_count = (int) graph.GetOperators().size();
+
+        bool matched = true;
+
+        // match from output
+        std::map<std::string, std::shared_ptr<Operator>> matched_operators;
+        std::map<std::string, std::shared_ptr<Operand>> matched_inputs;
+        std::map<std::string, std::shared_ptr<Operand>> matched_outputs;
+        std::map<std::string, std::shared_ptr<Parameter>> captured_params;
+        std::map<std::string, std::shared_ptr<Attribute>> captured_attrs;
+
+        // pattern match from end to begin
+        int q = graph_op_count - 1;
+        for (; q >= 1; q--) {
+            matched = true;
+            for (const auto& pattern: pattern_graph_output_operators) {
+                for (const auto& operand: pattern->GetInputOperands()) {
+                    const auto& pattern2 = operand->GetProducer();
+                    int j = q;
+                    for (; j >= 0; j--) {
+                        const auto& anchor = graph.GetOperators()[j];
+
+                        std::map<std::string, std::shared_ptr<Operator>> matched_operators2;
+                        std::map<std::string, std::shared_ptr<Operand>> matched_inputs2;
+                        std::map<std::string, std::shared_ptr<Operand>> matched_outputs2;
+                        std::map<std::string, std::shared_ptr<Parameter>> captured_params2;
+                        std::map<std::string, std::shared_ptr<Attribute>> captured_attrs2;
+
+                        if (!Match(anchor, pattern2, matched_operators2, matched_inputs2, matched_outputs2,
+                                   captured_params2, captured_attrs2)) {
+                            continue;
+                        }
+
+                        bool submatch_matched = true;
+                        for (const auto& x: matched_operators2) {
+                            // check these matched operators are same with previous matched ones
+                            if (matched_operators.find(x.first) != matched_operators.end()) {
+                                if (matched_operators[x.first] != x.second) {
+                                    // unmatched two sub-matches
+                                    submatch_matched = false;
+                                    break;
+                                }
+                            } else {
+                                matched_operators[x.first] = x.second;
+                            }
+                        }
+                        if (!submatch_matched) {
+                            continue;
+                        }
+
+                        for (const auto& x: matched_inputs2) {
+                            if (matched_inputs.find(x.first) == matched_inputs.end()) {
+                                matched_inputs[x.first] = x.second;
+                            }
+                        }
+
+                        for (const auto& x: matched_outputs2) {
+                            if (matched_outputs.find(x.first) == matched_outputs.end()) {
+                                matched_outputs[x.first] = x.second;
+                            }
+                        }
+
+                        for (const auto& x: captured_params2) {
+                            captured_params[x.first] = x.second;
+                        }
+
+                        for (const auto& x: captured_attrs2) {
+                            captured_attrs[x.first] = x.second;
+                        }
+
+                        // match !
+                        break;
+                    }
+
+                    if (j == -1) {
+                        matched = false;
+                        break;
+                    }
+                }
+
+                if (!matched) {
+                    break;
+                }
+            }
+
+            if (matched && !pass->Match(matched_operators, captured_params, captured_attrs)) {
+                matched_operators.clear();
+                matched_inputs.clear();
+                matched_outputs.clear();
+                captured_params.clear();
+                captured_attrs.clear();
+                matched = false;
+                continue;
+            }
+
+            break;
+        }
+
+        if (!matched) {
+            break;
+        }
+
+        std::cerr << "matched !\n";
+
+        // replace
+        // remove all operands inside matched graph
+        std::map<std::string, std::shared_ptr<Operand>> operands_to_remove;
+        for (auto& _x: matched_operators) {
+            auto& x = _x.second;
+            for (auto& r: x->GetInputOperands()) {
+                r->RemoveConsumer(x);
+
+                bool is_input = false;
+                for (auto& r2: matched_inputs) {
+                    if (r2.second == r) {
+                        is_input = true;
+                        break;
+                    }
+                }
+
+                if (!is_input) {
+                    operands_to_remove[r->name()] = r;
+                }
+            }
+            x->GetInputOperands().clear();
+
+            for (auto& r: x->GetOutputOperands()) {
+                r->SetProducer(nullptr);
+
+                bool is_output = false;
+                for (auto& r2: matched_outputs) {
+                    if (r2.second == r) {
+                        is_output = true;
+                        break;
+                    }
+                }
+
+                if (!is_output)
+                    operands_to_remove[r->name()] = r;
+            }
+
+            x->GetOutputOperands().clear();
+        }
+
+        for (auto& _x: operands_to_remove) {
+            auto& x = _x.second;
+            graph.GetOperands().erase(
+                    std::find(graph.GetOperands().begin(), graph.GetOperands().end(), x));
+        }
+
+        // insert new operator at the last matched one
+        // TODO: insert new op
+    }
 }
 
 static bool IsAliasOp(const std::shared_ptr<Operator>& op) {

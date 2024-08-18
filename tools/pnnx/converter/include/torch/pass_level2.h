@@ -36,7 +36,7 @@ public:
         return Match(capturedParams);
     }
 
-    virtual bool Match(const std::map<std::string, const std::shared_ptr<Operator>>&,
+    virtual bool Match(const std::map<std::string, std::shared_ptr<Operator>>&,
                        const std::map<std::string, std::shared_ptr<Parameter>>& capturedParams,
                        const std::map<std::string, std::shared_ptr<Attribute>>& capturedAttrs) const {
         return Match(capturedParams, capturedAttrs);
