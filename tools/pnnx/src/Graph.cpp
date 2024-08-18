@@ -1680,6 +1680,127 @@ int Graph::python(const std::string& pyPath, const std::string& binPath) {
     return 0;
 }
 
+int Graph::parse(const std::string& param) {
+    std::istringstream is(param);
+    if (!is.good()) {
+        std::cerr << "open failed\n";
+        return -1;
+    }
+
+    int magic = 0;
+    {
+        std::string line;
+        std::getline(is, line);
+        std::istringstream iss(line);
+        iss >> magic;
+    }
+
+    // parse the second line, operator number and operand number
+    int operatorNum = 0;
+    int operandNum = 0;
+    {
+        std::string line;
+        std::getline(is, line);
+        std::istringstream iss(line);
+        iss >> operatorNum >> operandNum;
+    }
+
+    for (int i = 0; i < operatorNum; ++i) {
+        std::string line;
+        std::getline(is, line);
+        std::istringstream iss(line);
+
+        std::string type;
+        std::string name;
+        int inputOperandNum = 0;
+        int outputOperandNum = 0;
+
+        iss >> type >> name >> inputOperandNum >> outputOperandNum;
+
+        const auto& op = CreateOperator(type, name);
+        for (int j = 0; j < inputOperandNum; ++j) {
+            std::string operandName;
+            iss >> operandName;
+            const auto& r = GetOperand(operandName);
+            r->AddConsumer(op);
+            op->AddInputOperand(r);
+        }
+
+        for (int j = 0; j < outputOperandNum; ++j) {
+            std::string operandName;
+            iss >> operandName;
+            const auto& r = CreateOperand(operandName);
+            r->SetProducer(op);
+            op->AddOutputOperand(r);
+        }
+
+        while (!iss.eof()) {
+            std::string param1;
+            iss >> param1;
+
+            std::string key;
+            std::string value;
+            std::istringstream pss(param1);
+            std::getline(pss, key, '=');
+            std::getline(pss, value);
+
+            if (key[0] == '@') {
+                // load attribute raw data, shape and data type
+                op->GetAttributes()[key.substr(1)] = std::make_shared<Attribute>();
+                std::shared_ptr<Attribute>& attr = op->GetAttributes()[key.substr(1)];
+                attr->SetType(DataType::kDataTypeUnknown);
+
+                if (value.empty()) {
+                    continue;
+                }
+
+                if (value[0] == '%') {
+                    // @data=%op1.data
+                    attr->GetRawData() = std::vector<char>(value.begin(), value.end());
+                }
+
+                if (value[0] == '(') {
+                    // @data=(1,%c,?,4)f32
+
+                    // parse attribute data type
+                    std::string str = value.substr(value.find_last_of(')') + 1);
+                    attr->SetType(String2Type(str));
+
+                    // parse shape
+                    std::string lc = value.substr(1, value.find_last_of(')') - 1);
+                    std::istringstream lcss(lc);
+                    attr->GetShape().clear();
+                    while (!lcss.eof()) {
+                        std::string elem;
+                        std::getline(lcss, elem, ',');
+                        if (elem == "?") {
+                            attr->GetShape().push_back(DimUnknownTag);
+                        } else if (elem[0] == '%') {
+                            // encode %abc as symbolic tag
+                            attr->GetShape().push_back(DimVariableTag);
+                            size_t index = attr->GetShape().size() - 1;
+                            attr->GetParameters()[std::string("__shape__") + std::to_string(index)] =
+                                    std::make_shared<Parameter>(elem.substr(1));
+                        } else {
+                            attr->GetShape().push_back(std::stoi(elem));
+                        }
+                    }
+                }
+            } else if (key[0] == '$') {
+                // operand input key
+                LoadInputName(op, key.substr(1), value);
+            } else if (key[0] == '#') {
+                // load operand shape and data type
+                LoadOperand(op, key.substr(1), value);
+            } else {
+                // load parameter
+                LoadParameter(op, key, value);
+            }
+        }
+    }
+    return 0;
+}
+
 std::shared_ptr<Operand> Graph::CreateOperator(const std::string& type, const std::string& name,
                                                const std::map<std::string, std::shared_ptr<Parameter>>& params,
                                                const std::map<std::string, std::shared_ptr<Attribute>>& attrs,
