@@ -141,5 +141,8 @@ int main(int argc, char** argv) {
                      input_types, input_shapes2, input_types2,
                      customop_modules, module_operators,
                      foldableConstantsZippath, foldableConstants);
+
+    pnnxGraph.save("conv2d.pnnx.param", "conv2d.pnnx.bin");
+
     pnnx::pass_level2(pnnxGraph);
 }

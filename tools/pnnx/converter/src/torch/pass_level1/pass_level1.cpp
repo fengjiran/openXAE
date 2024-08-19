@@ -55,12 +55,10 @@ void pass_level1(const torch::jit::Module& mod,
                  const std::shared_ptr<torch::jit::Graph>& g,
                  const std::vector<std::string>& moduleOperators,
                  Graph& pg) {
-    for (int i = 1; i < g->inputs().size(); i++) {
-        char name[32];
-        snprintf(name, sizeof(name), "pnnx_input_%d", i - 1);
-
+    for (int i = 1; i < g->inputs().size(); ++i) {
         // create pnnx operator and operand
-        std::shared_ptr<Operator> op = pg.CreateOperator("pnnx.Input", name);
+        std::shared_ptr<Operator> op = pg.CreateOperator("pnnx.Input",
+                                                         "pnnx_input_" + std::to_string(i - 1));
         std::shared_ptr<Operand> r = pg.CreateOperand(g->inputs()[i]);
         r->SetProducer(op);
         op->AddOutputOperand(r);

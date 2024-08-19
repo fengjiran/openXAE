@@ -424,8 +424,6 @@ int torch2pnnx(const std::string& ptPath,
     std::cerr << "############# Run pass_level1:\n";
     pass_level1(mod, graph, moduleOperators, g);
 
-    g.save("conv2d.pnnx.param", "conv2d.pnnx.bin");
-
     return 0;
 }
 
