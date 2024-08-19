@@ -52,21 +52,21 @@ static void FuseModuleOpUnpack(Graph& graph, const std::vector<std::string>& mod
 }
 
 void pass_level1(const torch::jit::Module& mod,
-                 const std::shared_ptr<torch::jit::Graph>& g,
+                 const std::shared_ptr<torch::jit::Graph>& tg,
                  const std::vector<std::string>& moduleOperators,
                  Graph& pg) {
-    for (int i = 1; i < g->inputs().size(); ++i) {
-        // create pnnx operator and operand
+    for (int i = 1; i < tg->inputs().size(); ++i) {
+        // create pnnx input operator and operand
         std::shared_ptr<Operator> op = pg.CreateOperator("pnnx.Input",
                                                          "pnnx_input_" + std::to_string(i - 1));
-        std::shared_ptr<Operand> r = pg.CreateOperand(g->inputs()[i]);
+        std::shared_ptr<Operand> r = pg.CreateOperand(tg->inputs()[i]);
         r->SetProducer(op);
         op->AddOutputOperand(r);
     }
 
     std::map<std::string, std::string> classTypeToNames;
-    int pnnxUnknownIndex = 0;
-    for (const auto& n: g->block()->nodes()) {
+    int pnnxUnknownIdx = 0;
+    for (const auto& n: tg->block()->nodes()) {
         if (n->kind() == c10::prim::GetAttr) {
             std::string name = n->s(torch::jit::attr::name);
             auto classType = n->output(0)->type()->cast<torch::jit::ClassType>();
@@ -76,8 +76,8 @@ void pass_level1(const torch::jit::Module& mod,
             } else {
                 // Tensor from some class
                 std::shared_ptr<Operator> op = pg.CreateOperator("pnnx.Attribute", name);
-                for (int i = 0; i < (int) n->outputs().size(); ++i) {
-                    std::shared_ptr<Operand> r = pg.CreateOperand(n->output(i));
+                for (const auto& output: n->outputs()) {
+                    std::shared_ptr<Operand> r = pg.CreateOperand(output);
                     r->SetProducer(op);
                     op->AddOutputOperand(r);
                 }
@@ -114,7 +114,7 @@ void pass_level1(const torch::jit::Module& mod,
             }
         } else if (n->kind() == c10::prim::Constant) {
             char name[32];
-            snprintf(name, sizeof(name), "pnnx_%d", pnnxUnknownIndex++);
+            snprintf(name, sizeof(name), "pnnx_%d", pnnxUnknownIdx++);
 
             std::shared_ptr<Operator> op = pg.CreateOperator(n->kind().toDisplayString(), name);
             for (size_t i = 0; i < n->inputs().size(); i++) {
@@ -274,7 +274,7 @@ void pass_level1(const torch::jit::Module& mod,
             }
         } else {
             char name[32];
-            snprintf(name, sizeof(name), "pnnx_%d", pnnxUnknownIndex++);
+            snprintf(name, sizeof(name), "pnnx_%d", pnnxUnknownIdx++);
 
             std::shared_ptr<Operator> op = pg.CreateOperator(n->kind().toDisplayString(), name);
 
@@ -292,8 +292,8 @@ void pass_level1(const torch::jit::Module& mod,
         }
     }
 
-    for (int i = 0; i < g->outputs().size(); i++) {
-        const auto& in = g->outputs()[i];
+    for (int i = 0; i < tg->outputs().size(); i++) {
+        const auto& in = tg->outputs()[i];
 
         char name[32];
         snprintf(name, sizeof(name), "pnnx_output_%d", i);

@@ -59,7 +59,7 @@ public:
 
 // convert to pnnx
 void pass_level1(const torch::jit::Module& mod,
-                 const std::shared_ptr<torch::jit::Graph>& g,
+                 const std::shared_ptr<torch::jit::Graph>& tg,
                  const std::vector<std::string>& moduleOperators,
                  Graph& pg);
 
