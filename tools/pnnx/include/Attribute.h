@@ -6,6 +6,7 @@
 #define OPENXAE_ATTRIBUTE_H
 
 #include "utils.h"
+#include "Parameter.h"
 #include <vector>
 
 namespace pnnx {

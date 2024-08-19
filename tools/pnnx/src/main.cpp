@@ -7,6 +7,8 @@
 #include "torch/torch2pnnx.h"
 #endif
 
+#include "torch/pass_level2.h"
+
 static void ShowUsage() {
     std::cerr << "Usage: pnnx [model.pt] [(key=value)...]\n";
     std::cerr << "  pnnxparam=model.pnnx.param\n";
@@ -139,4 +141,5 @@ int main(int argc, char** argv) {
                      input_types, input_shapes2, input_types2,
                      customop_modules, module_operators,
                      foldableConstantsZippath, foldableConstants);
+    pnnx::pass_level2(pnnxGraph);
 }
