@@ -92,6 +92,12 @@ public:
 #define REGISTER_PNNX_GRAPH_REWRITER_PASS(PASS, PRIORITY) \
     static GraphRewriterPassRegEntry<PASS, PRIORITY> CONCAT_STR(pnnx_graph_rewriter_pass_, PASS) = GraphRewriterPassRegEntry<PASS, PRIORITY>()
 
+void PNNXGraphRewrite(Graph& graph,
+                      const std::shared_ptr<GraphRewriterPass>& pass,
+                      int& opIdx);
+
+void pass_level2(Graph& g);
+
 }// namespace pnnx
 
 #endif//OPENXAE_PASS_LEVEL2_H

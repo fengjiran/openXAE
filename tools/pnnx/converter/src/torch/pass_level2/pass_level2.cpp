@@ -1177,4 +1177,14 @@ static void functionize(Graph& graph) {
     }
 }
 
+void pass_level2(Graph& g) {
+    functionize(g);
+    int opIdx = 0;
+    for (const auto& x: GraphRewriterPassRegistry::GetInstance().GetGlobalPNNXGraphRewriterPass()) {
+        for (const auto& rewriter: x.second) {
+            PNNXGraphRewrite(g, rewriter, opIdx);
+        }
+    }
+}
+
 }// namespace pnnx
