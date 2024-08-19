@@ -823,7 +823,119 @@ void PNNXGraphRewrite(Graph& graph,
         }
 
         // insert new operator at the last matched one
-        // TODO: insert new op
+        std::shared_ptr<Operator> cur;
+        {
+            size_t cur_index = 1;
+            for (const auto& o: matched_operators) {
+                size_t c_index = std::find(graph.GetOperators().begin(),
+                                           graph.GetOperators().end(),
+                                           o.second) -
+                                 graph.GetOperators().begin();
+                cur_index = std::max(cur_index, c_index + 1);
+            }
+            cur_index = std::min(cur_index, graph.GetOperators().size() - 1);
+            cur = graph.GetOperators()[cur_index];
+        }
+
+        // remove all matched operators
+        for (const auto& _x: matched_operators) {
+            auto& x = _x.second;
+            graph.GetOperators().erase(
+                    std::find(graph.GetOperators().begin(), graph.GetOperators().end(), x));
+        }
+
+        if (pass->ReplacePatternGraph().empty()) {
+            // insert single
+            auto op = graph.CreateOperatorBefore(pass->TypeStr(), std::string(pass->NameStr()), cur);
+            for (const auto& k: pattern_graph_inputs) {
+                auto& r = matched_inputs.at(k);
+                r->AddConsumer(op);
+                op->AddInputOperand(r);
+                op->GetInputNames().push_back(k);
+            }
+
+            for (const auto& k: pattern_graph_outputs) {
+                auto& r = matched_outputs.at(k);
+                r->SetProducer(op);
+                op->AddOutputOperand(r);
+            }
+
+            pass->Write(op, captured_params, captured_attrs);
+            new_ops.push_back(op);
+        } else {
+            // insert multiple
+            Graph replace_graph;
+            replace_graph.parse(pass->ReplacePatternGraph());
+
+            // move operators and operands from replace_graph to graph except input and output
+            std::map<std::string, std::shared_ptr<Operator>> ops;
+
+            for (auto& op: replace_graph.GetOperators()) {
+                if (op->type() == "pnnx.Input" || op->type() == "pnnx.Output") {
+                    continue;
+                }
+                graph.GetOperators().insert(std::find(graph.GetOperators().begin(), graph.GetOperators().end(), cur), op);
+                ops[op->name()] = op;
+                op.reset();
+            }
+
+            for (auto& r: replace_graph.GetOperands()) {
+                if (r->GetProducer()->type() == "pnnx.Input" ||
+                    (r->GetConsumers().size() == 1 && r->GetConsumers()[0]->type() == "pnnx.Output")) {
+                    continue;
+                }
+                graph.GetOperands().push_back(r);
+                r.reset();
+            }
+
+            replace_graph.GetOperators().erase(std::remove(replace_graph.GetOperators().begin(),
+                                                           replace_graph.GetOperators().end(),
+                                                           nullptr),
+                                               replace_graph.GetOperators().end());
+            replace_graph.GetOperands().erase(std::remove(replace_graph.GetOperands().begin(),
+                                                          replace_graph.GetOperands().end(),
+                                                          nullptr),
+                                              replace_graph.GetOperands().end());
+
+            for (const auto& k: pattern_graph_inputs) {
+                auto& r = matched_inputs.at(k);
+                const auto& rr = replace_graph.GetOperand(k);
+                for (auto& x: rr->GetConsumers()) {
+                    r->AddConsumer(x);
+                    x->GetInputNames().resize(x->GetInputOperands().size());
+                    for (size_t j = 0; j < x->GetInputOperands().size(); ++j) {
+                        if (x->GetInputOperands()[j]->name() == k) {
+                            x->GetInputOperands()[j] = r;
+                            x->GetInputNames()[j] = k;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            for (const auto& k: pattern_graph_outputs) {
+                auto& r = matched_outputs.at(k);
+                const auto& rr = replace_graph.GetOperand(k);
+                r->SetProducer(rr->GetProducer());
+
+                for (auto& operand: r->GetProducer()->GetOutputOperands()) {
+                    if (operand->name() == k) {
+                        operand = r;
+                        break;
+                    }
+                }
+            }
+
+            pass->Write(ops, captured_params, captured_attrs);
+            for (const auto& x: ops) {
+                new_ops.push_back(x.second);
+            }
+        }
+    }
+
+    // assign new op name number
+    for (int i = (int) new_ops.size() - 1; i >= 0; --i) {
+        new_ops[i]->name() = new_ops[i]->name() + "_" + std::to_string(opIdx++);
     }
 }
 
