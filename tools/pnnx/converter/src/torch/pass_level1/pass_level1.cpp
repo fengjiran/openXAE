@@ -113,18 +113,16 @@ void pass_level1(const torch::jit::Module& mod,
                 op->GetOutputOperands()[0]->GetShape() = op->GetAttributes()["data"]->GetShape();
             }
         } else if (n->kind() == c10::prim::Constant) {
-            char name[32];
-            snprintf(name, sizeof(name), "pnnx_%d", pnnxUnknownIdx++);
-
+            std::string name = "pnnx_" + std::to_string(pnnxUnknownIdx++);
             std::shared_ptr<Operator> op = pg.CreateOperator(n->kind().toDisplayString(), name);
-            for (size_t i = 0; i < n->inputs().size(); i++) {
-                std::shared_ptr<Operand> r = pg.GetOperand(n->input(i)->debugName());
+            for (const auto& input: n->inputs()) {
+                std::shared_ptr<Operand> r = pg.GetOperand(input->debugName());
                 r->AddConsumer(op);
                 op->AddInputOperand(r);
             }
 
-            for (size_t i = 0; i < n->outputs().size(); i++) {
-                std::shared_ptr<Operand> r = pg.CreateOperand(n->output(i));
+            for (const auto& output: n->outputs()) {
+                std::shared_ptr<Operand> r = pg.CreateOperand(output);
                 r->SetProducer(op);
                 op->AddOutputOperand(r);
             }
