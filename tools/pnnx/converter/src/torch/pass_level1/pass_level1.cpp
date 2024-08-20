@@ -66,7 +66,7 @@ void pass_level1(const torch::jit::Module& mod,
 
     std::map<std::string, std::string> classTypeToNames;
     int pnnxUnknownIdx = 0;
-    for (const auto& n: tg->block()->nodes()) {
+    for (const auto n: tg->block()->nodes()) {
         if (n->kind() == c10::prim::GetAttr) {
             std::string name = n->s(torch::jit::attr::name);
             auto classType = n->output(0)->type()->cast<torch::jit::ClassType>();
@@ -76,7 +76,7 @@ void pass_level1(const torch::jit::Module& mod,
             } else {
                 // Tensor from some class
                 std::shared_ptr<Operator> op = pg.CreateOperator("pnnx.Attribute", name);
-                for (const auto& output: n->outputs()) {
+                for (const auto output: n->outputs()) {
                     std::shared_ptr<Operand> r = pg.CreateOperand(output);
                     r->SetProducer(op);
                     op->AddOutputOperand(r);
@@ -223,7 +223,6 @@ void pass_level1(const torch::jit::Module& mod,
                             }
                         } else if (mn->kind() == c10::prim::Constant) {
                             Parameter p(mn);
-
                             if (p.type() == ParameterType::kParameterOther) {
                                 size_t unique_id = mn->output(0)->unique();
                                 constant_attr_nodes[unique_id] = mn;
@@ -271,9 +270,7 @@ void pass_level1(const torch::jit::Module& mod,
                 }
             }
         } else {
-            char name[32];
-            snprintf(name, sizeof(name), "pnnx_%d", pnnxUnknownIdx++);
-
+            std::string name = "pnnx_" + std::to_string(pnnxUnknownIdx++);
             std::shared_ptr<Operator> op = pg.CreateOperator(n->kind().toDisplayString(), name);
 
             for (size_t i = 0; i < n->inputs().size(); i++) {
@@ -292,9 +289,8 @@ void pass_level1(const torch::jit::Module& mod,
 
     for (int i = 0; i < tg->outputs().size(); i++) {
         const auto& in = tg->outputs()[i];
+        std::string name = "pnnx_output_" + std::to_string(i);
 
-        char name[32];
-        snprintf(name, sizeof(name), "pnnx_output_%d", i);
         std::shared_ptr<Operator> op = pg.CreateOperator("pnnx.Output", name);
         std::shared_ptr<Operand> r = pg.GetOperand(in->debugName());
         r->AddConsumer(op);
