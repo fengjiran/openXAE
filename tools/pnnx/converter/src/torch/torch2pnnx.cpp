@@ -416,7 +416,8 @@ int torch2pnnx(const std::string& ptPath,
     graph->dump();
 
     std::cerr << "############# Run pass_level0:\n";
-    pass_level0(mod, graph, inputTensors, inputTensors2, moduleOperators, ptPath, device,
+    pass_level0(mod, graph, inputTensors, inputTensors2,
+                moduleOperators, ptPath, device,
                 foldableConstants, foldableConstantsZippath);
     std::cerr << "Graph after pass level 0:\n";
     graph->dump();

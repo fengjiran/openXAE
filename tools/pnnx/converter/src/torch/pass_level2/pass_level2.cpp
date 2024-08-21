@@ -954,13 +954,24 @@ static void functionize(Graph& graph) {
     // step1: create shadow view/slice/select for each consumer.
     {
         for (int i = (int) graph.GetOperators().size() - 1; i >= 0; --i) {
-            auto op = graph.GetOperators()[i];
+            const auto& op = graph.GetOperators()[i];
             if (!IsAliasOp(op)) {
                 continue;
             }
 
-            auto out0 = op->GetOutputOperands()[0];
+            auto& out0 = op->GetOutputOperands()[0];
             if (out0->GetConsumers().size() == 1) {
+                continue;
+            }
+
+            bool allConsumersAreSame = true;
+            for (size_t j = 1; j < out0->GetConsumers().size(); ++j) {
+                if (out0->GetConsumers()[j] != out0->GetConsumers()[0]) {
+                    allConsumersAreSame = false;
+                    break;
+                }
+            }
+            if (allConsumersAreSame) {
                 continue;
             }
 
