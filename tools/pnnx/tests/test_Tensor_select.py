@@ -10,6 +10,9 @@ class Model(nn.Module):
         x = x.select(1, 1)
         y = y.select(2, 4)
         z = z.select(0, 10)
+        # print(x.shape)
+        # print(y.shape)
+        # print(z.shape)
         return x, y, z
 
 

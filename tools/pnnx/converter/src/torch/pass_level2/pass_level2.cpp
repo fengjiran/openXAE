@@ -1014,11 +1014,11 @@ static void functionize(Graph& graph) {
             bool isInplaceOp = op->type().size() > 2 &&
                                op->type()[op->type().size() - 2] != '_' &&
                                op->type()[op->type().size() - 1] == '_';
-            if (op->type() != "aten::copy_" && !IsAliasOp(op) && !isInplaceOp) {
+            if (!(op->type() == "aten::copy_" || IsAliasOp(op) || isInplaceOp)) {
                 continue;
             }
 
-            auto in = op->GetInputOperands()[0];
+            auto& in = op->GetInputOperands()[0];
             int aliasIdx;
             if (in->GetParams().find("__alias__") != in->GetParams().end()) {
                 aliasIdx = in->GetParams().at("__alias__")->toValue<int>();
