@@ -13,18 +13,22 @@ static void FuseModuleOpUnpack(Graph& graph, const std::vector<std::string>& mod
     while (true) {
         bool matched = false;
         for (auto& op: graph.GetOperators()) {
-            if (std::find(moduleOperators.begin(), moduleOperators.end(), op->type()) == moduleOperators.end())
+            if (std::find(moduleOperators.begin(), moduleOperators.end(), op->type()) == moduleOperators.end()) {
                 continue;
+            }
 
-            if (op->GetOutputOperands().size() != 1)
+            if (op->GetOutputOperands().size() != 1) {
                 continue;
+            }
 
-            if (op->GetOutputOperands()[0]->GetConsumers().size() != 1)
+            if (op->GetOutputOperands()[0]->GetConsumers().size() != 1) {
                 continue;
+            }
 
             const auto& op2 = op->GetOutputOperands()[0]->GetConsumers()[0];
-            if (op2->type() != "prim::TupleUnpack")
+            if (op2->type() != "prim::TupleUnpack") {
                 continue;
+            }
 
             matched = true;
 
@@ -36,13 +40,11 @@ static void FuseModuleOpUnpack(Graph& graph, const std::vector<std::string>& mod
             }
 
             op->GetOutputOperands() = op2->GetOutputOperands();
-
             op2->GetInputOperands().clear();
             op2->GetOutputOperands().clear();
 
             graph.GetOperators().erase(
                     std::find(graph.GetOperators().begin(), graph.GetOperators().end(), op2));
-
             break;
         }
 
@@ -159,24 +161,25 @@ void pass_level1(const torch::jit::Module& mod,
                 op->AddInputOperand(r);
             }
 
-            for (size_t i = 0; i < n->outputs().size(); i++) {
-                std::shared_ptr<Operand> r = pg.CreateOperand(n->output(i));
+            for (const auto output: n->outputs()) {
+                std::shared_ptr<Operand> r = pg.CreateOperand(output);
                 r->SetProducer(op);
                 op->AddOutputOperand(r);
             }
 
             // module operator
-            if (std::find(moduleOperators.begin(), moduleOperators.end(), classTypeStrNoTorchPrefix) != moduleOperators.end()) {
-                const std::string& function_name = n->s(torch::jit::attr::name);
-                torch::jit::Function& function = classType->getMethod(function_name);
+            if (std::find(moduleOperators.begin(),
+                          moduleOperators.end(),
+                          classTypeStrNoTorchPrefix) != moduleOperators.end()) {
+                const std::string& funcName = n->s(torch::jit::attr::name);
+                torch::jit::Function& function = classType->getMethod(funcName);
                 if (function.isGraphFunction()) {
                     torch::jit::Block* moduleOpBlock = toGraphFunction(function).graph()->block();
-                    std::map<size_t, torch::jit::Node*> constant_attr_nodes;
-                    for (const auto& mn: moduleOpBlock->nodes()) {
+                    std::map<size_t, torch::jit::Node*> constAttrNodes;
+                    for (const auto mn: moduleOpBlock->nodes()) {
                         if (mn->kind() == c10::prim::GetAttr) {
                             std::string nodeName = mn->s(torch::jit::attr::name);
                             auto classType2 = mn->output(0)->type()->cast<torch::jit::ClassType>();
-
                             if (!classType2) {
                                 std::deque<std::string> moduleNames;// = split(mn->input(0)->node()->s(torch::jit::attr::name), '.');
                                 {
@@ -199,9 +202,9 @@ void pass_level1(const torch::jit::Module& mod,
                                     moduleNames.push_back(x);
                                 }
 
-                                auto sub_mod = mod;
+                                auto subMod = mod;
                                 for (const auto& module_name: moduleNames) {
-                                    sub_mod = sub_mod.attr(module_name).toModule();
+                                    subMod = subMod.attr(module_name).toModule();
                                 }
 
                                 std::string wrapName;
@@ -219,23 +222,23 @@ void pass_level1(const torch::jit::Module& mod,
                                     wrapName += ("." + nodeName);
                                 }
 
-                                op->GetAttributes()[wrapName] = std::make_shared<Attribute>(sub_mod.attr(nodeName).toTensor());
+                                op->GetAttributes()[wrapName] = std::make_shared<Attribute>(subMod.attr(nodeName).toTensor());
                             }
                         } else if (mn->kind() == c10::prim::Constant) {
                             Parameter p(mn);
                             if (p.type() == ParameterType::kParameterOther) {
-                                size_t unique_id = mn->output(0)->unique();
-                                constant_attr_nodes[unique_id] = mn;
+                                size_t uniqueId = mn->output(0)->unique();
+                                constAttrNodes[uniqueId] = mn;
                             }
                         }
                     }
 
-                    int pnnx_moduleop_unknown_index = 0;
-                    for (auto attr: constant_attr_nodes) {
+                    int pnnxModuleOpUnknownIdx = 0;
+                    for (auto attr: constAttrNodes) {
                         char attrName[32];
-                        snprintf(attrName, sizeof(attrName), "pnnx_%02d", pnnx_moduleop_unknown_index);
+                        snprintf(attrName, sizeof(attrName), "pnnx_%02d", pnnxModuleOpUnknownIdx);
                         op->GetAttributes()[attrName] = std::make_shared<Attribute>(attr.second->t(torch::jit::attr::value));
-                        pnnx_moduleop_unknown_index++;
+                        pnnxModuleOpUnknownIdx++;
                     }
                 }
             } else {
@@ -254,17 +257,18 @@ void pass_level1(const torch::jit::Module& mod,
                         }
 
                         std::string wrapName;
-                        auto sub_mod = mod;
+                        auto subMod = mod;
                         for (const auto& moduleName: moduleNames) {
-                            if (!wrapName.empty())
+                            if (!wrapName.empty()) {
                                 wrapName += ("." + moduleName);
-                            else
+                            } else {
                                 wrapName = moduleName;
-                            sub_mod = sub_mod.attr(moduleName).toModule();
+                            }
+                            subMod = subMod.attr(moduleName).toModule();
                         }
 
                         op->name() = wrapName;
-                        ow->Write(op, toGraphFunction(function).graph(), sub_mod);
+                        ow->Write(op, toGraphFunction(function).graph(), subMod);
                         break;
                     }
                 }
@@ -273,14 +277,14 @@ void pass_level1(const torch::jit::Module& mod,
             std::string name = "pnnx_" + std::to_string(pnnxUnknownIdx++);
             std::shared_ptr<Operator> op = pg.CreateOperator(n->kind().toDisplayString(), name);
 
-            for (size_t i = 0; i < n->inputs().size(); i++) {
-                std::shared_ptr<Operand> r = pg.GetOperand(n->input(i)->debugName());
+            for (const auto input: n->inputs()) {
+                std::shared_ptr<Operand> r = pg.GetOperand(input->debugName());
                 r->AddConsumer(op);
                 op->AddInputOperand(r);
             }
 
-            for (size_t i = 0; i < n->outputs().size(); i++) {
-                std::shared_ptr<Operand> r = pg.CreateOperand(n->output(i));
+            for (const auto output: n->outputs()) {
+                std::shared_ptr<Operand> r = pg.CreateOperand(output);
                 r->SetProducer(op);
                 op->AddOutputOperand(r);
             }
@@ -290,7 +294,6 @@ void pass_level1(const torch::jit::Module& mod,
     for (int i = 0; i < tg->outputs().size(); i++) {
         const auto& in = tg->outputs()[i];
         std::string name = "pnnx_output_" + std::to_string(i);
-
         std::shared_ptr<Operator> op = pg.CreateOperator("pnnx.Output", name);
         std::shared_ptr<Operand> r = pg.GetOperand(in->debugName());
         r->AddConsumer(op);
