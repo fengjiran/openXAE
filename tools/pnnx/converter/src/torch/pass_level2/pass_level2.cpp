@@ -1047,8 +1047,8 @@ static void functionize(Graph& graph) {
 
                 // append aten::copy_
                 if (graph.GetOperands()[aliasIdx]->GetConsumers().size() > 1) {
-                    auto in0 = op->GetInputOperands()[0];
-                    auto out0 = op->GetOutputOperands()[0];
+                    const auto& in0 = op->GetInputOperands()[0];
+                    const auto& out0 = op->GetOutputOperands()[0];
 
                     auto copyOp = graph.CreateOperatorAfter("aten::copy_", op->name() + "_copy", op);
                     auto copyOut = graph.CreateOperand(op->name() + "_copy_out");
@@ -1068,7 +1068,7 @@ static void functionize(Graph& graph) {
     // step4: scan inplace copy op, collect affected alias
     {
         for (size_t i = 0; i < graph.GetOperators().size(); ++i) {
-            auto op = graph.GetOperators()[i];
+            const auto& op = graph.GetOperators()[i];
             if (op->type() != "aten::copy_") {
                 continue;
             }
