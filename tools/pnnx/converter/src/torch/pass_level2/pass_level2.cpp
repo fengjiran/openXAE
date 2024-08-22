@@ -1018,7 +1018,7 @@ static void functionize(Graph& graph) {
                 continue;
             }
 
-            auto& in = op->GetInputOperands()[0];
+            const auto& in = op->GetInputOperands()[0];// tensor
             int aliasIdx;
             if (in->GetParams().find("__alias__") != in->GetParams().end()) {
                 aliasIdx = in->GetParams().at("__alias__")->toValue<int>();
@@ -1029,6 +1029,9 @@ static void functionize(Graph& graph) {
 
             if (op->type() == "aten::copy_") {
                 op->GetOutputOperands()[0]->GetParams()["__alias__"] = std::make_shared<Parameter>(aliasIdx);
+                std::cerr << "operand " << op->GetOutputOperands()[0]->name()
+                          << " is alias of " << graph.GetOperands()[aliasIdx]->name()
+                          << std::endl;
 
                 // set copy output shape as the alias one
                 op->GetOutputOperands()[0]->SetType(graph.GetOperands()[aliasIdx]->type());
@@ -1038,6 +1041,9 @@ static void functionize(Graph& graph) {
 
             if (IsAliasOp(op)) {
                 op->GetOutputOperands()[0]->GetParams()["__alias__"] = std::make_shared<Parameter>(aliasIdx);
+                std::cerr << "operand " << op->GetOutputOperands()[0]->name()
+                          << " is alias of " << graph.GetOperands()[aliasIdx]->name()
+                          << std::endl;
                 continue;
             }
 
@@ -1074,17 +1080,17 @@ static void functionize(Graph& graph) {
             }
 
             op->type() = "aten::copy";
-            auto out0 = op->GetOutputOperands()[0];
+            const auto& out0 = op->GetOutputOperands()[0];
 
             // inplace op output always alias with the input
             const int aliasIdx = out0->GetParams().at("__alias__")->toValue<int>();
-            auto aliasIn0 = graph.GetOperands()[aliasIdx];
+            const auto& aliasIn0 = graph.GetOperands()[aliasIdx];
 
             size_t iAdvanced = 0;
 
             // step5: look fpr any op after the inplace op with alias input
             for (size_t j = i + 1; j < graph.GetOperators().size(); ++j) {
-                auto op1 = graph.GetOperators()[j];
+                auto& op1 = graph.GetOperators()[j];
                 bool affected = false;
                 for (const auto& x: op1->GetInputOperands()) {
                     if (x == aliasIn0) {
