@@ -1123,7 +1123,7 @@ static void functionize(Graph& graph) {
                     }
 
                     while (true) {
-                        auto x = op1->GetInputOperands()[0];
+                        const auto& x = op1->GetInputOperands()[0];
                         if (x->GetParams().find("__alias__") == x->GetParams().end()) {
                             break;
                         }
