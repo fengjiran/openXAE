@@ -976,7 +976,7 @@ static void functionize(Graph& graph) {
             }
 
             for (int j = (int) out0->GetConsumers().size() - 1; j > 0; --j) {
-                auto op1 = out0->GetConsumers()[j];
+                auto& op1 = out0->GetConsumers()[j];
                 auto shadowOp = graph.CreateOperatorAfter(op->type(),
                                                           op->name() + "_pnnxshadow_" + std::to_string(j),
                                                           op);
@@ -1010,7 +1010,8 @@ static void functionize(Graph& graph) {
     // step2: replace inplace op, append copy
     // step3: tag operand alias for view/slice/select/... output
     {
-        for (const auto& op: graph.GetOperators()) {
+        for (size_t i = 0; i < graph.GetOperators().size(); ++i) {
+            const auto& op = graph.GetOperators()[i];
             bool isInplaceOp = op->type().size() > 2 &&
                                op->type()[op->type().size() - 2] != '_' &&
                                op->type()[op->type().size() - 1] == '_';
@@ -1150,7 +1151,7 @@ static void functionize(Graph& graph) {
                         doi -= k;
 
                         for (size_t l = doi; l < i - iAdvanced; ++l) {
-                            std::swap(graph.GetOperators()[l], graph.GetOperators()[l + 1]);
+                            std::swap(ops[l], ops[l + 1]);
                         }
 
                         k++;
@@ -1162,8 +1163,8 @@ static void functionize(Graph& graph) {
                 out0->GetParams().erase("__alias__");
                 const int newAliasIdx = std::find(graph.GetOperands().begin(), graph.GetOperands().end(), out0) -
                                         graph.GetOperands().begin();
-                for (size_t k = i - iAdvanced + 1; k < graph.GetOperators().size(); ++k) {
-                    auto op2 = graph.GetOperators()[k];
+                for (size_t k = i - iAdvanced + 1; k < ops.size(); ++k) {
+                    const auto& op2 = ops[k];
 
                     for (size_t l = 0; l < op2->GetInputOperands().size(); ++l) {
                         if (op2->GetInputOperands()[l] == aliasIn0) {

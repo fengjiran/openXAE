@@ -142,7 +142,7 @@ int main(int argc, char** argv) {
                      customop_modules, module_operators,
                      foldableConstantsZippath, foldableConstants);
 
-    pnnxGraph.save("conv2d.pnnx.param", "conv2d.pnnx.bin");
+    pnnxGraph.save("test.pnnx.param", "test.pnnx.bin");
 
     pnnx::pass_level2(pnnxGraph);
 }
