@@ -1073,8 +1073,9 @@ static void functionize(Graph& graph) {
 
     // step4: scan inplace copy op, collect affected alias
     {
-        for (size_t i = 0; i < graph.GetOperators().size(); ++i) {
-            const auto& op = graph.GetOperators()[i];
+        auto& ops = graph.GetOperators();
+        for (size_t i = 0; i < ops.size(); ++i) {
+            const auto& op = ops[i];
             if (op->type() != "aten::copy_") {
                 continue;
             }
@@ -1085,12 +1086,13 @@ static void functionize(Graph& graph) {
             // inplace op output always alias with the input
             const int aliasIdx = out0->GetParams().at("__alias__")->toValue<int>();
             const auto& aliasIn0 = graph.GetOperands()[aliasIdx];
+            std::cerr << "---> " << op->name() << " for " << aliasIn0->name() << std::endl;
 
             size_t iAdvanced = 0;
 
             // step5: look fpr any op after the inplace op with alias input
-            for (size_t j = i + 1; j < graph.GetOperators().size(); ++j) {
-                auto& op1 = graph.GetOperators()[j];
+            for (size_t j = i + 1; j < ops.size(); ++j) {
+                auto& op1 = ops[j];
                 bool affected = false;
                 for (const auto& x: op1->GetInputOperands()) {
                     if (x == aliasIn0) {
@@ -1114,12 +1116,12 @@ static void functionize(Graph& graph) {
                 }
 
                 // step6: collect ops on the chain back to alias
-                std::set<size_t> chainsx_op_indexes;
+                std::set<size_t> chainsxOpIndexes;
                 {
-                    size_t op1Idx = std::find(graph.GetOperators().begin(), graph.GetOperators().end(), op1) -
-                                    graph.GetOperators().begin();
+                    size_t op1Idx = std::find(ops.begin(), ops.end(), op1) - ops.begin();
                     if (op1Idx < i - iAdvanced) {
-                        chainsx_op_indexes.insert(op1Idx);
+                        chainsxOpIndexes.insert(op1Idx);
+                        std::cerr << "affected op " << op1->name() << " for " << graph.GetOperands()[aliasIdx]->name() << std::endl;
                     }
 
                     while (true) {
@@ -1134,10 +1136,9 @@ static void functionize(Graph& graph) {
                         }
 
                         op1 = x->GetProducer();
-                        size_t newOp1Idx = std::find(graph.GetOperators().begin(), graph.GetOperators().end(), op1) -
-                                           graph.GetOperators().begin();
+                        size_t newOp1Idx = std::find(ops.begin(), ops.end(), op1) - ops.begin();
                         if (newOp1Idx < i - iAdvanced) {
-                            chainsx_op_indexes.insert(newOp1Idx);
+                            chainsxOpIndexes.insert(newOp1Idx);
                         }
                     }
                 }
@@ -1145,7 +1146,7 @@ static void functionize(Graph& graph) {
                 // step7: move chain after copy op
                 {
                     int k = 0;
-                    for (size_t doi: chainsx_op_indexes) {
+                    for (size_t doi: chainsxOpIndexes) {
                         doi -= k;
 
                         for (size_t l = doi; l < i - iAdvanced; ++l) {
@@ -1154,7 +1155,7 @@ static void functionize(Graph& graph) {
 
                         k++;
                     }
-                    iAdvanced += chainsx_op_indexes.size();
+                    iAdvanced += chainsxOpIndexes.size();
                 }
 
                 // step8: update all alias uses after copy op, retag alias
@@ -1181,7 +1182,7 @@ static void functionize(Graph& graph) {
                 }
 
                 // rewind to the updated copy op
-                j -= chainsx_op_indexes.size();
+                j -= chainsxOpIndexes.size();
             }
         }
     }
