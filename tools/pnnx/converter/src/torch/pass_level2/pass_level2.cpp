@@ -949,12 +949,23 @@ static bool IsAliasOp(const std::shared_ptr<Operator>& op) {
     return false;
 }
 
+// step 1. create shadow view/slice/select/... for each consumer
+// step 2. replace inplace op, append copy
+// step 3. tag operand alias for view/slice/select/... output
+// step 4. scan inplace op, collect affacted alias
+// step 5. look for any op after the inplace op with alias input
+// step 6. collect ops on the chain back to alias
+// step 7. move chain after copy op
+// step 8. update all alias uses after copy op, retag alias
+// step 9. clear all alias tag
 static void functionize(Graph& graph) {
+    auto& ops = graph.GetOperators();
+    const auto& operands = graph.GetOperands();
 
     // step1: create shadow view/slice/select for each consumer.
     {
-        for (int i = (int) graph.GetOperators().size() - 1; i >= 0; --i) {
-            const auto& op = graph.GetOperators()[i];
+        for (int i = (int) ops.size() - 1; i >= 0; --i) {
+            const auto& op = ops[i];
             if (!IsAliasOp(op)) {
                 continue;
             }
@@ -1010,8 +1021,8 @@ static void functionize(Graph& graph) {
     // step2: replace inplace op, append copy
     // step3: tag operand alias for view/slice/select/... output
     {
-        for (size_t i = 0; i < graph.GetOperators().size(); ++i) {
-            const auto& op = graph.GetOperators()[i];
+        for (size_t i = 0; i < ops.size(); ++i) {
+            const auto& op = ops[i];
             bool isInplaceOp = op->type().size() > 2 &&
                                op->type()[op->type().size() - 2] != '_' &&
                                op->type()[op->type().size() - 1] == '_';
@@ -1024,26 +1035,25 @@ static void functionize(Graph& graph) {
             if (in->GetParams().find("__alias__") != in->GetParams().end()) {
                 aliasIdx = in->GetParams().at("__alias__")->toValue<int>();
             } else {
-                aliasIdx = std::find(graph.GetOperands().begin(), graph.GetOperands().end(), in) -
-                           graph.GetOperands().begin();
+                aliasIdx = std::find(operands.begin(), operands.end(), in) - operands.begin();
             }
 
             if (op->type() == "aten::copy_") {
                 op->GetOutputOperands()[0]->GetParams()["__alias__"] = std::make_shared<Parameter>(aliasIdx);
                 std::cerr << "operand " << op->GetOutputOperands()[0]->name()
-                          << " is alias of " << graph.GetOperands()[aliasIdx]->name()
+                          << " is alias of " << operands[aliasIdx]->name()
                           << std::endl;
 
                 // set copy output shape as the alias one
-                op->GetOutputOperands()[0]->SetType(graph.GetOperands()[aliasIdx]->type());
-                op->GetOutputOperands()[0]->GetShape() = graph.GetOperands()[aliasIdx]->GetShape();
+                op->GetOutputOperands()[0]->SetType(operands[aliasIdx]->type());
+                op->GetOutputOperands()[0]->GetShape() = operands[aliasIdx]->GetShape();
                 continue;
             }
 
             if (IsAliasOp(op)) {
                 op->GetOutputOperands()[0]->GetParams()["__alias__"] = std::make_shared<Parameter>(aliasIdx);
                 std::cerr << "operand " << op->GetOutputOperands()[0]->name()
-                          << " is alias of " << graph.GetOperands()[aliasIdx]->name()
+                          << " is alias of " << operands[aliasIdx]->name()
                           << std::endl;
                 continue;
             }
@@ -1053,7 +1063,7 @@ static void functionize(Graph& graph) {
                 op->type() = op->type().substr(0, op->type().size() - 1);
 
                 // append aten::copy_
-                if (graph.GetOperands()[aliasIdx]->GetConsumers().size() > 1) {
+                if (operands[aliasIdx]->GetConsumers().size() > 1) {
                     const auto& in0 = op->GetInputOperands()[0];
                     const auto& out0 = op->GetOutputOperands()[0];
 
@@ -1074,7 +1084,6 @@ static void functionize(Graph& graph) {
 
     // step4: scan inplace copy op, collect affected alias
     {
-        auto& ops = graph.GetOperators();
         for (size_t i = 0; i < ops.size(); ++i) {
             const auto& op = ops[i];
             if (op->type() != "aten::copy_") {
@@ -1086,12 +1095,12 @@ static void functionize(Graph& graph) {
 
             // inplace op output always alias with the input
             const int aliasIdx = out0->GetParams().at("__alias__")->toValue<int>();
-            const auto& aliasIn0 = graph.GetOperands()[aliasIdx];
+            const auto& aliasIn0 = operands[aliasIdx];
             std::cerr << "---> " << op->name() << " for " << aliasIn0->name() << std::endl;
 
             size_t iAdvanced = 0;
 
-            // step5: look fpr any op after the inplace op with alias input
+            // step5: look for any op after the inplace op with alias input
             for (size_t j = i + 1; j < ops.size(); ++j) {
                 auto& op1 = ops[j];
                 bool affected = false;
@@ -1122,7 +1131,8 @@ static void functionize(Graph& graph) {
                     size_t op1Idx = std::find(ops.begin(), ops.end(), op1) - ops.begin();
                     if (op1Idx < i - iAdvanced) {
                         chainsxOpIndexes.insert(op1Idx);
-                        std::cerr << "affected op " << op1->name() << " for " << graph.GetOperands()[aliasIdx]->name() << std::endl;
+                        std::cerr << "affected op " << op1->name() << " for "
+                                  << operands[aliasIdx]->name() << std::endl;
                     }
 
                     while (true) {
@@ -1140,6 +1150,8 @@ static void functionize(Graph& graph) {
                         size_t newOp1Idx = std::find(ops.begin(), ops.end(), op1) - ops.begin();
                         if (newOp1Idx < i - iAdvanced) {
                             chainsxOpIndexes.insert(newOp1Idx);
+                            std::cerr << "affected op " << op1->name() << " for "
+                                      << operands[aliasIdx]->name() << std::endl;
                         }
                     }
                 }
@@ -1161,8 +1173,7 @@ static void functionize(Graph& graph) {
 
                 // step8: update all alias uses after copy op, retag alias
                 out0->GetParams().erase("__alias__");
-                const int newAliasIdx = std::find(graph.GetOperands().begin(), graph.GetOperands().end(), out0) -
-                                        graph.GetOperands().begin();
+                const int newAliasIdx = std::find(operands.begin(), operands.end(), out0) - operands.begin();
                 for (size_t k = i - iAdvanced + 1; k < ops.size(); ++k) {
                     const auto& op2 = ops[k];
 
@@ -1190,18 +1201,18 @@ static void functionize(Graph& graph) {
 
     // step9: clear all alias tag
     {
-        for (const auto& x: graph.GetOperands()) {
+        for (const auto& x: operands) {
             x->GetParams().erase("__alias__");
         }
     }
 }
 
-void pass_level2(Graph& g) {
-    functionize(g);
+void pass_level2(Graph& pg) {
+    functionize(pg);
     int opIdx = 0;
     for (const auto& x: GraphRewriterPassRegistry::GetInstance().GetGlobalPNNXGraphRewriterPass()) {
         for (const auto& rewriter: x.second) {
-            PNNXGraphRewrite(g, rewriter, opIdx);
+            PNNXGraphRewrite(pg, rewriter, opIdx);
         }
     }
 }

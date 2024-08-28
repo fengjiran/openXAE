@@ -3,6 +3,10 @@ import torch.nn as nn
 
 
 class Model(nn.Module):
+    """
+    torch slice op implementation in C++:
+    Tensor slice(const Tensor& self, int64_t dim, int64_t start, int64_t end, int64_t step);
+    """
     def __init__(self):
         super(Model, self).__init__()
 
