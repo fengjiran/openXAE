@@ -265,6 +265,8 @@ TEST(IRTEST, create_parameter_from_torch_node) {
     EXPECT_TRUE(node1->output()->type()->kind() == c10::TypeKind::NoneType);
     Parameter p1 = CreateParameterFromTorchNode(node1);
     std::cout << "p1: " << p1.toString() << std::endl;
+//    p1 = node1;
+//    std::cout << (int) p1.type() << std::endl;
 
     torch::jit::Node* node2 = g.create(c10::prim::Constant);
     node2->output()->setType(c10::IntType::get());

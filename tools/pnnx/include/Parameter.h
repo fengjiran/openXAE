@@ -7,10 +7,10 @@
 
 #include "utils.h"
 
-#include <any>
+//#include <any>
 #include <complex>
 #include <torch/script.h>
-#include <variant>
+//#include <variant>
 #include <vector>
 
 namespace pnnx {
@@ -115,79 +115,18 @@ public:
 
     template<typename U,
              typename = typename std::enable_if_t<std::is_same_v<T, std::decay_t<U>>>>
-    explicit ParameterImpl(U&& val);
+    explicit ParameterImpl(U&& val)
+        : type_(GetParameterType<std::decay_t<U>>()), value_(std::forward<U>(val)) {}
 
     NODISCARD const T& toValue() const;
 
     T& toValue();
 
-    NODISCARD ParameterType& type() override {
-        return type_;
-    }
+    ParameterType& type() override;
 
-    NODISCARD const ParameterType& type() const override {
-        return type_;
-    }
+    NODISCARD const ParameterType& type() const override;
 
-    NODISCARD std::string toString() const override {
-        if constexpr (GetParameterType<T>() == ParameterType::kParameterBool) {
-            return value_ ? "True" : "False";
-        } else if constexpr (GetParameterType<T>() == ParameterType::kParameterInt) {
-            return std::to_string(value_);
-        } else if constexpr (GetParameterType<T>() == ParameterType::kParameterFloat) {
-            char buf[64];
-            snprintf(buf, sizeof(buf), "%e", value_);
-            return buf;
-        } else if constexpr (GetParameterType<T>() == ParameterType::kParameterString) {
-            return value_;
-        } else if constexpr (GetParameterType<T>() == ParameterType::kParameterComplex) {
-            char buf[128];
-            snprintf(buf, sizeof(buf), "%e+%ei", value_.real(), value_.imag());
-            return buf;
-        } else if constexpr (GetParameterType<T>() == ParameterType::kParameterArrayInt) {
-            std::string code;
-            code += "(";
-            size_t size = toValue().size();
-            for (const auto& ele: toValue()) {
-                code += (std::to_string(ele) + (--size ? "," : ""));
-            }
-            code += ")";
-            return code;
-        } else if constexpr (GetParameterType<T>() == ParameterType::kParameterArrayFloat) {
-            std::string code;
-            code += "(";
-            size_t size = toValue().size();
-            for (const auto& ele: toValue()) {
-                char buf[64];
-                snprintf(buf, sizeof(buf), "%e", ele);
-                code += (std::string(buf) + (--size ? "," : ""));
-            }
-            code += ")";
-            return code;
-        } else if constexpr (GetParameterType<T>() == ParameterType::kParameterArrayString) {
-            std::string code;
-            code += "(";
-            size_t size = toValue().size();
-            for (const auto& ele: toValue()) {
-                code += (ele + (--size ? "," : ""));
-            }
-            code += ")";
-            return code;
-        } else if constexpr (GetParameterType<T>() == ParameterType::kParameterArrayComplex) {
-            std::string code;
-            code += "(";
-            size_t size = toValue().size();
-            for (const auto& ele: toValue()) {
-                char buf[128];
-                snprintf(buf, sizeof(buf), "%e+%ei", ele.real(), ele.imag());
-                code += (std::string(buf) + (--size ? "," : ""));
-            }
-            code += ")";
-            return code;
-        }
-
-        return "None";
-    }
+    NODISCARD std::string toString() const override;
 
 private:
     /**
@@ -200,7 +139,6 @@ private:
      */
     T value_{};
 };
-
 
 class Parameter {
 public:

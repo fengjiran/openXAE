@@ -225,7 +225,7 @@ void pass_level1(const torch::jit::Module& mod,
                                 op->GetAttributes()[wrapName] = std::make_shared<Attribute>(subMod.attr(nodeName).toTensor());
                             }
                         } else if (mn->kind() == c10::prim::Constant) {
-                            Parameter p(mn);
+                            Parameter p = CreateParameterFromTorchNode(mn);
                             if (p.type() == ParameterType::kParameterOther) {
                                 size_t uniqueId = mn->output(0)->unique();
                                 constAttrNodes[uniqueId] = mn;

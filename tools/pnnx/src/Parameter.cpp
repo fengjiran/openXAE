@@ -10,10 +10,10 @@ template<typename T>
 ParameterImpl<T>::ParameterImpl()
     : type_(GetParameterType<std::decay_t<T>>()) {}
 
-template<typename T>
-template<typename U, typename>
-ParameterImpl<T>::ParameterImpl(U&& val)
-    : type_(GetParameterType<std::decay_t<U>>()), value_(std::forward<U>(val)) {}
+//template<typename T>
+//template<typename U, typename>
+//ParameterImpl<T>::ParameterImpl(U&& val)
+//    : type_(GetParameterType<std::decay_t<U>>()), value_(std::forward<U>(val)) {}
 
 template<typename T>
 const T& ParameterImpl<T>::toValue() const {
@@ -24,6 +24,87 @@ template<typename T>
 T& ParameterImpl<T>::toValue() {
     return value_;
 }
+
+template<typename T>
+ParameterType& ParameterImpl<T>::type() {
+    return type_;
+}
+
+template<typename T>
+const ParameterType& ParameterImpl<T>::type() const {
+    return type_;
+}
+
+template<typename T>
+std::string ParameterImpl<T>::toString() const {
+    if constexpr (GetParameterType<T>() == ParameterType::kParameterBool) {
+        return value_ ? "True" : "False";
+    } else if constexpr (GetParameterType<T>() == ParameterType::kParameterInt) {
+        return std::to_string(value_);
+    } else if constexpr (GetParameterType<T>() == ParameterType::kParameterFloat) {
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%e", value_);
+        return buf;
+    } else if constexpr (GetParameterType<T>() == ParameterType::kParameterString) {
+        return value_;
+    } else if constexpr (GetParameterType<T>() == ParameterType::kParameterComplex) {
+        char buf[128];
+        snprintf(buf, sizeof(buf), "%e+%ei", value_.real(), value_.imag());
+        return buf;
+    } else if constexpr (GetParameterType<T>() == ParameterType::kParameterArrayInt) {
+        std::string code;
+        code += "(";
+        size_t size = toValue().size();
+        for (const auto& ele: toValue()) {
+            code += (std::to_string(ele) + (--size ? "," : ""));
+        }
+        code += ")";
+        return code;
+    } else if constexpr (GetParameterType<T>() == ParameterType::kParameterArrayFloat) {
+        std::string code;
+        code += "(";
+        size_t size = toValue().size();
+        for (const auto& ele: toValue()) {
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%e", ele);
+            code += (std::string(buf) + (--size ? "," : ""));
+        }
+        code += ")";
+        return code;
+    } else if constexpr (GetParameterType<T>() == ParameterType::kParameterArrayString) {
+        std::string code;
+        code += "(";
+        size_t size = toValue().size();
+        for (const auto& ele: toValue()) {
+            code += (ele + (--size ? "," : ""));
+        }
+        code += ")";
+        return code;
+    } else if constexpr (GetParameterType<T>() == ParameterType::kParameterArrayComplex) {
+        std::string code;
+        code += "(";
+        size_t size = toValue().size();
+        for (const auto& ele: toValue()) {
+            char buf[128];
+            snprintf(buf, sizeof(buf), "%e+%ei", ele.real(), ele.imag());
+            code += (std::string(buf) + (--size ? "," : ""));
+        }
+        code += ")";
+        return code;
+    }
+
+    return "None";
+}
+
+template class ParameterImpl<bool>;
+template class ParameterImpl<int>;
+template class ParameterImpl<float>;
+template class ParameterImpl<std::string>;
+template class ParameterImpl<std::complex<float>>;
+template class ParameterImpl<std::vector<int>>;
+template class ParameterImpl<std::vector<float>>;
+template class ParameterImpl<std::vector<std::string>>;
+template class ParameterImpl<std::vector<std::complex<float>>>;
 
 
 bool operator==(const Parameter& lhs, const Parameter& rhs) {
