@@ -111,20 +111,15 @@ public:
 template<typename T>
 class ParameterImpl : public ParameterBase {
 public:
-    ParameterImpl() : type_(GetParameterType<std::decay_t<T>>()) {}
+    ParameterImpl();
 
     template<typename U,
              typename = typename std::enable_if_t<std::is_same_v<T, std::decay_t<U>>>>
-    explicit ParameterImpl(U&& val)
-        : type_(GetParameterType<std::decay_t<U>>()), value_(std::forward<U>(val)) {}
+    explicit ParameterImpl(U&& val);
 
-    NODISCARD const T& toValue() const {
-        return value_;
-    }
+    NODISCARD const T& toValue() const;
 
-    NODISCARD T& toValue() {
-        return value_;
-    }
+    T& toValue();
 
     NODISCARD ParameterType& type() override {
         return type_;
@@ -205,6 +200,7 @@ private:
      */
     T value_{};
 };
+
 
 class Parameter {
 public:
@@ -332,275 +328,6 @@ private:
 };
 
 bool operator==(const Parameter& lhs, const Parameter& rhs);
-
-template<typename T>
-class Parameter_Deprecated {
-public:
-    using value_type = T;
-
-    Parameter_Deprecated() : type_(GetParameterType<T>()) {}
-
-    explicit Parameter_Deprecated(T val)
-        : type_(GetParameterType<T>()),
-          value_(val) {}
-
-#if BUILD_ONNX2PNNX
-    Parameter(const onnx::AttributeProto& attr);
-    Parameter(const onnx2pnnx::OnnxAttributeProxy& attr);
-#endif// BUILD_ONNX2PNNX
-
-    NODISCARD const ParameterType& type() const {
-        return type_;
-    }
-
-    void SetType(ParameterType type) {
-        type_ = type;
-    }
-
-    NODISCARD T toValue() const {
-        return value_;
-    }
-
-    template<typename U,
-             typename std::enable_if<std::is_convertible_v<U, T>>::type* = nullptr>
-    void SetValue(U&& value) {
-        value_ = std::forward<U>(value);
-    }
-
-    /**
-     * @brief Encode unknown type parameter to string.
-     * @tparam U
-     * @return
-     */
-    template<typename U = T,
-             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterUnknown>::type* = nullptr>
-    NODISCARD std::string Encode2String() const {
-        return "None";
-    }
-
-    /**
-     * @brief Encode bool parameter to string.
-     * @tparam U
-     * @return
-     */
-    template<typename U = T,
-             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterBool>::type* = nullptr>
-    NODISCARD std::string Encode2String() const {
-        return toValue() ? "True" : "False";
-    }
-
-    /**
-     * @brief Encode int parameter to string.
-     * @tparam U
-     * @return
-     */
-    template<typename U = T,
-             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterInt>::type* = nullptr>
-    NODISCARD std::string Encode2String() const {
-        return std::to_string(toValue());
-    }
-
-    /**
-     * @brief Encode float parameter to string.
-     * @tparam U
-     * @param param
-     * @return
-     */
-    template<typename U = T,
-             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterFloat>::type* = nullptr>
-    NODISCARD std::string Encode2String() const {
-        char buf[64];
-        snprintf(buf, sizeof(buf), "%e", toValue());
-        return buf;
-    }
-
-    /**
-     * @brief Encode string parameter to string.
-     * @tparam U
-     * @return
-     */
-    template<typename U = T,
-             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterString>::type* = nullptr>
-    NODISCARD std::string Encode2String() const {
-        return toValue();
-    }
-
-    /**
-     * @brief Encode complex parameter to string.
-     * @tparam U
-     * @return
-     */
-    template<typename U = T,
-             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterComplex>::type* = nullptr>
-    NODISCARD std::string Encode2String() const {
-        char buf[128];
-        snprintf(buf, sizeof(buf), "%e+%ei", toValue().real(), toValue().imag());
-        return buf;
-    }
-
-private:
-    /**
-     * @brief Parameter type
-     */
-    ParameterType type_;
-
-    T value_{};
-};
-
-template<typename T>
-class Parameter_Deprecated<std::vector<T>> {
-public:
-    using value_type = std::vector<T>;
-
-    Parameter_Deprecated() : type_(GetParameterType<std::vector<T>>()) {}
-
-    explicit Parameter_Deprecated(const std::vector<T>& val)
-        : type_(GetParameterType<std::vector<T>>()), value_(val) {}
-
-    NODISCARD const ParameterType& type() const {
-        return type_;
-    }
-
-    void SetType(ParameterType type) {
-        type_ = type;
-    }
-
-    NODISCARD std::vector<T> toValue() const {
-        return value_;
-    }
-
-    void SetValue(std::vector<T> value) {
-        value_ = std::move(value);
-    }
-
-    template<typename U,
-             typename std::enable_if<std::is_convertible_v<U, T>>::type* = nullptr>
-    void AddElemToArray(U&& value) {
-        value_.push_back(std::forward<U>(value));
-    }
-
-    /**
-     * @brief Encode array int parameter to string.
-     * @tparam U
-     * @return
-     */
-    template<typename U = std::vector<T>,
-             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterArrayInt>::type* = nullptr>
-    NODISCARD std::string Encode2String() const {
-        std::string code;
-        code += "(";
-        size_t size = toValue().size();
-        for (const auto& ele: toValue()) {
-            code += (std::to_string(ele) + (--size ? "," : ""));
-        }
-        code += ")";
-        return code;
-    }
-
-    /**
-     * @brief Encode array float parameter to string.
-     * @tparam U
-     * @return
-     */
-    template<typename U = std::vector<T>,
-             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterArrayFloat>::type* = nullptr>
-    NODISCARD std::string Encode2String() const {
-        std::string code;
-        code += "(";
-        size_t size = toValue().size();
-        for (const auto& ele: toValue()) {
-            char buf[64];
-            snprintf(buf, sizeof(buf), "%e", ele);
-            code += (std::string(buf) + (--size ? "," : ""));
-        }
-        code += ")";
-        return code;
-    }
-
-    /**
-     * @brief Encode array string parameter to string.
-     * @tparam U
-     * @return
-     */
-    template<typename U = std::vector<T>,
-             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterArrayString>::type* = nullptr>
-    NODISCARD std::string Encode2String() const {
-        std::string code;
-        code += "(";
-        size_t size = toValue().size();
-        for (const auto& ele: toValue()) {
-            code += (ele + (--size ? "," : ""));
-        }
-        code += ")";
-        return code;
-    }
-
-    /**
-     * @brief Encode array complex parameter to string.
-     * @tparam U
-     * @return
-     */
-    template<typename U = std::vector<T>,
-             typename std::enable_if<GetParameterType<U>() == ParameterType::kParameterArrayComplex>::type* = nullptr>
-    NODISCARD std::string Encode2String() const {
-        std::string code;
-        code += "(";
-        size_t size = toValue().size();
-        for (const auto& ele: toValue()) {
-            char buf[128];
-            snprintf(buf, sizeof(buf), "%e+%ei", ele.real(), ele.imag());
-            code += (std::string(buf) + (--size ? "," : ""));
-        }
-        code += ")";
-        return code;
-    }
-
-private:
-    ParameterType type_;
-    std::vector<T> value_;
-};
-
-// CTAD Deduction Guides
-Parameter_Deprecated(const char*) -> Parameter_Deprecated<std::string>;
-
-Parameter_Deprecated(std::initializer_list<const char*>) -> Parameter_Deprecated<std::vector<std::string>>;
-
-Parameter_Deprecated(std::vector<const char*>) -> Parameter_Deprecated<std::vector<std::string>>;
-
-template<typename T>
-Parameter_Deprecated(std::initializer_list<T>) -> Parameter_Deprecated<std::vector<T>>;
-
-template<typename T>
-bool operator==(const Parameter_Deprecated<T>& lhs, const Parameter_Deprecated<T>& rhs) {
-    if (lhs.type() != rhs.type()) {
-        return false;
-    }
-
-    if (lhs.type() == ParameterType::kParameterUnknown) {
-        return true;
-    }
-
-    return lhs.toValue() == rhs.toValue();
-}
-
-template<typename... Args>
-auto make_parameter(Args&&... args) {
-    return Parameter_Deprecated<Args...>(std::forward<Args>(args)...);
-}
-
-
-using ParameterVar = std::variant<Parameter_Deprecated<void*>,
-                                  Parameter_Deprecated<bool>,
-                                  Parameter_Deprecated<int>,
-                                  Parameter_Deprecated<float>,
-                                  Parameter_Deprecated<double>,
-                                  Parameter_Deprecated<std::string>,
-                                  Parameter_Deprecated<std::complex<float>>,
-
-                                  Parameter_Deprecated<std::vector<int>>,
-                                  Parameter_Deprecated<std::vector<float>>,
-                                  Parameter_Deprecated<std::vector<std::string>>,
-                                  Parameter_Deprecated<std::vector<std::complex<float>>>>;
 
 }// namespace pnnx
 

@@ -6,6 +6,26 @@
 
 namespace pnnx {
 
+template<typename T>
+ParameterImpl<T>::ParameterImpl()
+    : type_(GetParameterType<std::decay_t<T>>()) {}
+
+template<typename T>
+template<typename U, typename>
+ParameterImpl<T>::ParameterImpl(U&& val)
+    : type_(GetParameterType<std::decay_t<U>>()), value_(std::forward<U>(val)) {}
+
+template<typename T>
+const T& ParameterImpl<T>::toValue() const {
+    return value_;
+}
+
+template<typename T>
+T& ParameterImpl<T>::toValue() {
+    return value_;
+}
+
+
 bool operator==(const Parameter& lhs, const Parameter& rhs) {
     if (lhs.type() != rhs.type()) {
         return false;
@@ -31,17 +51,17 @@ bool operator==(const Parameter& lhs, const Parameter& rhs) {
             break;
         }
 
-        case ParameterType::kParameterString:{
+        case ParameterType::kParameterString: {
             isEqual = lhs.toValue<std::string>() == rhs.toValue<std::string>();
             break;
         }
 
-        case ParameterType::kParameterArrayInt:{
+        case ParameterType::kParameterArrayInt: {
             isEqual = lhs.toValue<std::vector<int>>() == rhs.toValue<std::vector<int>>();
             break;
         }
 
-        case ParameterType::kParameterArrayFloat:{
+        case ParameterType::kParameterArrayFloat: {
             const auto& a = lhs.toValue<std::vector<float>>();
             const auto& b = rhs.toValue<std::vector<float>>();
             isEqual = std::equal(a.begin(), a.end(), b.begin(), b.end());
@@ -67,7 +87,7 @@ bool operator==(const Parameter& lhs, const Parameter& rhs) {
             break;
         }
 
-        default:{
+        default: {
             isEqual = false;
             break;
         }
