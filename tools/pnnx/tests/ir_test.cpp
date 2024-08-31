@@ -22,6 +22,8 @@ TEST(IRTEST, type_check) {
     static_assert(std::is_floating_point_v<double>);
     static_assert(!std::is_same_v<std::decay_t<const char*>, std::string>);
     static_assert(std::is_convertible_v<const char*, std::string>);
+    static_assert(is_string_v<const char*>);
+    static_assert(is_string_v<std::decay_t<const char*>>);
 
     static_assert(is_std_vector_int_v<std::vector<int>>);
     static_assert(is_std_vector_float_v<std::vector<float>>);

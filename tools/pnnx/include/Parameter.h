@@ -6,11 +6,8 @@
 #define OPENXAE_PARAMETER_H
 
 #include "utils.h"
-
-//#include <any>
 #include <complex>
 #include <torch/script.h>
-//#include <variant>
 #include <vector>
 
 namespace pnnx {
@@ -184,7 +181,7 @@ public:
             ptr_ = std::make_shared<ParameterImpl<int>>((int) std::forward<T>(val));
         } else if constexpr (std::is_floating_point_v<U>) {
             ptr_ = std::make_shared<ParameterImpl<float>>((float) std::forward<T>(val));
-        } else if constexpr (is_string_v<T>) {
+        } else if constexpr (is_string_v<U>) {
             ptr_ = std::make_shared<ParameterImpl<std::string>>(std::string(std::forward<T>(val)));
         } else if constexpr (is_std_vector_int_v<U>) {
             ptr_ = std::make_shared<ParameterImpl<std::vector<int>>>(

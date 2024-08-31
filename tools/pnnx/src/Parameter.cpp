@@ -10,11 +10,6 @@ template<typename T>
 ParameterImpl<T>::ParameterImpl()
     : type_(GetParameterType<std::decay_t<T>>()) {}
 
-//template<typename T>
-//template<typename U, typename>
-//ParameterImpl<T>::ParameterImpl(U&& val)
-//    : type_(GetParameterType<std::decay_t<U>>()), value_(std::forward<U>(val)) {}
-
 template<typename T>
 const T& ParameterImpl<T>::toValue() const {
     return value_;
@@ -105,7 +100,6 @@ template class ParameterImpl<std::vector<int>>;
 template class ParameterImpl<std::vector<float>>;
 template class ParameterImpl<std::vector<std::string>>;
 template class ParameterImpl<std::vector<std::complex<float>>>;
-
 
 bool operator==(const Parameter& lhs, const Parameter& rhs) {
     if (lhs.type() != rhs.type()) {
