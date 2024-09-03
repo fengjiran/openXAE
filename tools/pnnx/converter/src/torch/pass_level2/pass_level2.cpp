@@ -1161,6 +1161,8 @@ static void functionize(Graph& graph) {
                     int k = 0;
                     for (size_t doi: chainsxOpIndexes) {
                         doi -= k;
+                        std::cerr << "---> move " << ops[doi]->name()
+                                  << "after " << ops[i - iAdvanced] << std::endl;
 
                         for (size_t l = doi; l < i - iAdvanced; ++l) {
                             std::swap(ops[l], ops[l + 1]);
@@ -1179,6 +1181,9 @@ static void functionize(Graph& graph) {
 
                     for (size_t l = 0; l < op2->GetInputOperands().size(); ++l) {
                         if (op2->GetInputOperands()[l] == aliasIn0) {
+                            std::cerr << "---> replace " << op2->name() << "input " << op2->GetInputOperands()[l]->name()
+                                      << "to " << out0->name() << std::endl;
+
                             op2->GetInputOperands()[l] = out0;
                             aliasIn0->RemoveConsumer(op2);
                             out0->AddConsumer(op2);
