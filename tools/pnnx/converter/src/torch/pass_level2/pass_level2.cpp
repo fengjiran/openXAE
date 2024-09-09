@@ -651,43 +651,43 @@ void PNNXGraphRewrite(Graph& graph,
     patternGraph.parse(pass->MatchPatternGraph());
 
     // collect pattern inputs and outputs order
-    std::vector<std::string> pattern_graph_inputs;
-    std::vector<std::string> pattern_graph_outputs;
-    std::vector<std::shared_ptr<Operator>> pattern_graph_output_operators;
+    std::vector<std::string> patternGraphInputs;  // input operand name
+    std::vector<std::string> patternGraphOutputs;  // output operand name
+    std::vector<std::shared_ptr<Operator>> patternGraphOutputOps;
 
     for (const auto& x: patternGraph.GetOperators()) {
         if (x->type() == "pnnx.Input") {
             for (const auto& y: x->GetOutputOperands()) {
-                pattern_graph_inputs.push_back(y->name());
+                patternGraphInputs.push_back(y->name());
             }
         }
 
         if (x->type() == "pnnx.Output") {
-            pattern_graph_output_operators.push_back(x);
+            patternGraphOutputOps.push_back(x);
             for (const auto& y: x->GetInputOperands()) {
-                pattern_graph_outputs.push_back(y->name());
+                patternGraphOutputs.push_back(y->name());
             }
         }
     }
 
-    std::vector<std::shared_ptr<Operator>> new_ops;
+    std::vector<std::shared_ptr<Operator>> newOps;
     while (true) {
-        const int graph_op_count = (int) graph.GetOperators().size();
+        const int graphOpNum = (int) graph.GetOperators().size();
 
         bool matched = true;
 
         // match from output
-        std::map<std::string, std::shared_ptr<Operator>> matched_operators;
-        std::map<std::string, std::shared_ptr<Operand>> matched_inputs;
-        std::map<std::string, std::shared_ptr<Operand>> matched_outputs;
-        std::map<std::string, std::shared_ptr<Parameter>> captured_params;
-        std::map<std::string, std::shared_ptr<Attribute>> captured_attrs;
+        std::map<std::string, std::shared_ptr<Operator>> matchedOperators;
+        std::map<std::string, std::shared_ptr<Operand>> matchedInputs;
+        std::map<std::string, std::shared_ptr<Operand>> matchedOutputs;
+        std::map<std::string, std::shared_ptr<Parameter>> capturedParams;
+        std::map<std::string, std::shared_ptr<Attribute>> capturedAttrs;
 
         // pattern match from end to begin
-        int q = graph_op_count - 1;
+        int q = graphOpNum - 1;
         for (; q >= 1; q--) {
             matched = true;
-            for (const auto& pattern: pattern_graph_output_operators) {
+            for (const auto& pattern: patternGraphOutputOps) {
                 for (const auto& operand: pattern->GetInputOperands()) {
                     const auto& pattern2 = operand->GetProducer();
                     int j = q;
@@ -708,14 +708,14 @@ void PNNXGraphRewrite(Graph& graph,
                         bool submatch_matched = true;
                         for (const auto& x: matched_operators2) {
                             // check these matched operators are same with previous matched ones
-                            if (matched_operators.find(x.first) != matched_operators.end()) {
-                                if (matched_operators[x.first] != x.second) {
+                            if (matchedOperators.find(x.first) != matchedOperators.end()) {
+                                if (matchedOperators[x.first] != x.second) {
                                     // unmatched two sub-matches
                                     submatch_matched = false;
                                     break;
                                 }
                             } else {
-                                matched_operators[x.first] = x.second;
+                                matchedOperators[x.first] = x.second;
                             }
                         }
                         if (!submatch_matched) {
@@ -723,23 +723,23 @@ void PNNXGraphRewrite(Graph& graph,
                         }
 
                         for (const auto& x: matched_inputs2) {
-                            if (matched_inputs.find(x.first) == matched_inputs.end()) {
-                                matched_inputs[x.first] = x.second;
+                            if (matchedInputs.find(x.first) == matchedInputs.end()) {
+                                matchedInputs[x.first] = x.second;
                             }
                         }
 
                         for (const auto& x: matched_outputs2) {
-                            if (matched_outputs.find(x.first) == matched_outputs.end()) {
-                                matched_outputs[x.first] = x.second;
+                            if (matchedOutputs.find(x.first) == matchedOutputs.end()) {
+                                matchedOutputs[x.first] = x.second;
                             }
                         }
 
                         for (const auto& x: captured_params2) {
-                            captured_params[x.first] = x.second;
+                            capturedParams[x.first] = x.second;
                         }
 
                         for (const auto& x: captured_attrs2) {
-                            captured_attrs[x.first] = x.second;
+                            capturedAttrs[x.first] = x.second;
                         }
 
                         // match !
@@ -757,12 +757,12 @@ void PNNXGraphRewrite(Graph& graph,
                 }
             }
 
-            if (matched && !pass->Match(matched_operators, captured_params, captured_attrs)) {
-                matched_operators.clear();
-                matched_inputs.clear();
-                matched_outputs.clear();
-                captured_params.clear();
-                captured_attrs.clear();
+            if (matched && !pass->Match(matchedOperators, capturedParams, capturedAttrs)) {
+                matchedOperators.clear();
+                matchedInputs.clear();
+                matchedOutputs.clear();
+                capturedParams.clear();
+                capturedAttrs.clear();
                 matched = false;
                 continue;
             }
@@ -779,13 +779,13 @@ void PNNXGraphRewrite(Graph& graph,
         // replace
         // remove all operands inside matched graph
         std::map<std::string, std::shared_ptr<Operand>> operands_to_remove;
-        for (auto& _x: matched_operators) {
+        for (auto& _x: matchedOperators) {
             auto& x = _x.second;
             for (auto& r: x->GetInputOperands()) {
                 r->RemoveConsumer(x);
 
                 bool is_input = false;
-                for (auto& r2: matched_inputs) {
+                for (auto& r2: matchedInputs) {
                     if (r2.second == r) {
                         is_input = true;
                         break;
@@ -802,7 +802,7 @@ void PNNXGraphRewrite(Graph& graph,
                 r->SetProducer(nullptr);
 
                 bool is_output = false;
-                for (auto& r2: matched_outputs) {
+                for (auto& r2: matchedOutputs) {
                     if (r2.second == r) {
                         is_output = true;
                         break;
@@ -826,7 +826,7 @@ void PNNXGraphRewrite(Graph& graph,
         std::shared_ptr<Operator> cur;
         {
             size_t cur_index = 1;
-            for (const auto& o: matched_operators) {
+            for (const auto& o: matchedOperators) {
                 size_t c_index = std::find(graph.GetOperators().begin(),
                                            graph.GetOperators().end(),
                                            o.second) -
@@ -838,7 +838,7 @@ void PNNXGraphRewrite(Graph& graph,
         }
 
         // remove all matched operators
-        for (const auto& _x: matched_operators) {
+        for (const auto& _x: matchedOperators) {
             auto& x = _x.second;
             graph.GetOperators().erase(
                     std::find(graph.GetOperators().begin(), graph.GetOperators().end(), x));
@@ -847,21 +847,21 @@ void PNNXGraphRewrite(Graph& graph,
         if (pass->ReplacePatternGraph().empty()) {
             // insert single
             auto op = graph.CreateOperatorBefore(pass->TypeStr(), std::string(pass->NameStr()), cur);
-            for (const auto& k: pattern_graph_inputs) {
-                auto& r = matched_inputs.at(k);
+            for (const auto& k: patternGraphInputs) {
+                auto& r = matchedInputs.at(k);
                 r->AddConsumer(op);
                 op->AddInputOperand(r);
                 op->GetInputNames().push_back(k);
             }
 
-            for (const auto& k: pattern_graph_outputs) {
-                auto& r = matched_outputs.at(k);
+            for (const auto& k: patternGraphOutputs) {
+                auto& r = matchedOutputs.at(k);
                 r->SetProducer(op);
                 op->AddOutputOperand(r);
             }
 
-            pass->Write(op, captured_params, captured_attrs);
-            new_ops.push_back(op);
+            pass->Write(op, capturedParams, capturedAttrs);
+            newOps.push_back(op);
         } else {
             // insert multiple
             Graph replace_graph;
@@ -897,8 +897,8 @@ void PNNXGraphRewrite(Graph& graph,
                                                           nullptr),
                                               replace_graph.GetOperands().end());
 
-            for (const auto& k: pattern_graph_inputs) {
-                auto& r = matched_inputs.at(k);
+            for (const auto& k: patternGraphInputs) {
+                auto& r = matchedInputs.at(k);
                 const auto& rr = replace_graph.GetOperand(k);
                 for (auto& x: rr->GetConsumers()) {
                     r->AddConsumer(x);
@@ -913,8 +913,8 @@ void PNNXGraphRewrite(Graph& graph,
                 }
             }
 
-            for (const auto& k: pattern_graph_outputs) {
-                auto& r = matched_outputs.at(k);
+            for (const auto& k: patternGraphOutputs) {
+                auto& r = matchedOutputs.at(k);
                 const auto& rr = replace_graph.GetOperand(k);
                 r->SetProducer(rr->GetProducer());
 
@@ -926,16 +926,16 @@ void PNNXGraphRewrite(Graph& graph,
                 }
             }
 
-            pass->Write(ops, captured_params, captured_attrs);
+            pass->Write(ops, capturedParams, capturedAttrs);
             for (const auto& x: ops) {
-                new_ops.push_back(x.second);
+                newOps.push_back(x.second);
             }
         }
     }
 
     // assign new op name number
-    for (int i = (int) new_ops.size() - 1; i >= 0; --i) {
-        new_ops[i]->name() = new_ops[i]->name() + "_" + std::to_string(opIdx++);
+    for (int i = (int) newOps.size() - 1; i >= 0; --i) {
+        newOps[i]->name() = newOps[i]->name() + "_" + std::to_string(opIdx++);
     }
 }
 
