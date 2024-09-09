@@ -223,8 +223,8 @@ static bool MatchExpression(const std::shared_ptr<Operator>& op1,
 
     // capture values
     for (size_t i = 0; i < tokens1.size(); ++i) {
-        const std::string& at = tokens1[i];
-        const std::string& bt = tokens2[i];
+        const auto& at = tokens1[i];
+        const auto& bt = tokens2[i];
 
         if (at == bt) {
             continue;
@@ -252,7 +252,7 @@ static bool MatchParameter(const Parameter& a,
         auto key = b.toString().substr(1);
         if (capturedParams.find(key) != capturedParams.end()) {
             // match previous captured parameter
-            return *capturedParams.at(key) == *std::make_shared<Parameter>(a);
+            return *capturedParams.at(key) == a;
         }
 
         // captured parameter
