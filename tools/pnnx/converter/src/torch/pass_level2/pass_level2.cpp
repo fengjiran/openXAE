@@ -143,11 +143,13 @@ static bool TokenIsArgument(const std::string& t) {
 static bool MatchExpression(const std::shared_ptr<Operator>& op1,
                             const std::shared_ptr<Operator>& op2,
                             std::map<std::string, std::shared_ptr<Parameter>>& capturedParams) {
-    if (op1->GetParameters().size() != 1 || op1->GetParameters().find("expr") == op1->GetParameters().end()) {
+    if (op1->GetParameters().size() != 1 ||
+        op1->GetParameters().find("expr") == op1->GetParameters().end()) {
         return false;
     }
 
-    if (op2->GetParameters().size() != 1 || op2->GetParameters().find("expr") == op2->GetParameters().end()) {
+    if (op2->GetParameters().size() != 1 ||
+        op2->GetParameters().find("expr") == op2->GetParameters().end()) {
         return false;
     }
 
@@ -167,7 +169,13 @@ static bool MatchExpression(const std::shared_ptr<Operator>& op1,
                 t += ch;
                 tokens1.push_back(t);
                 t.clear();
-            } else if (ch == '(' || ch == ')' || ch == ',' || ch == ']') {
+            } else if (ch == ']') {
+                if (!t.empty()) {
+                    tokens1.push_back(t);
+                    t.clear();
+                }
+                t += ch;
+            } else if (ch == '(' || ch == ')' || ch == ',') {
                 if (!t.empty()) {
                     tokens1.push_back(t);
                     t.clear();
@@ -181,7 +189,7 @@ static bool MatchExpression(const std::shared_ptr<Operator>& op1,
         }
     }
 
-    // split expr1 into tokens
+    // split expr2 into tokens
     {
         std::string t;
         for (char ch: expr2) {
@@ -189,7 +197,13 @@ static bool MatchExpression(const std::shared_ptr<Operator>& op1,
                 t += ch;
                 tokens2.push_back(t);
                 t.clear();
-            } else if (ch == '(' || ch == ')' || ch == ',' || ch == ']') {
+            } else if (ch == ']') {
+                if (!t.empty()) {
+                    tokens2.push_back(t);
+                    t.clear();
+                }
+                t += ch;
+            } else if (ch == '(' || ch == ')' || ch == ',') {
                 if (!t.empty()) {
                     tokens2.push_back(t);
                     t.clear();
@@ -430,17 +444,23 @@ static bool MatchOperator(const std::shared_ptr<Operator>& a,
                           const std::shared_ptr<Operator>& b,
                           std::map<std::string, std::shared_ptr<Parameter>>& capturedParams,
                           std::map<std::string, std::shared_ptr<Attribute>>& capturedAttrs) {
-    if (a->type() != b->type()) {
+    if (!(a->type() == b->type() &&
+          a->GetInputOperands().size() == b->GetInputOperands().size() &&
+          a->GetOutputOperands().size() == b->GetOutputOperands().size())) {
         return false;
     }
 
-    if (a->GetInputOperands().size() != b->GetInputOperands().size()) {
-        return false;
-    }
-
-    if (a->GetOutputOperands().size() != b->GetOutputOperands().size()) {
-        return false;
-    }
+    //    if (a->type() != b->type()) {
+    //        return false;
+    //    }
+    //
+    //    if (a->GetInputOperands().size() != b->GetInputOperands().size()) {
+    //        return false;
+    //    }
+    //
+    //    if (a->GetOutputOperands().size() != b->GetOutputOperands().size()) {
+    //        return false;
+    //    }
 
     // match params
     if (b->GetParameters().size() == 1 &&
@@ -448,11 +468,11 @@ static bool MatchOperator(const std::shared_ptr<Operator>& a,
         b->GetParameters().at("%*")->type() == ParameterType::kParameterString &&
         b->GetParameters().at("%*")->toValue<std::string>() == "%*") {
         for (const auto& p: a->GetParameters()) {
-            const auto& pkey = p.first;
-            const auto& pp = p.second;
+            const auto& key = p.first;
+            const auto& value = p.second;
 
             // capture all parameters
-            capturedParams[b->name() + '.' + pkey] = pp;
+            capturedParams[b->name() + '.' + key] = value;
         }
     } else if (a->type() == "pnnx.Expression") {
         if (!MatchExpression(a, b, capturedParams))
@@ -609,8 +629,8 @@ static bool Match(const std::shared_ptr<Operator>& anchor,
     }
 
     for (size_t i = 0; i < pattern->GetOutputOperands().size(); ++i) {
-        if (pattern->GetOutputOperands()[i]->GetConsumers().size() == 1 &&
-            pattern->GetOutputOperands()[i]->GetConsumers()[0]->type() == "pnnx.Output") {
+        const auto& consumers = pattern->GetOutputOperands()[i]->GetConsumers();
+        if (consumers.size() == 1 && consumers[0]->type() == "pnnx.Output") {
             if (matchedOutputs.find(pattern->GetOutputOperands()[i]->name()) == matchedOutputs.end()) {
                 matchedOutputs[pattern->GetOutputOperands()[i]->name()] = anchor->GetOutputOperands()[i];
             } else if (matchedOutputs[pattern->GetOutputOperands()[i]->name()] != anchor->GetOutputOperands()[i]) {
@@ -637,7 +657,8 @@ static bool Match(const std::shared_ptr<Operator>& anchor,
             }
             continue;
         }
-        if (!Match(anchor2, pattern2, matchedOperators, matchedInputs, matchedOutputs, capturedParams, capturedAttrs)) {
+        if (!Match(anchor2, pattern2, matchedOperators, matchedInputs,
+                   matchedOutputs, capturedParams, capturedAttrs)) {
             return false;
         }
     }
@@ -651,8 +672,8 @@ void PNNXGraphRewrite(Graph& graph,
     patternGraph.parse(pass->MatchPatternGraph());
 
     // collect pattern inputs and outputs order
-    std::vector<std::string> patternGraphInputs;  // input operand name
-    std::vector<std::string> patternGraphOutputs;  // output operand name
+    std::vector<std::string> patternGraphInputs; // input operand name
+    std::vector<std::string> patternGraphOutputs;// output operand name
     std::vector<std::shared_ptr<Operator>> patternGraphOutputOps;
 
     for (const auto& x: patternGraph.GetOperators()) {
@@ -694,19 +715,19 @@ void PNNXGraphRewrite(Graph& graph,
                     for (; j >= 0; j--) {
                         const auto& anchor = graph.GetOperators()[j];
 
-                        std::map<std::string, std::shared_ptr<Operator>> matched_operators2;
-                        std::map<std::string, std::shared_ptr<Operand>> matched_inputs2;
-                        std::map<std::string, std::shared_ptr<Operand>> matched_outputs2;
-                        std::map<std::string, std::shared_ptr<Parameter>> captured_params2;
-                        std::map<std::string, std::shared_ptr<Attribute>> captured_attrs2;
+                        std::map<std::string, std::shared_ptr<Operator>> matchedOperators2;
+                        std::map<std::string, std::shared_ptr<Operand>> matchedInputs2;
+                        std::map<std::string, std::shared_ptr<Operand>> matchedOutputs2;
+                        std::map<std::string, std::shared_ptr<Parameter>> capturedParams2;
+                        std::map<std::string, std::shared_ptr<Attribute>> capturedAttrs2;
 
-                        if (!Match(anchor, pattern2, matched_operators2, matched_inputs2, matched_outputs2,
-                                   captured_params2, captured_attrs2)) {
+                        if (!Match(anchor, pattern2, matchedOperators2, matchedInputs2, matchedOutputs2,
+                                   capturedParams2, capturedAttrs2)) {
                             continue;
                         }
 
                         bool submatch_matched = true;
-                        for (const auto& x: matched_operators2) {
+                        for (const auto& x: matchedOperators2) {
                             // check these matched operators are same with previous matched ones
                             if (matchedOperators.find(x.first) != matchedOperators.end()) {
                                 if (matchedOperators[x.first] != x.second) {
@@ -722,23 +743,23 @@ void PNNXGraphRewrite(Graph& graph,
                             continue;
                         }
 
-                        for (const auto& x: matched_inputs2) {
+                        for (const auto& x: matchedInputs2) {
                             if (matchedInputs.find(x.first) == matchedInputs.end()) {
                                 matchedInputs[x.first] = x.second;
                             }
                         }
 
-                        for (const auto& x: matched_outputs2) {
+                        for (const auto& x: matchedOutputs2) {
                             if (matchedOutputs.find(x.first) == matchedOutputs.end()) {
                                 matchedOutputs[x.first] = x.second;
                             }
                         }
 
-                        for (const auto& x: captured_params2) {
+                        for (const auto& x: capturedParams2) {
                             capturedParams[x.first] = x.second;
                         }
 
-                        for (const auto& x: captured_attrs2) {
+                        for (const auto& x: capturedAttrs2) {
                             capturedAttrs[x.first] = x.second;
                         }
 
